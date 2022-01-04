@@ -3,3 +3,4 @@
 .metals/
 metals.sbt
 target/
+yarn.lock
