@@ -1,0 +1,2 @@
+install:
+   - sbt -J-XX:MaxMetaspaceSize=1024M +publishM2
