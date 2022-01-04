@@ -151,7 +151,8 @@ class Dsl[F[_], State, Action]
         s"A $tag element cannot have child nodes."
       )
 
-      args.children.sequence.flatMap { vnodes =>
+      // toList is needed in 2.12 apparently
+      args.children.toList.sequence.flatMap { vnodes =>
         element(
           tag,
           key = args.key,
