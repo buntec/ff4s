@@ -8,7 +8,8 @@ Heavily inspired by [Outwatch](https://github.com/outwatch/outwatch).
 
 See the `examples` folder for commented code examples.
 
-To run an example locally, at the sbt prompt change to the `examples` project, then run `dev`.
+To run the example locally, at the sbt prompt change to the `examples` project, then run `dev`
+and go to `localhost:8080` in your browser.
 
 If you want to give ff4s a spin, add this to your `build.sbt`:
 ```scala

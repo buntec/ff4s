@@ -68,10 +68,8 @@ lazy val examples = (project in file("examples"))
     ),
     fastOptJS / webpackBundlingMode := BundlingMode
       .LibraryOnly(), // https://scalacenter.github.io/scalajs-bundler/cookbook.html#performance
-    resolvers += "jitpack" at "https://jitpack.io", // needed for scala-js-d3
     libraryDependencies ++= Seq(
       "org.scala-js" %%% "scalajs-dom" % scalajsDomVersion,
-      "com.github.fdietze.scala-js-d3v4" %%% "scala-js-d3v4" % "6089876",
       "io.circe" %%% "circe-generic" % circeVersion,
       "io.circe" %%% "circe-literal" % circeVersion,
       "io.circe" %%% "circe-parser" % circeVersion,
