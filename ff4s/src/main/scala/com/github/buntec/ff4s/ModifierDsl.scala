@@ -52,6 +52,9 @@ trait ModifierDsl[F[_], State, Action] { self: Dsl[F, State, Action] =>
 
     case class ChildNodes(vnodes: Seq[View[VNode[F]]]) extends Modifier
 
+    implicit def fromViews(views: Seq[View[VNode[F]]]): Modifier =
+      ChildNodes(views)
+
     implicit def fromVNodes(
         vnodes: Seq[VNode[F]]
     ): Modifier =
