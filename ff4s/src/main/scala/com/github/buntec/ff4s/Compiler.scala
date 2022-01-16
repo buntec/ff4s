@@ -1,15 +1,17 @@
 package com.github.buntec.ff4s
 
-import cats.effect.kernel.Async
+import scala.scalajs.js
+
 import cats.~>
+
+import cats.effect.kernel.Async
+import cats.effect.std.Dispatcher
 
 import org.scalajs.dom
 
-import scala.scalajs.js
-
 import com.github.buntec.ff4s.snabbdom.VNodeProxy
-import cats.effect.std.Dispatcher
 import com.github.buntec.ff4s.snabbdom.Snabby
+import com.github.buntec.ff4s.snabbdom.thunk
 
 private[ff4s] object Compiler {
 
@@ -37,7 +39,8 @@ private[ff4s] object Compiler {
               onDestroy,
               props,
               attrs,
-              style
+              style,
+              thunkArgs
             ) =>
           dslB.element(
             tag,
@@ -51,7 +54,8 @@ private[ff4s] object Compiler {
             onDestroy.map(hook => (v: dom.Element) => g(hook(v))),
             props,
             attrs,
-            style
+            style,
+            thunkArgs.map(t => (s: StateB) => t(f(s)))
           )
       }
 
@@ -62,7 +66,7 @@ private[ff4s] object Compiler {
       dsl: Dsl[F, State, Action],
       state: State,
       dispatcher: Action => F[Unit]
-  ): dsl.ViewA ~> F = {
+  ): (dsl.ViewA ~> F) = {
 
     import dsl._
 
@@ -73,10 +77,12 @@ private[ff4s] object Compiler {
         case GetState() => Async[F].pure(state)
 
         case Text(s) =>
-          Async[F].delay {
+          Async[F].pure {
             new VNode[F] {
 
-              override def toSnabbdom(dispatcher: Dispatcher[F]): VNodeProxy = {
+              override def toSnabbdom(
+                  dispatcher: Dispatcher[F]
+              ): VNodeProxy = {
                 VNodeProxy.fromString(s)
               }
 
@@ -84,21 +90,25 @@ private[ff4s] object Compiler {
           }
 
         case Empty() =>
-          Async[F].delay {
+          Async[F].pure {
             new VNode[F] {
 
-              override def toSnabbdom(dispatcher: Dispatcher[F]): VNodeProxy = {
-                null // Is this dangerous? An alternative would be `VNodeProxy.fromString("")`, but this results in a text element in the DOM
+              override def toSnabbdom(
+                  dispatcher: Dispatcher[F]
+              ): VNodeProxy = {
+                null // Is this dangerous? An alternative would be `VNodeProxy.fromString("")`, but this results in an empty text element in the DOM
               }
 
             }
           }
 
         case Literal(html) =>
-          Async[F].delay {
+          Async[F].pure {
             new VNode[F] {
 
-              override def toSnabbdom(dispatcher: Dispatcher[F]): VNodeProxy = {
+              override def toSnabbdom(
+                  dispatcher: Dispatcher[F]
+              ): VNodeProxy = {
                 Snabby.apply(js.Array(html))
               }
 
@@ -115,72 +125,83 @@ private[ff4s] object Compiler {
               onDestroy,
               props,
               attrs,
-              style
+              style,
+              thunkArgs
             ) =>
           Async[F].delay {
 
-            val base = children match {
-              case Nil => VNode.empty[F](tag)
-              case _   => VNode.parentNode[F](tag, children: _*)
+            val renderFn = () => {
+
+              var vn = children match {
+                case Nil => VNode.empty[F](tag)
+                case _   => VNode.parentNode[F](tag, children: _*)
+              }
+
+              if (props.nonEmpty) vn = vn.withProps(props)
+
+              if (attrs.nonEmpty) vn = vn.withAttrs(attrs)
+
+              if (style.nonEmpty) vn = vn.withStyle(style)
+
+              key match {
+                case Some(key0) => vn = vn.withKey(key0)
+                case None       => ()
+              }
+
+              cls match {
+                case Some(cls0) => vn = vn.withClass(cls0)
+                case None       => ()
+              }
+
+              vn = eventHandlers.foldLeft(vn) {
+                case (vnode, (eventName, handler)) =>
+                  vnode.withEventHandler(
+                    eventName,
+                    (ev: dom.Event) =>
+                      handler(ev) match {
+                        case Some(action) => dispatcher(action)
+                        case None         => Async[F].unit
+                      }
+                  )
+              }
+
+              onInsert match {
+                case Some(hook) =>
+                  vn =
+                    vn.withOnInsertHook((n: dom.Element) => dispatcher(hook(n)))
+                case None => ()
+              }
+
+              onDestroy match {
+                case Some(hook) =>
+                  vn =
+                    vn.withDestroyHook((n: dom.Element) => dispatcher(hook(n)))
+                case None => ()
+              }
+
+              vn
             }
 
-            val applyClass =
-              (vn: VNode[F]) =>
-                cls.map(cls0 => vn.withClass(cls0)).getOrElse(vn)
-
-            val applyKey =
-              (vn: VNode[F]) => key.map(key0 => vn.withKey(key0)).getOrElse(vn)
-
-            val applyEventHandlers =
-              (vn: VNode[F]) =>
-                eventHandlers.foldLeft(vn) {
-                  case (vnode, (eventName, handler)) =>
-                    vnode.withEventHandler(
-                      eventName,
-                      (ev: dom.Event) =>
-                        handler(ev) match {
-                          case Some(action) => dispatcher(action)
-                          case None         => Async[F].unit
-                        }
-                    )
+            thunkArgs match {
+              case Some(args) =>
+                new VNode[F] {
+                  override def toSnabbdom(
+                      dispatcher: Dispatcher[F]
+                  ): VNodeProxy = thunk(
+                    js.undefined,
+                    tag,
+                    key.getOrElse(""): String,
+                    () => renderFn().toSnabbdom(dispatcher),
+                    js.Array(args(state))
+                  )
                 }
-
-            val applyOnInsert =
-              (vn: VNode[F]) =>
-                onInsert
-                  .map(hook =>
-                    vn.withOnInsertHook((n: dom.Element) => dispatcher(hook(n)))
-                  )
-                  .getOrElse(vn)
-
-            val applyOnDestroy =
-              (vn: VNode[F]) =>
-                onDestroy
-                  .map(hook =>
-                    vn.withDestroyHook((n: dom.Element) => dispatcher(hook(n)))
-                  )
-                  .getOrElse(vn)
-
-            val applyProps = (vn: VNode[F]) =>
-              if (props.nonEmpty) vn.withProps(props)
-              else vn
-
-            val applyAttrs = (vn: VNode[F]) =>
-              if (attrs.nonEmpty) vn.withAttrs(attrs)
-              else vn
-
-            val applyStyle = (vn: VNode[F]) =>
-              if (style.nonEmpty) vn.withStyle(style)
-              else vn
-
-            (applyProps andThen
-              applyAttrs andThen
-              applyStyle andThen
-              applyKey andThen
-              applyClass andThen
-              applyEventHandlers andThen
-              applyOnInsert andThen
-              applyOnDestroy)(base)
+              case _ =>
+                new VNode[F] {
+                  override private[ff4s] def toSnabbdom(
+                      dispatcher: Dispatcher[F]
+                  ): VNodeProxy = renderFn().toSnabbdom(dispatcher)
+                }
+            }
 
           }
 

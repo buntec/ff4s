@@ -1,6 +1,6 @@
 package com.github.buntec.ff4s.snabbdom
 
-/* Snabbdom facades taken verbatim from https://github.com/outwatch/outwatch */
+/* Snabbdom facades taken verbatim from https://github.com/outwatch/outwatch (Apache-2.0 License) */
 
 import org.scalajs.dom._
 
@@ -59,6 +59,144 @@ object DataObject {
 //   def apply(selector: String, renderFn: js.Function, argument: js.Array[Any]): VNodeProxy = js.native
 //   def apply(selector: String, key: String, renderFn: js.Function, argument: js.Array[Any]): VNodeProxy = js.native
 // }
+
+// Scala implementation of snabbdom's `thunk` taken from https://github.com/outwatch/outwatch (Apache-2.0 License)
+object thunk {
+  // own implementation of https://github.com/snabbdom/snabbdom/blob/master/src/thunk.ts
+  //does respect equality via the equals method. snabbdom thunk uses reference equality: https://github.com/snabbdom/snabbdom/issues/143
+
+  private def initThunk(fn: () => VNodeProxy)(thunk: VNodeProxy): Unit = {
+    for {
+      _ <- thunk.data
+    } {
+      VNodeProxy.updateInto(source = fn(), target = thunk)
+    }
+
+    thunk.data.foreach(_.hook.foreach(_.init.foreach(_(thunk))))
+  }
+
+  private def prepatchArray(
+      fn: () => VNodeProxy
+  )(oldProxy: VNodeProxy, thunk: VNodeProxy): Unit = {
+    for {
+      newArgs <- thunk._args.asInstanceOf[js.UndefOr[js.Array[Any]]]
+    } {
+      val oldArgs = oldProxy._args.asInstanceOf[js.UndefOr[js.Array[Any]]]
+      val isDifferent = oldArgs.fold(true) { oldArgs =>
+        (oldArgs.length != newArgs.length) || existsIndexWhere(oldArgs.length)(
+          i => oldArgs(i) != newArgs(i)
+        )
+      }
+      prepatch(fn, isDifferent, oldProxy, thunk)
+    }
+
+    thunk.data.foreach(_.hook.foreach(_.prepatch.foreach(_(oldProxy, thunk))))
+  }
+
+  private def prepatchBoolean(
+      fn: () => VNodeProxy
+  )(oldProxy: VNodeProxy, thunk: VNodeProxy): Unit = {
+    for {
+      shouldRender <- thunk._args.asInstanceOf[js.UndefOr[Boolean]]
+    } {
+      prepatch(fn, shouldRender, oldProxy, thunk)
+    }
+
+    thunk.data.foreach(_.hook.foreach(_.prepatch.foreach(_(oldProxy, thunk))))
+  }
+
+  @inline private def prepatch(
+      fn: () => VNodeProxy,
+      shouldRender: Boolean,
+      oldProxy: VNodeProxy,
+      thunk: VNodeProxy
+  ): Unit = {
+    if (shouldRender) VNodeProxy.updateInto(source = fn(), target = thunk)
+    else VNodeProxy.updateInto(source = oldProxy, target = thunk)
+  }
+
+  @inline private def existsIndexWhere(
+      maxIndex: Int
+  )(predicate: Int => Boolean): Boolean = {
+    var i = 0
+    while (i < maxIndex) {
+      if (predicate(i)) return true
+      i += 1
+    }
+    false
+  }
+
+  private def createProxy(
+      namespace: js.UndefOr[String],
+      selector: String,
+      keyValue: DataObject.KeyValue,
+      renderArgs: js.Array[Any] | Boolean,
+      initHook: Hooks.HookSingleFn,
+      prepatchHook: Hooks.HookPairFn
+  ): VNodeProxy = {
+    val proxy = new VNodeProxy {
+      sel = selector
+      data = new DataObject {
+        hook = new Hooks {
+          init = initHook
+          insert = { (p: VNodeProxy) =>
+            p.data.foreach(_.hook.foreach(_.insert.foreach(_(p))))
+          }: Hooks.HookSingleFn
+          prepatch = prepatchHook
+          update = { (o: VNodeProxy, p: VNodeProxy) =>
+            p.data.foreach(_.hook.foreach(_.update.foreach(_(o, p))))
+          }: Hooks.HookPairFn
+          postpatch = { (o: VNodeProxy, p: VNodeProxy) =>
+            p.data.foreach(_.hook.foreach(_.postpatch.foreach(_(o, p))))
+          }: Hooks.HookPairFn
+          destroy = { (p: VNodeProxy) =>
+            p.data.foreach(_.hook.foreach(_.destroy.foreach(_(p))))
+          }: Hooks.HookSingleFn
+        }
+        key = keyValue
+        ns = namespace
+      }
+      _args = renderArgs
+      key = keyValue
+    }
+    proxy._update = { newProxy =>
+      VNodeProxy.copyInto(newProxy, proxy)
+    }: js.Function1[VNodeProxy, Unit]
+    proxy
+  }
+
+  @inline def apply(
+      namespace: js.UndefOr[String],
+      selector: String,
+      keyValue: DataObject.KeyValue,
+      renderFn: js.Function0[VNodeProxy],
+      renderArgs: js.Array[Any]
+  ): VNodeProxy =
+    createProxy(
+      namespace,
+      selector,
+      keyValue,
+      renderArgs,
+      initThunk(renderFn),
+      prepatchArray(renderFn)
+    )
+
+  @inline def conditional(
+      namespace: js.UndefOr[String],
+      selector: String,
+      keyValue: DataObject.KeyValue,
+      renderFn: js.Function0[VNodeProxy],
+      shouldRender: Boolean
+  ): VNodeProxy =
+    createProxy(
+      namespace,
+      selector,
+      keyValue,
+      shouldRender,
+      initThunk(renderFn),
+      prepatchBoolean(renderFn)
+    )
+}
 
 object patch {
 

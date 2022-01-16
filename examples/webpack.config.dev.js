@@ -8,6 +8,13 @@ module.exports.infrastructureLogging = {
   colors: true,
   stream: process.stdout,
 };
+
+module.exports.plugins = [
+  new webpack.EnvironmentPlugin({
+    CATS_EFFECT_TRACING_MODE: 'none'
+  })
+]
+
 module.exports.devServer = {
     static: [
       { directory: Path.resolve(__dirname, 'dev') },

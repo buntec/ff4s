@@ -38,7 +38,9 @@ class App[F[_]: Async] {
     store <- Resource.eval(Store[F, State, Action](init) { ref => (a: Action) =>
       a match {
         case SetName(name) =>
-          ref.update(_.copy(name = if (name.nonEmpty) Some(name) else None))
+          ref.update(
+            _.copy(name = if (name.nonEmpty) Some(name.toUpperCase) else None)
+          )
         case SetPets(pets) =>
           ref.update(_.copy(pets = pets))
         case IncrementCounter() =>
@@ -119,6 +121,26 @@ class App[F[_]: Async] {
 
   val counterButtons = div(cls := "flex flex-row", incButton, decButton)
 
+  val mySvg = {
+    import dsl.syntax.svg._
+    svg(height := "100", width := "100")
+  }
+
+  val longList = getState.flatMap { state =>
+    div(
+      cls := "bg-blue-400",
+      key := "my-long-list",
+      thunked := (s => s.name),
+      Seq.tabulate(100) { i =>
+        div(
+          key := i,
+          cls := "m-1 px-1 rounded flex flex-row",
+          Seq.tabulate(10)(j => div(s"${state.name} ${i}/${j}"))
+        )
+      }
+    )
+  }
+
   val view = for {
     s <- getState
     welcome <- h1(
@@ -156,7 +178,9 @@ class App[F[_]: Async] {
       catsOrDogs,
       suggestedActivity,
       counter,
-      counterButtons
+      counterButtons,
+      mySvg,
+      longList
     )
   } yield node
 

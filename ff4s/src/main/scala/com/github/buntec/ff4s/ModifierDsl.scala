@@ -68,6 +68,8 @@ trait ModifierDsl[F[_], State, Action] { self: Dsl[F, State, Action] =>
 
     case class Style(name: String, value: String) extends Modifier
 
+    case class Thunk(args: State => Any) extends Modifier
+
   }
 
 }

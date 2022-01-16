@@ -35,7 +35,8 @@ class Dsl[F[_], State, Action]
       onDestroy: Option[dom.Element => Action],
       props: Map[String, Any],
       attrs: Map[String, DataObject.AttrValue],
-      style: Map[String, String]
+      style: Map[String, String],
+      thunkArgs: Option[State => Any]
   ) extends ViewA[VNode[F]]
 
   case class Literal(html: String) extends ViewA[VNode[F]]
@@ -80,7 +81,8 @@ class Dsl[F[_], State, Action]
       onDestroy: Option[dom.Element => Action] = None,
       props: Map[String, Any] = Map.empty,
       attrs: Map[String, DataObject.AttrValue] = Map.empty,
-      style: Map[String, String] = Map.empty
+      style: Map[String, String] = Map.empty,
+      thunkArgs: Option[State => Any] = None
   ): View[VNode[F]] = liftF[ViewA, VNode[F]](
     Element(
       tag,
@@ -92,7 +94,8 @@ class Dsl[F[_], State, Action]
       onDestroy,
       props,
       attrs,
-      style
+      style,
+      thunkArgs
     )
   )
 
@@ -111,7 +114,8 @@ class Dsl[F[_], State, Action]
       style: Map[String, String] = Map.empty,
       eventHandlers: Map[String, dom.Event => Option[Action]] = Map.empty,
       insertHook: Option[dom.Element => Action] = None,
-      destroyHook: Option[dom.Element => Action] = None
+      destroyHook: Option[dom.Element => Action] = None,
+      thunkArgs: Option[State => Any] = None
   )
 
   class ElementBuilder[A](tag: String, void: Boolean) {
@@ -143,6 +147,7 @@ class Dsl[F[_], State, Action]
             args.copy(destroyHook = Some(onDestroy))
           case Modifier.Style(name, value) =>
             args.copy(style = args.style + (name -> value))
+          case Modifier.Thunk(tArgs) => args.copy(thunkArgs = Some(tArgs))
         }
       }
 
@@ -152,17 +157,18 @@ class Dsl[F[_], State, Action]
       )
 
       // toList is needed in 2.12 apparently
-      args.children.toList.sequence.flatMap { vnodes =>
+      args.children.toList.sequence.flatMap { children =>
         element(
           tag,
           key = args.key,
-          children = vnodes,
+          children = children,
           eventHandlers = args.eventHandlers,
           attrs = args.attrs,
           props = args.props,
           style = args.style,
           onInsert = args.insertHook,
-          onDestroy = args.destroyHook
+          onDestroy = args.destroyHook,
+          thunkArgs = args.thunkArgs
         )
       }
 
@@ -190,6 +196,10 @@ class Dsl[F[_], State, Action]
     def :=(s: String): Modifier = Modifier.Key(s)
     def :=(n: Int): Modifier = Modifier.Key(n.toString)
     def :=(x: Double): Modifier = Modifier.Key(x.toString)
+  }
+
+  object thunked {
+    def :=(args: State => Any): Modifier = Modifier.Thunk(args)
   }
 
   object insertHook {

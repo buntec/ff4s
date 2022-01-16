@@ -23,18 +23,34 @@ private[ff4s] object Render {
     root <- Resource.eval(Async[F].delay(document.querySelector(selector)))
     s <- store
     state0 <- Resource.eval(s.state.get)
-    compiler = Compiler(dsl, state0, s.dispatcher)
-    vnode <- Resource.eval(view.foldMap(compiler))
-    vnode0 <- Resource.eval(
-      Async[F].delay(patch(root, vnode.toSnabbdom(dispatcher)))
+    vnode0 <- Resource.eval(view.foldMap(Compiler(dsl, state0, s.dispatcher)))
+    proxy0 <- Resource.eval(
+      Async[F].delay(patch(root, vnode0.toSnabbdom(dispatcher)))
     )
     vnodes = s.state.discrete.evalMap(state =>
-      view.foldMap(Compiler(dsl, state, s.dispatcher))
+      Async[F]
+        .timed(
+          view.foldMap(Compiler(dsl, state, s.dispatcher))
+        )
+        .flatMap { case (elapsed, node) =>
+          Async[F].delay {
+            Logging.debug(s"compiling view took ${elapsed.toMillis} ms")
+            node
+          }
+        }
     )
     _ <- vnodes
-      .evalMapAccumulate(vnode0) { case (vnPrev, vnNext) =>
+      .evalMapAccumulate(proxy0) { case (prevProxy, nextProxy) =>
         Async[F]
-          .delay(patch(vnPrev, vnNext.toSnabbdom(dispatcher)))
+          .timed(
+            Async[F].delay(patch(prevProxy, nextProxy.toSnabbdom(dispatcher)))
+          )
+          .flatMap { case (elapsed, vnode) =>
+            Async[F].delay {
+              Logging.debug(s"patching took ${elapsed.toMillis} ms")
+              vnode
+            }
+          }
           .map(v => (v, ()))
       }
       .compile
