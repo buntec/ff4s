@@ -5,45 +5,76 @@ import scala.concurrent.duration._
 import org.scalajs.dom
 
 import cats.syntax.all._
-
 import cats.effect.kernel.{Async, Resource}
+import cats.effect.std.Random
 
 import io.circe.generic.auto._
 
-import com.github.buntec.ff4s.{Dsl, Store}
-import com.github.buntec.ff4s.HttpClient
+import com.github.buntec.ff4s
 
 class App[F[_]: Async] {
 
   // Define our app's state space.
-
-  val defaultDish = "Pizza"
-
   case class State(
       name: Option[String] = None,
-      pets: String = "cats",
+      pets: Pets = Cats,
       counter: Int = 0,
       bored: Option[Bored] = None,
-      favoriteDish: String = defaultDish,
-      magic: Boolean = false
+      favoriteDish: Dish = Sushi,
+      magic: Boolean = false,
+      svgCoords: SvgCoords = SvgCoords(0, 0)
   )
+  case class SvgCoords(x: Double, y: Double)
   case class Bored(activity: String, `type`: String)
+
+  sealed trait Dish
+  case object Sushi extends Dish
+  case object Pizza extends Dish
+  case object Pasta extends Dish
+  case object Ramen extends Dish
+
+  object Dish {
+
+    val all: Seq[Dish] = Seq(Sushi, Pizza, Pasta, Ramen)
+
+    def fromString(s: String): Option[Dish] = s match {
+      case "Sushi" => Some(Sushi)
+      case "Pizza" => Some(Pizza)
+      case "Pasta" => Some(Pasta)
+      case "Ramen" => Some(Ramen)
+      case _       => None
+    }
+
+  }
+
+  sealed trait Pets
+  case object Cats extends Pets
+  case object Dogs extends Pets
+
+  object Pets {
+
+    val all: Seq[Pets] = Seq(Cats, Dogs)
+
+  }
 
   // Define a set of actions.
   sealed trait Action
   case object Magic extends Action
   case class SetName(name: String) extends Action
-  case class SetPets(pets: String) extends Action
-  case class SetFavoriteDish(dish: String) extends Action
+  case class SetPets(pets: Pets) extends Action
+  case class SetFavoriteDish(dish: Dish) extends Action
   case class IncrementCounter() extends Action
   case class DecrementCounter() extends Action
   case class GetActivity() extends Action
+  case class SetSvgCoords(x: Double, y: Double) extends Action
 
   // Create a store by assigning actions to effects in F. (This is where we need `Async`.)
   implicit val store = for {
-    store <- Resource.eval(Store[F, State, Action](State()) {
+    store <- Resource.eval(ff4s.Store[F, State, Action](State()) {
       ref => (a: Action) =>
         a match {
+          case SetSvgCoords(x, y) =>
+            ref.update(_.copy(svgCoords = SvgCoords(x, y)))
           case Magic => ref.update(_.copy(magic = true))
           case SetName(name) =>
             ref.update(
@@ -57,7 +88,8 @@ class App[F[_]: Async] {
           case DecrementCounter() =>
             ref.update(s => s.copy(counter = s.counter - 1))
           case GetActivity() =>
-            HttpClient[F]
+            ff4s
+              .HttpClient[F]
               .get[Bored]("https://www.boredapi.com/api/activity")
               .flatMap { bored =>
                 ref.update(s => s.copy(bored = Some(bored)))
@@ -77,44 +109,40 @@ class App[F[_]: Async] {
     _ <- Async[F].background(
       store.state.discrete
         .map { state =>
-          (state.favoriteDish, state.counter)
+          // use `toString` here to avoid having to provide Eq typeclass instance
+          (state.favoriteDish.toString, state.counter)
         }
         .changes
-        .filter(p => p._1 == "Ramen" && p._2 == 17)
+        .filter(p => p._1 == Ramen.toString && p._2 == 3)
         .evalMap(_ => store.dispatcher(Magic))
+        .compile
+        .drain
+    )
+
+    rng <- Resource.eval(Random.scalaUtilRandom)
+    _ <- Async[F].background(
+      fs2.Stream
+        .fixedDelay(1.second)
+        .evalMap { _ =>
+          for {
+            x <- rng.betweenDouble(10.0, 90.0)
+            y <- rng.betweenDouble(10.0, 90.0)
+          } yield (x, y)
+        }
+        .evalMap { case (x, y) => store.dispatcher(SetSvgCoords(x, y)) }
         .compile
         .drain
     )
   } yield store
 
   // Create a DSL for our model.
-  val dsl = new Dsl[F, State, Action]
+  val dsl = new ff4s.Dsl[F, State, Action]
 
   import dsl._ // basic dsl
-  import dsl.syntax.html._ // nice syntax
+  import dsl.syntax.html._ // nice syntax for html tags, attributes etc.
 
   val linkCls = "text-pink-500"
-  val subHeadingCls = "text-center text-2xl mt-5 mb-2"
-
-  // We can use for-comprehensions to build our components since `View` is a (free) monad.
-  val catsOrDogs = for {
-    s <- getState
-    catsRadio <- input(
-      cls := "m-1",
-      tpe := "radio",
-      checked := (s.pets == "cats"),
-      onChange := (_ => Some(SetPets("cats")))
-    )
-    cats <- div(cls := "m-1 flex flex-row", "cats", catsRadio)
-    dogsRadio <- input(
-      cls := "m-1",
-      tpe := "radio",
-      checked := (s.pets == "dogs"),
-      onChange := (_ => Some(SetPets("dogs")))
-    )
-    dogs <- div(cls := "m-1 flex flex-row", "dogs", dogsRadio)
-    node <- div(cls := "m-1 flex flex-col", cats, dogs)
-  } yield node
+  val subHeadingCls = "text-center text-2xl mt-4 mb-2"
 
   // We can use literals for convenience, e.g., SVG icons
   val plusIcon = literal("""<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -123,26 +151,6 @@ class App[F[_]: Async] {
   val minusIcon = literal("""<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
 <path fill-rule="evenodd" clip-rule="evenodd" d="M10 18C14.4183 18 18 14.4183 18 10C18 5.58172 14.4183 2 10 2C5.58172 2 2 5.58172 2 10C2 14.4183 5.58172 18 10 18ZM7 9C6.44772 9 6 9.44772 6 10C6 10.5523 6.44772 11 7 11H13C13.5523 11 14 10.5523 14 10C14 9.44772 13.5523 9 13 9H7Z" fill="#4A5568"/>
 </svg>""") // taken from https://github.com/tailwindlabs/heroicons, MIT License
-
-  val mySvg = {
-    import dsl.syntax.svg._
-    svg(height := "100", width := "100")
-  }
-
-  val longList = useState { state =>
-    div(
-      cls := "bg-blue-400",
-      key := "my-long-list",
-      thunked := (s => s.name),
-      Seq.tabulate(100) { i =>
-        div(
-          key := i,
-          cls := "m-1 px-1 rounded flex flex-row",
-          Seq.tabulate(10)(j => div(s"${state.name} ${i}/${j}"))
-        )
-      }
-    )
-  }
 
   val welcome = h1(
     cls := "m-4 text-4xl", // some tailwindcss classes
@@ -158,10 +166,19 @@ class App[F[_]: Async] {
         href := "https://www.scala-js.org",
         "Scala.js"
       ),
+      ", leveraging the magical powers of ",
+      a(cls := linkCls, href := "https://fs2.io", "FS2"),
+      " and ",
+      a(
+        cls := linkCls,
+        href := "https://typelevel.org/cats-effect",
+        "Cats Effect"
+      ),
       "."
     ),
     p(
-      "Here we demonstrate some basic functionality of ff4s."
+      cls := "mt-4",
+      "This is a minimal SPA built with ff4s. Please check out the code to see how it all works."
     )
   )
 
@@ -218,7 +235,7 @@ class App[F[_]: Async] {
         cls := "flex flex-col",
         input(
           tpe := "text",
-          cls := "m-1 rounded font-light shadow",
+          cls := "text-center m-1 rounded font-light shadow",
           placeholder := "type something here...",
           value := state.name.getOrElse(""),
           onInput := ((ev: dom.Event) =>
@@ -237,7 +254,6 @@ class App[F[_]: Async] {
   }
 
   val dropDown = useState { state =>
-    val foods = Seq("Sushi", "Pizza", "Pasta", "Ramen")
     div(
       h2(cls := subHeadingCls, "A dropdown"),
       div(
@@ -247,20 +263,21 @@ class App[F[_]: Async] {
           cls := "m-1 rounded font-light",
           onChange := ((ev: dom.Event) =>
             ev.target match {
-              case el: dom.HTMLSelectElement => Some(SetFavoriteDish(el.value))
-              case _                         => None
+              case el: dom.HTMLSelectElement =>
+                Some(SetFavoriteDish(Dish.fromString(el.value).get))
+              case _ => None
             }
           ),
-          foods.map(food =>
+          Dish.all.map(food =>
             option(
-              (if (food == defaultDish) defaultSelected := true else noop),
-              key := food,
-              value := food,
-              food
+              (if (food == Sushi) defaultSelected := true else noop),
+              key := food.toString,
+              value := food.toString,
+              food.toString
             )
           )
         ),
-        span(s"Great choice, I like ${state.favoriteDish} too!")
+        span(s"Great choice, we like ${state.favoriteDish} too!")
       )
     )
   }
@@ -268,9 +285,67 @@ class App[F[_]: Async] {
   val magicAlert = useState { state =>
     if (state.magic)
       div(
-        span(cls := "text-xl", "You found the magic combination...")
+        span(cls := "text-xl", "✨You found the magic combination✨")
       )
     else empty
+  }
+
+  val radioButtons = useState { state =>
+    div(
+      cls := "m-1 flex flex-col items-center",
+      h2(cls := subHeadingCls, "Radio buttons"),
+      p("What is your favorite pet?"),
+      div(
+        Pets.all.map { pets =>
+          label(
+            cls := "m-1 flex flex-row items-center",
+            input(
+              cls := "m-1",
+              tpe := "radio",
+              checked := (state.pets == pets),
+              onChange := (_ => Some(SetPets(pets)))
+            ),
+            pets.toString
+          )
+        }
+      ),
+      span(
+        {
+          state.pets match {
+            case Cats => "Meow!"
+            case Dogs => "Woof!"
+          }
+        }
+      )
+    )
+  }
+
+  val svgDemo = useState { state =>
+    div(
+      cls := "m-1 flex flex-col items-center",
+      h2(cls := subHeadingCls, "A simple SVG"), {
+        import dsl.syntax.svg._
+        svg(
+          height := "100",
+          width := "100",
+          circle(
+            cx := "50",
+            cy := "50",
+            r := "10",
+            stroke := "blue",
+            fill := "transparent"
+          ),
+          rect(
+            x := state.svgCoords.x.toString,
+            y := state.svgCoords.y.toString,
+            width := "30",
+            height := "30",
+            stroke := "black",
+            fill := "transparent"
+          )
+        )
+      }
+    )
   }
 
   val app = div(
@@ -281,7 +356,9 @@ class App[F[_]: Async] {
     counter,
     apiCalls,
     textInput,
-    dropDown
+    dropDown,
+    radioButtons,
+    svgDemo
   )
 
   // this is our entry point
