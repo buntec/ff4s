@@ -71,6 +71,10 @@ class Dsl[F[_], State, Action]
 
   def getState: View[State] = liftF[ViewA, State](GetState())
 
+  /** Alias for `getState.flatMap(f)`.
+    */
+  def useState[A](f: State => View[A]): View[A] = getState.flatMap(f)
+
   def element(
       tag: String,
       children: Seq[VNode[F]] = Seq.empty,
@@ -126,6 +130,7 @@ class Dsl[F[_], State, Action]
 
       val args = modifiers.foldLeft(ElemArgs()) { case (args, mod) =>
         mod match {
+          case Modifier.NoOp     => args
           case Modifier.Key(key) => args.copy(key = Some(key))
           case Modifier.HtmlAttr(name, value, codec) =>
             args.copy(attrs = args.attrs + (name -> codec.encode(value)))
@@ -197,6 +202,13 @@ class Dsl[F[_], State, Action]
     def :=(n: Int): Modifier = Modifier.Key(n.toString)
     def :=(x: Double): Modifier = Modifier.Key(x.toString)
   }
+
+  /** This modifier does nothing. Can be useful in conditionals, e.g.,
+    * ```
+    * option(if (someCondition) defaultSelected := true else noop)
+    * ```
+    */
+  val noop = Modifier.NoOp
 
   object thunked {
     def :=(args: State => Any): Modifier = Modifier.Thunk(args)

@@ -11,6 +11,8 @@ trait ModifierDsl[F[_], State, Action] { self: Dsl[F, State, Action] =>
 
   object Modifier {
 
+    case object NoOp extends Modifier
+
     case class Key(key: String) extends Modifier
 
     case class EventHandler(
