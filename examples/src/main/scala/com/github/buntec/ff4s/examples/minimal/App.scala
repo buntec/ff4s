@@ -12,6 +12,16 @@ import io.circe.generic.auto._
 
 import com.github.buntec.ff4s
 
+// This is a small demo application so show off the basic functionality of ff4s.
+// It uses tailwindcss for simple styling.
+//
+// In a real-world project, the code would be split over several files.
+// Typically, we would have one file for defining the state types,
+// one file for defining the actions, one file for for the store,
+// and several files for the view components.
+//
+// Note that we use the "tagless final" style where `F` is a generic effect type.
+// We always require an instance of `cats.effect.Async` for `F`.
 class App[F[_]: Async] {
 
   // Define our app's state space.
@@ -68,7 +78,7 @@ class App[F[_]: Async] {
   case class GetActivity() extends Action
   case class SetSvgCoords(x: Double, y: Double) extends Action
 
-  // Create a store by assigning actions to effects in F. (This is where we need `Async`.)
+  // Create a store by assigning actions to effects in F.
   implicit val store = for {
     store <- Resource.eval(ff4s.Store[F, State, Action](State()) {
       ref => (a: Action) =>
@@ -88,6 +98,7 @@ class App[F[_]: Async] {
           case DecrementCounter() =>
             ref.update(s => s.copy(counter = s.counter - 1))
           case GetActivity() =>
+            // ff4s provides a very basic HTTP client (currently using sttp under the hood).
             ff4s
               .HttpClient[F]
               .get[Bored]("https://www.boredapi.com/api/activity")
@@ -97,7 +108,7 @@ class App[F[_]: Async] {
 
         }
     })
-    // We can do something fancy in the background...
+    // We can do something fancy in the background.
     _ <- Async[F].background(
       (fs2.Stream.emit(()) ++ fs2.Stream.fixedDelay(5.second))
         .covary[F]
@@ -105,11 +116,11 @@ class App[F[_]: Async] {
         .compile
         .drain
     )
-    // We can also react to state changes...
+    // We can also listen to and react to state changes.
     _ <- Async[F].background(
       store.state.discrete
         .map { state =>
-          // use `toString` here to avoid having to provide Eq typeclass instance
+          // Use `toString` here to avoid having to provide a Eq typeclass instance.
           (state.favoriteDish.toString, state.counter)
         }
         .changes
@@ -118,7 +129,7 @@ class App[F[_]: Async] {
         .compile
         .drain
     )
-
+    // Animate our SVG with some random numbers.
     rng <- Resource.eval(Random.scalaUtilRandom)
     _ <- Async[F].background(
       fs2.Stream
@@ -141,10 +152,11 @@ class App[F[_]: Async] {
   import dsl._ // basic dsl
   import dsl.syntax.html._ // nice syntax for html tags, attributes etc.
 
+  // Define some classes for easy re-use.
   val linkCls = "text-pink-500"
   val subHeadingCls = "text-center text-2xl mt-4 mb-2"
 
-  // We can use literals for convenience, e.g., SVG icons
+  // We can use (unsafe!) literals for convenience, e.g., SVG icons
   val plusIcon = literal("""<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
 <path fill-rule="evenodd" clip-rule="evenodd" d="M10 18C14.4183 18 18 14.4183 18 10C18 5.58172 14.4183 2 10 2C5.58172 2 2 5.58172 2 10C2 14.4183 5.58172 18 10 18ZM11 7C11 6.44772 10.5523 6 10 6C9.44772 6 9 6.44772 9 7V9H7C6.44772 9 6 9.44771 6 10C6 10.5523 6.44772 11 7 11H9V13C9 13.5523 9.44772 14 10 14C10.5523 14 11 13.5523 11 13V11H13C13.5523 11 14 10.5523 14 10C14 9.44772 13.5523 9 13 9H11V7Z" fill="#4A5568"/>
 </svg>""") // taken from https://github.com/tailwindlabs/heroicons, MIT License
@@ -152,21 +164,25 @@ class App[F[_]: Async] {
 <path fill-rule="evenodd" clip-rule="evenodd" d="M10 18C14.4183 18 18 14.4183 18 10C18 5.58172 14.4183 2 10 2C5.58172 2 2 5.58172 2 10C2 14.4183 5.58172 18 10 18ZM7 9C6.44772 9 6 9.44772 6 10C6 10.5523 6.44772 11 7 11H13C13.5523 11 14 10.5523 14 10C14 9.44772 13.5523 9 13 9H7Z" fill="#4A5568"/>
 </svg>""") // taken from https://github.com/tailwindlabs/heroicons, MIT License
 
-  val welcome = h1(
-    cls := "m-4 text-4xl", // some tailwindcss classes
-    "Welcome to ff4s!" // strings are valid child nodes
-  )
+  // The html syntax import gives us a nice DSL for composing HTML markup.
+  // We can easily nest elements inside each other, define attributes,
+  // properties, event handlers etc.
+  val welcome =
+    h1( // All common html tags are available thanks to scala-dom-types.
+      cls := "m-4 text-4xl", // Some tailwindcss utility classes.
+      "Welcome to ff4s 👋" // Strings are valid child nodes, of course.
+    )
 
   val intro = div(
     cls := "m-4 text-center",
     p(
-      "ff4s lets you write web frontends in a purely functional style using ",
+      "ff4s lets you write web front-ends in a purely functional style using ",
       a(
         cls := linkCls,
-        href := "https://www.scala-js.org",
+        href := "https://www.scala-js.org", // All common html attributes are available thanks to scala-dom-types.
         "Scala.js"
       ),
-      ", leveraging the magical powers of ",
+      " and the magical powers of ",
       a(cls := linkCls, href := "https://fs2.io", "FS2"),
       " and ",
       a(
@@ -174,14 +190,30 @@ class App[F[_]: Async] {
         href := "https://typelevel.org/cats-effect",
         "Cats Effect"
       ),
-      "."
+      ". It comes with an expressive and type-safe DSL for HTML/SVG markup thanks to the amazing ",
+      a(
+        cls := linkCls,
+        href := "https://github.com/raquo/scala-dom-types",
+        "Scala DOM Types"
+      ),
+      ". Rendering is based on the ",
+      a(
+        cls := linkCls,
+        href := "https://github.com/snabbdom/snabbdom",
+        "Snabbdom"
+      ),
+      " virtual DOM."
     ),
     p(
       cls := "mt-4",
-      "This is a minimal SPA built with ff4s. Please check out the code to see how it all works."
+      "This is a minimal SPA built with ff4s. Please check out the ",
+      a(cls := linkCls, href := "https://github.com/buntec/ff4s", "code"),
+      " to see how it all works."
     )
   )
 
+  // If a component requires access to state, we can use `useState{ state => ...}`,
+  // which is just an alias for `getState.flatMap{ state => ...}`.
   val counter = useState { state =>
     val buttonClasses =
       "m-1 shadow bg-zinc-300 hover:bg-zinc-400 active:bg-zinc-500 text-white py-1 px-2 rounded"
@@ -196,8 +228,11 @@ class App[F[_]: Async] {
         button(
           tpe := "button",
           cls := buttonClasses,
+          // We can assign callbacks to events; note that the callback
+          // returns an `Option[Action]`, which, when defined, is dispatched
+          // by our store. Returning `None` means we don't do anything.
           onClick := (_ => Some(IncrementCounter())),
-          plusIcon // can take other components as children
+          plusIcon
         ),
         button(
           tpe := "button",
@@ -238,11 +273,14 @@ class App[F[_]: Async] {
           cls := "text-center m-1 rounded font-light shadow",
           placeholder := "type something here...",
           value := state.name.getOrElse(""),
-          onInput := ((ev: dom.Event) =>
-            ev.target match {
-              case el: dom.HTMLInputElement => Some(SetName(el.value))
-              case _                        => None
-            }
+          onInput := (
+            // Callbacks are invoked with an instance of `dom.Event`.
+            // We typically have to match on the type of the target to get the desired information.
+            (ev: dom.Event) =>
+              ev.target match {
+                case el: dom.HTMLInputElement => Some(SetName(el.value))
+                case _                        => None
+              }
           )
         ),
         span(
@@ -268,10 +306,13 @@ class App[F[_]: Async] {
               case _ => None
             }
           ),
+          // `Seq`s of components are also valid child elements.
+          // In this case one should always define the `key` attribute
+          // to something that is unique among all siblings.
           Dish.all.map(food =>
             option(
               (if (food == Sushi) defaultSelected := true else noop),
-              key := food.toString,
+              key := food.toString, // Should be unique among siblings.
               value := food.toString,
               food.toString
             )
@@ -287,6 +328,9 @@ class App[F[_]: Async] {
       div(
         span(cls := "text-xl", "✨You found the magic combination✨")
       )
+    // The `empty` component can be convenient
+    // for conditional rendering as it doesn't result in any element
+    // being added to the DOM.
     else empty
   }
 
@@ -324,6 +368,10 @@ class App[F[_]: Async] {
     div(
       cls := "m-1 flex flex-col items-center",
       h2(cls := subHeadingCls, "A simple SVG"), {
+        // Because of name clashes with HTML/CSS we need a
+        // separate import for SVG tags and attributes.
+        // Note the curly braces defining a new scope.
+        // Html syntax can still be accessed through fully-qualified names.
         import dsl.syntax.svg._
         svg(
           height := "100",
@@ -348,6 +396,7 @@ class App[F[_]: Async] {
     )
   }
 
+  // Pull everything together into our final app.
   val app = div(
     cls := "flex flex-col items-center",
     welcome,
@@ -361,7 +410,8 @@ class App[F[_]: Async] {
     svgDemo
   )
 
-  // this is our entry point
+  // Render our app into the unique element with ID "app",
+  // which is defined in our `index.html`.
   def run: F[Nothing] = app.renderInto("#app")
 
 }
