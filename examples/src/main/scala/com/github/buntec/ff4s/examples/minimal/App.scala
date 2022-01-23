@@ -8,9 +8,11 @@ import cats.syntax.all._
 import cats.effect.kernel.{Async, Resource}
 import cats.effect.std.Random
 
+import io.circe.parser._
 import io.circe.generic.auto._
 
 import com.github.buntec.ff4s
+import cats.effect.kernel.Fiber
 
 // This is a small demo application so show off the basic functionality of ff4s.
 // It uses tailwindcss for simple styling.
@@ -32,7 +34,9 @@ class App[F[_]: Async] {
       bored: Option[Bored] = None,
       favoriteDish: Dish = Sushi,
       magic: Boolean = false,
-      svgCoords: SvgCoords = SvgCoords(0, 0)
+      svgCoords: SvgCoords = SvgCoords(0, 0),
+      bitcoinPrice: Option[Double] = None,
+      websocketFiber: Option[Fiber[F, Throwable, Unit]] = None
   )
   case class SvgCoords(x: Double, y: Double)
   case class Bored(activity: String, `type`: String)
@@ -73,16 +77,53 @@ class App[F[_]: Async] {
   case class SetName(name: String) extends Action
   case class SetPets(pets: Pets) extends Action
   case class SetFavoriteDish(dish: Dish) extends Action
-  case class IncrementCounter() extends Action
-  case class DecrementCounter() extends Action
-  case class GetActivity() extends Action
+  case object IncrementCounter extends Action
+  case object DecrementCounter extends Action
+  case object GetActivity extends Action
   case class SetSvgCoords(x: Double, y: Double) extends Action
+  case object StartWebsocket extends Action
+  case object StopWebsocket extends Action
 
   // Create a store by assigning actions to effects in F.
   implicit val store = for {
     store <- Resource.eval(ff4s.Store[F, State, Action](State()) {
       ref => (a: Action) =>
         a match {
+          case StopWebsocket =>
+            ref.get.flatMap { state =>
+              state.websocketFiber.fold(Async[F].unit)(_.cancel)
+            }
+          case StartWebsocket =>
+            for {
+              fiber <- Async[F].start(
+                ff4s
+                  .WebSocketsClient[F]
+                  .stream(
+                    "wss://ws.bitmex.com/realtime?subscribe=instrument:XBTUSD",
+                    is =>
+                      is.evalMap { msg =>
+                        (for {
+                          json <- Async[F].fromEither(parse(msg))
+                          lastPrice <- Async[F].fromEither(
+                            json.hcursor
+                              .downField("data")
+                              .downArray
+                              .downField("lastPrice")
+                              .as[Double]
+                          )
+                          _ <- ref
+                            .update(_.copy(bitcoinPrice = Some(lastPrice)))
+                        } yield ()).handleError(_ => ())
+                      }.drain
+                  )
+              )
+              sPrev <- ref.getAndUpdate(
+                _.copy(
+                  websocketFiber = Some(fiber)
+                )
+              )
+              _ <- sPrev.websocketFiber.fold(Async[F].unit)(_.cancel)
+            } yield ()
           case SetSvgCoords(x, y) =>
             ref.update(_.copy(svgCoords = SvgCoords(x, y)))
           case Magic => ref.update(_.copy(magic = true))
@@ -93,11 +134,11 @@ class App[F[_]: Async] {
           case SetPets(pets) =>
             ref.update(_.copy(pets = pets))
           case SetFavoriteDish(dish) => ref.update(_.copy(favoriteDish = dish))
-          case IncrementCounter() =>
+          case IncrementCounter =>
             ref.update(s => s.copy(counter = s.counter + 1))
-          case DecrementCounter() =>
+          case DecrementCounter =>
             ref.update(s => s.copy(counter = s.counter - 1))
-          case GetActivity() =>
+          case GetActivity =>
             // ff4s provides a very basic HTTP client (currently using sttp under the hood).
             ff4s
               .HttpClient[F]
@@ -112,7 +153,7 @@ class App[F[_]: Async] {
     _ <- Async[F].background(
       (fs2.Stream.emit(()) ++ fs2.Stream.fixedDelay(5.second))
         .covary[F]
-        .evalMap(_ => store.dispatcher(GetActivity()))
+        .evalMap(_ => store.dispatcher(GetActivity))
         .compile
         .drain
     )
@@ -157,12 +198,14 @@ class App[F[_]: Async] {
   val subHeadingCls = "text-center text-2xl mt-4 mb-2"
 
   // We can use (unsafe!) literals for convenience, e.g., SVG icons
-  val plusIcon = literal("""<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-<path fill-rule="evenodd" clip-rule="evenodd" d="M10 18C14.4183 18 18 14.4183 18 10C18 5.58172 14.4183 2 10 2C5.58172 2 2 5.58172 2 10C2 14.4183 5.58172 18 10 18ZM11 7C11 6.44772 10.5523 6 10 6C9.44772 6 9 6.44772 9 7V9H7C6.44772 9 6 9.44771 6 10C6 10.5523 6.44772 11 7 11H9V13C9 13.5523 9.44772 14 10 14C10.5523 14 11 13.5523 11 13V11H13C13.5523 11 14 10.5523 14 10C14 9.44772 13.5523 9 13 9H11V7Z" fill="#4A5568"/>
+  val plusIcon = literal("""<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
 </svg>""") // taken from https://github.com/tailwindlabs/heroicons, MIT License
-  val minusIcon = literal("""<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-<path fill-rule="evenodd" clip-rule="evenodd" d="M10 18C14.4183 18 18 14.4183 18 10C18 5.58172 14.4183 2 10 2C5.58172 2 2 5.58172 2 10C2 14.4183 5.58172 18 10 18ZM7 9C6.44772 9 6 9.44772 6 10C6 10.5523 6.44772 11 7 11H13C13.5523 11 14 10.5523 14 10C14 9.44772 13.5523 9 13 9H7Z" fill="#4A5568"/>
-</svg>""") // taken from https://github.com/tailwindlabs/heroicons, MIT License
+  val minusIcon = literal(
+    """<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+</svg>"""
+  ) // taken from https://github.com/tailwindlabs/heroicons, MIT License
 
   // The html syntax import gives us a nice DSL for composing HTML markup.
   // We can easily nest elements inside each other, define attributes,
@@ -216,7 +259,7 @@ class App[F[_]: Async] {
   // which is just an alias for `getState.flatMap{ state => ...}`.
   val counter = useState { state =>
     val buttonClasses =
-      "m-1 shadow bg-zinc-300 hover:bg-zinc-400 active:bg-zinc-500 text-white py-1 px-2 rounded"
+      "m-1 shadow bg-emerald-500 text-zinc-200 hover:bg-emerald-600 active:bg-emerald-700 py-1 px-2 rounded"
     div(
       cls := "m-4",
       h2(cls := subHeadingCls, "A simple counter"),
@@ -231,13 +274,13 @@ class App[F[_]: Async] {
           // We can assign callbacks to events; note that the callback
           // returns an `Option[Action]`, which, when defined, is dispatched
           // by our store. Returning `None` means we don't do anything.
-          onClick := (_ => Some(IncrementCounter())),
+          onClick := (_ => Some(IncrementCounter)),
           plusIcon
         ),
         button(
           tpe := "button",
           cls := buttonClasses,
-          onClick := (_ => Some(DecrementCounter())),
+          onClick := (_ => Some(DecrementCounter)),
           minusIcon
         )
       )
@@ -396,9 +439,37 @@ class App[F[_]: Async] {
     )
   }
 
+  val websocketExample = useState { state =>
+    val btnCls =
+      "m-1 font-light shadow bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-zinc-100 py-1 px-2 rounded"
+    div(
+      cls := "m-1 flex flex-col items-center",
+      h2(cls := subHeadingCls, "A WebSocket example"),
+      p("Here we stream the latest bitcoin prices from a WebSocket API."),
+      div(
+        cls := "flex flex-row justify-center items-center",
+        button(
+          cls := btnCls,
+          tpe := "button",
+          "Start",
+          onClick := (_ => Some(StartWebsocket))
+        ),
+        button(
+          cls := btnCls,
+          tpe := "button",
+          "Stop",
+          onClick := (_ => Some(StopWebsocket))
+        )
+      ),
+      state.bitcoinPrice.fold(empty)(price =>
+        span(cls := "m-2 text-xl text-amber-600", s"$price USD")
+      )
+    )
+  }
+
   // Pull everything together into our final app.
   val app = div(
-    cls := "flex flex-col items-center",
+    cls := "mb-16 flex flex-col items-center",
     welcome,
     magicAlert,
     intro,
@@ -407,7 +478,8 @@ class App[F[_]: Async] {
     textInput,
     dropDown,
     radioButtons,
-    svgDemo
+    svgDemo,
+    websocketExample
   )
 
   // Render our app into the unique element with ID "app",
