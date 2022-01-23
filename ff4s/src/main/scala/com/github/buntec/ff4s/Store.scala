@@ -9,7 +9,7 @@ import fs2.concurrent.SignallingRef
 
 trait Store[F[_], State, Action] {
 
-  def dispatcher: Action => F[Unit]
+  def dispatcher: Store.Dispatcher[F, Action]
 
   def state: Signal[F, State]
 

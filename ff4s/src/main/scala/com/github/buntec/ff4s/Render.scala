@@ -47,7 +47,7 @@ private[ff4s] object Render {
           )
           .flatMap { case (elapsed, vnode) =>
             Async[F].delay {
-              Logging.debug(s"patching took ${elapsed.toMillis} ms")
+              Logging.debug(s"patching DOM took ${elapsed.toMillis} ms")
               vnode
             }
           }

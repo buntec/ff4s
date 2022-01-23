@@ -29,7 +29,7 @@ object LogLevel {
 
 }
 
-object Logging {
+private[ff4s] object Logging {
 
   val level: LogLevel = Try(
     js.Dynamic.global.ff4s.logLevel.asInstanceOf[String]

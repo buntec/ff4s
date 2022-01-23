@@ -35,28 +35,34 @@ object WebSocketsClient {
       queue <- Stream.eval(Queue.bounded[F, Option[String]](100))
       ws <- Stream.eval(Async[F].delay {
         val ws = new dom.WebSocket(uri)
-        ws.onopen = (ev: dom.Event) => {
-          println(s"onopen: $ev")
+        ws.onopen = (_: dom.Event) => {
+          Logging.debug(s"websocket onopen")
           dispatcher.unsafeRunAndForget(isOpen.complete(Right(())))
         }
         ws.onmessage = (ev: dom.MessageEvent) => {
-          println(s"onmessage: $ev")
+          Logging.debug(s"websocket onmessage: ${ev.data}")
           ev.data match {
             case body: String =>
               dispatcher.unsafeRunAndForget(queue.offer(Some(body)))
-            case _ => println(s"unknown data type: ${ev.data}")
+            case _ =>
+              Logging.warn(
+                s"websocket client cannot handle binary frames: ${ev.data}. will close connection..."
+              )
+              dispatcher.unsafeRunAndForget(
+                queue.offer(None) *> shouldClose.complete(Right(()))
+              )
           }
         }
         ws.onerror = (ev: dom.ErrorEvent) => {
-          println(s"onerror: $ev")
+          Logging.debug(s"websocket onerror: ${ev.message}")
           dispatcher.unsafeRunAndForget {
             shouldClose.complete(Left(new Exception(ev.toString)))
           }
 
         }
         ws.onclose = (ev: dom.CloseEvent) => {
-          println(
-            s"onclose: (reason: ${ev.reason}, code: ${ev.code}, wasClean: ${ev.wasClean})"
+          Logging.debug(
+            s"websocket onclose: (reason: ${ev.reason}, code: ${ev.code}, wasClean: ${ev.wasClean})"
           )
           dispatcher.unsafeRunAndForget(
             queue.offer(None) *> onCloseCompleted.complete(Right(()))
@@ -74,8 +80,8 @@ object WebSocketsClient {
           }
         )
         .onFinalize(Async[F].delay {
-          println("finalizing websocket...")
-          ws.close(1000);
+          Logging.debug("finalizing websocket connection...")
+          ws.close(1000)
         } *> onCloseCompleted.get.void)
     } yield ()).compile.drain
 
