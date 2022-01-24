@@ -7,9 +7,6 @@ on:
   workflow_dispatch:
 jobs:
   build:
-    strategy:
-      matrix:
-        scalaVersion: ["2.12.15", "2.13.7"]
     runs-on: ubuntu-20.04
 
     steps:
@@ -33,4 +30,4 @@ jobs:
           key: ${{ runner.os }}-scala-target-${{ github.sha }}
 
       - name: Build
-        run: sbt ++${{matrix.scalaVersion}} compile
+        run: sbt +compile
