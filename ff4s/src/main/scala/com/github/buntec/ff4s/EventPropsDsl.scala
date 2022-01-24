@@ -16,8 +16,11 @@ trait EventPropsDsl[F[_], State, Action] {
 
     implicit class EvenPropOps[Ev](prop: EventProp[Ev]) {
 
-      def :=(handler: dom.Event => Option[Action]): Modifier =
-        Modifier.EventHandler(prop.name, handler)
+      def :=(handler: Ev => Option[Action]): Modifier =
+        Modifier.EventHandler(
+          prop.name,
+          (ev: dom.Event) => handler(ev.asInstanceOf[Ev])
+        )
 
     }
 

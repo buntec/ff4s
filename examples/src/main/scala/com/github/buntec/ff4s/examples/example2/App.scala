@@ -1,4 +1,4 @@
-package com.github.buntec.ff4s.examples.minimal
+package com.github.buntec.ff4s.examples.example2
 
 import scala.concurrent.duration._
 
@@ -196,6 +196,8 @@ class App[F[_]: Async] {
   // Define some classes for easy re-use.
   val linkCls = "text-pink-500"
   val subHeadingCls = "text-center text-2xl mt-4 mb-2"
+  val buttonCls =
+    "m-1 shadow bg-emerald-500 text-zinc-200 hover:bg-emerald-600 active:bg-emerald-700 py-1 px-2 rounded"
 
   // We can use (unsafe!) literals for convenience, e.g., SVG icons
   val plusIcon = literal("""<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -258,8 +260,6 @@ class App[F[_]: Async] {
   // If a component requires access to state, we can use `useState{ state => ...}`,
   // which is just an alias for `getState.flatMap{ state => ...}`.
   val counter = useState { state =>
-    val buttonClasses =
-      "m-1 shadow bg-emerald-500 text-zinc-200 hover:bg-emerald-600 active:bg-emerald-700 py-1 px-2 rounded"
     div(
       cls := "m-4",
       h2(cls := subHeadingCls, "A simple counter"),
@@ -270,7 +270,7 @@ class App[F[_]: Async] {
         cls := "flex flex-row justify-center",
         button(
           tpe := "button",
-          cls := buttonClasses,
+          cls := buttonCls,
           // We can assign callbacks to events; note that the callback
           // returns an `Option[Action]`, which, when defined, is dispatched
           // by our store. Returning `None` means we don't do anything.
@@ -279,7 +279,7 @@ class App[F[_]: Async] {
         ),
         button(
           tpe := "button",
-          cls := buttonClasses,
+          cls := buttonCls,
           onClick := (_ => Some(DecrementCounter)),
           minusIcon
         )
@@ -440,8 +440,6 @@ class App[F[_]: Async] {
   }
 
   val websocketExample = useState { state =>
-    val btnCls =
-      "m-1 font-light shadow bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-zinc-100 py-1 px-2 rounded"
     div(
       cls := "m-1 flex flex-col items-center",
       h2(cls := subHeadingCls, "A WebSocket example"),
@@ -449,13 +447,13 @@ class App[F[_]: Async] {
       div(
         cls := "flex flex-row justify-center items-center",
         button(
-          cls := btnCls,
+          cls := buttonCls,
           tpe := "button",
           "Start",
           onClick := (_ => Some(StartWebsocket))
         ),
         button(
-          cls := btnCls,
+          cls := buttonCls,
           tpe := "button",
           "Stop",
           onClick := (_ => Some(StopWebsocket))
