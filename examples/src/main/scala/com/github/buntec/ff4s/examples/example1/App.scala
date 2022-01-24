@@ -1,7 +1,7 @@
 package com.github.buntec.ff4s.examples.example1
 
 import org.scalajs.dom
-import cats.effect.kernel.{Async, Resource}
+import cats.effect.kernel.Async
 import com.github.buntec.ff4s
 
 // The obligatory to-do list app.
@@ -22,31 +22,29 @@ class App[F[_]: Async] {
   case class SetTodoInput(what: String) extends Action
 
   // Build our store by assigning actions to effects.
-  implicit val store = for {
-    store <- Resource.eval(ff4s.Store[F, State, Action](State()) {
-      ref => (a: Action) =>
-        a match {
-          case AddTodo =>
-            ref.update { state =>
-              val nextId = state.nextId
-              state.todoInput match {
-                case Some(what) if what.nonEmpty =>
-                  state.copy(
-                    nextId = nextId + 1,
-                    todos = state.todos :+ Todo(what, nextId),
-                    todoInput = None
-                  )
-                case _ => state.copy()
-              }
+  implicit val store = ff4s.Store[F, State, Action](State()) {
+    ref => (a: Action) =>
+      a match {
+        case AddTodo =>
+          ref.update { state =>
+            val nextId = state.nextId
+            state.todoInput match {
+              case Some(what) if what.nonEmpty =>
+                state.copy(
+                  nextId = nextId + 1,
+                  todos = state.todos :+ Todo(what, nextId),
+                  todoInput = None
+                )
+              case _ => state.copy()
             }
-          case RemoveTodo(id) =>
-            ref.update { state =>
-              state.copy(todos = state.todos.filterNot(_.id == id))
-            }
-          case SetTodoInput(what) => ref.update(_.copy(todoInput = Some(what)))
-        }
-    })
-  } yield store
+          }
+        case RemoveTodo(id) =>
+          ref.update { state =>
+            state.copy(todos = state.todos.filterNot(_.id == id))
+          }
+        case SetTodoInput(what) => ref.update(_.copy(todoInput = Some(what)))
+      }
+  }
 
   // Create the DSL for our model.
   val dsl = new ff4s.Dsl[F, State, Action]

@@ -1,8 +1,7 @@
 package com.github.buntec.ff4s
 
-import cats.syntax.all._
-
 import cats.effect.kernel.Async
+import cats.effect.kernel.Resource
 
 import fs2.concurrent.Signal
 import fs2.concurrent.SignallingRef
@@ -23,8 +22,8 @@ object Store {
       initial: State
   )(
       toDispatcher: SignallingRef[F, State] => Dispatcher[F, Action]
-  ): F[Store[F, State, Action]] = for {
-    ref <- SignallingRef.of[F, State](initial)
+  ): Resource[F, Store[F, State, Action]] = for {
+    ref <- Resource.eval(SignallingRef.of[F, State](initial))
     disp = toDispatcher(ref)
   } yield (new Store[F, State, Action] {
 

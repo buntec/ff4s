@@ -86,69 +86,68 @@ class App[F[_]: Async] {
 
   // Create a store by assigning actions to effects in F.
   implicit val store = for {
-    store <- Resource.eval(ff4s.Store[F, State, Action](State()) {
-      ref => (a: Action) =>
-        a match {
-          case StopWebsocket =>
-            ref.get.flatMap { state =>
-              state.websocketFiber.fold(Async[F].unit)(_.cancel)
-            }
-          case StartWebsocket =>
-            for {
-              fiber <- Async[F].start(
-                ff4s
-                  .WebSocketsClient[F]
-                  .stream(
-                    "wss://ws.bitmex.com/realtime?subscribe=instrument:XBTUSD",
-                    is =>
-                      is.evalMap { msg =>
-                        (for {
-                          json <- Async[F].fromEither(parse(msg))
-                          lastPrice <- Async[F].fromEither(
-                            json.hcursor
-                              .downField("data")
-                              .downArray
-                              .downField("lastPrice")
-                              .as[Double]
-                          )
-                          _ <- ref
-                            .update(_.copy(bitcoinPrice = Some(lastPrice)))
-                        } yield ()).handleError(_ => ())
-                      }.drain
-                  )
-              )
-              sPrev <- ref.getAndUpdate(
-                _.copy(
-                  websocketFiber = Some(fiber)
+    store <- ff4s.Store[F, State, Action](State()) { ref => (a: Action) =>
+      a match {
+        case StopWebsocket =>
+          ref.get.flatMap { state =>
+            state.websocketFiber.fold(Async[F].unit)(_.cancel)
+          }
+        case StartWebsocket =>
+          for {
+            fiber <- Async[F].start(
+              ff4s
+                .WebSocketsClient[F]
+                .stream(
+                  "wss://ws.bitmex.com/realtime?subscribe=instrument:XBTUSD",
+                  is =>
+                    is.evalMap { msg =>
+                      (for {
+                        json <- Async[F].fromEither(parse(msg))
+                        lastPrice <- Async[F].fromEither(
+                          json.hcursor
+                            .downField("data")
+                            .downArray
+                            .downField("lastPrice")
+                            .as[Double]
+                        )
+                        _ <- ref
+                          .update(_.copy(bitcoinPrice = Some(lastPrice)))
+                      } yield ()).handleError(_ => ())
+                    }.drain
                 )
-              )
-              _ <- sPrev.websocketFiber.fold(Async[F].unit)(_.cancel)
-            } yield ()
-          case SetSvgCoords(x, y) =>
-            ref.update(_.copy(svgCoords = SvgCoords(x, y)))
-          case Magic => ref.update(_.copy(magic = true))
-          case SetName(name) =>
-            ref.update(
-              _.copy(name = if (name.nonEmpty) Some(name) else None)
             )
-          case SetPets(pets) =>
-            ref.update(_.copy(pets = pets))
-          case SetFavoriteDish(dish) => ref.update(_.copy(favoriteDish = dish))
-          case IncrementCounter =>
-            ref.update(s => s.copy(counter = s.counter + 1))
-          case DecrementCounter =>
-            ref.update(s => s.copy(counter = s.counter - 1))
-          case GetActivity =>
-            // ff4s provides a very basic HTTP client (currently using sttp under the hood).
-            ff4s
-              .HttpClient[F]
-              .get[Bored]("https://www.boredapi.com/api/activity")
-              .flatMap { bored =>
-                ref.update(s => s.copy(bored = Some(bored)))
-              }
+            sPrev <- ref.getAndUpdate(
+              _.copy(
+                websocketFiber = Some(fiber)
+              )
+            )
+            _ <- sPrev.websocketFiber.fold(Async[F].unit)(_.cancel)
+          } yield ()
+        case SetSvgCoords(x, y) =>
+          ref.update(_.copy(svgCoords = SvgCoords(x, y)))
+        case Magic => ref.update(_.copy(magic = true))
+        case SetName(name) =>
+          ref.update(
+            _.copy(name = if (name.nonEmpty) Some(name) else None)
+          )
+        case SetPets(pets) =>
+          ref.update(_.copy(pets = pets))
+        case SetFavoriteDish(dish) => ref.update(_.copy(favoriteDish = dish))
+        case IncrementCounter =>
+          ref.update(s => s.copy(counter = s.counter + 1))
+        case DecrementCounter =>
+          ref.update(s => s.copy(counter = s.counter - 1))
+        case GetActivity =>
+          // ff4s provides a very basic HTTP client (currently using sttp under the hood).
+          ff4s
+            .HttpClient[F]
+            .get[Bored]("https://www.boredapi.com/api/activity")
+            .flatMap { bored =>
+              ref.update(s => s.copy(bored = Some(bored)))
+            }
 
-        }
-    })
+      }
+    }
     // We can do something fancy in the background.
     _ <- Async[F].background(
       (fs2.Stream.emit(()) ++ fs2.Stream.fixedDelay(5.second))
