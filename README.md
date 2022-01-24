@@ -16,7 +16,7 @@ If you want to give ff4s a spin, add this to your `build.sbt`:
 enablePlugins(ScalaJSPlugin)
 enablePlugins(ScalaJSBundlerPlugin)
 resolvers += "jitpack" at "https://jitpack.io"
-libraryDependencies += "com.github.buntec.ff4s" %%% "ff4s" % "0.1.1"
+libraryDependencies += "com.github.buntec.ff4s" %%% "ff4s" % "0.1.4"
 ```
 (You can also use the latest short commit hash as the version string).
 Be sure to add these plugins to your `project/plugins.sbt`:
