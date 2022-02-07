@@ -4,7 +4,7 @@ ThisBuild / organization := "com.github.buntec"
 ThisBuild / organizationName := "buntec"
 
 lazy val http4sVersion = "0.23.7"
-lazy val sttpVersion = "3.3.18"
+lazy val sttpVersion = "3.4.1"
 lazy val scalajsDomVersion = "2.1.0"
 lazy val domtypesVersion = "0.15.1"
 lazy val circeVersion = "0.14.1"
