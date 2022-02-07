@@ -1,4 +1,4 @@
-ThisBuild / scalaVersion := "2.13.7"
+ThisBuild / scalaVersion := "2.13.8"
 
 ThisBuild / organization := "com.github.buntec"
 ThisBuild / organizationName := "buntec"
@@ -22,7 +22,7 @@ lazy val ff4s = (project in file("ff4s"))
   .settings(
     name := "ff4s",
     git.useGitDescribe := true,
-    crossScalaVersions := Seq("2.12.15", "2.13.7"),
+    crossScalaVersions := Seq("2.12.15", "2.13.8"),
     scalacOptions -= "-Xfatal-warnings",
     Compile / npmDependencies ++= Seq(
       "snabbdom" -> "3.2.0",
