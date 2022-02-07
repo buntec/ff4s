@@ -63,7 +63,7 @@ object DataObject {
 // Scala implementation of snabbdom's `thunk` taken from https://github.com/outwatch/outwatch (Apache-2.0 License)
 object thunk {
   // own implementation of https://github.com/snabbdom/snabbdom/blob/master/src/thunk.ts
-  //does respect equality via the equals method. snabbdom thunk uses reference equality: https://github.com/snabbdom/snabbdom/issues/143
+  // does respect equality via the equals method. snabbdom thunk uses reference equality: https://github.com/snabbdom/snabbdom/issues/143
 
   private def initThunk(fn: () => VNodeProxy)(thunk: VNodeProxy): Unit = {
     for {

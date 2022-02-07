@@ -1,6 +1,3 @@
 package com.github.buntec
 
-package object ff4s {
-
-
-}
+package object ff4s {}
