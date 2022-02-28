@@ -9,7 +9,7 @@ lazy val scalajsDomVersion = "2.1.0"
 lazy val domtypesVersion = "0.15.1"
 lazy val circeVersion = "0.14.1"
 lazy val catsVersion = "2.7.0"
-lazy val catsEffectVersion = "3.3.5"
+lazy val catsEffectVersion = "3.3.6"
 lazy val fs2Version = "3.2.4"
 lazy val kindProjectorVersion = "0.13.2"
 
