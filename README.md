@@ -1,27 +1,34 @@
 # ff4s
 
-A purely functional web frontend framework for [Scala.js](https://www.scala-js.org/).
+A minimal purely-functional web frontend framework for [Scala.js](https://www.scala-js.org/).
 
-Based on [Snabbdom](https://github.com/snabbdom/snabbdom), [Cats](https://typelevel.org/cats/), [Cats-Effect](https://typelevel.org/cats-effect/), [FS2](https://fs2.io/), [Scala DOM Types](https://github.com/raquo/scala-dom-types).
+Based on these wonderful libraries:
+ - [Cats](https://typelevel.org/cats/)
+ - [Cats-Effect](https://typelevel.org/cats-effect/)
+ - [FS2](https://fs2.io/)
+ - [Scala DOM Types](https://github.com/raquo/scala-dom-types)
+ - [Snabbdom](https://github.com/snabbdom/snabbdom)
 
-Heavily inspired by [Outwatch](https://github.com/outwatch/outwatch).
+Inspired by:
+  - [Outwatch](https://github.com/outwatch/outwatch)
+  - [Laminar](https://github.com/raquo/Laminar)
 
 See the `examples` folder for commented code examples.
 
 To run the example locally, at the sbt prompt change to the `examples` project, then run `dev`
-and go to `localhost:8080` in your browser.
+and open `localhost:8080` in your browser.
 
-If you want to give ff4s a spin, add this to your `build.sbt`:
+If you want to try ff4s in your own project, add this to your `build.sbt`:
 ```scala
 enablePlugins(ScalaJSPlugin)
 enablePlugins(ScalaJSBundlerPlugin)
 resolvers += "jitpack" at "https://jitpack.io"
-libraryDependencies += "com.github.buntec.ff4s" %%% "ff4s" % "0.1.4"
+libraryDependencies += "com.github.buntec.ff4s" %%% "ff4s" % "0.1.5"
 ```
 (You can also use the latest short commit hash as the version string).
 Be sure to add these plugins to your `project/plugins.sbt`:
 ```scala
-addSbtPlugin("org.scala-js" % "sbt-scalajs" % "1.8.0")
+addSbtPlugin("org.scala-js" % "sbt-scalajs" % "1.9.0")
 addSbtPlugin("ch.epfl.scala" % "sbt-scalajs-bundler" % "0.20.0")
 ```
 

@@ -35,7 +35,7 @@ class App[F[_]: Async] {
                   todos = state.todos :+ Todo(what, nextId),
                   todoInput = None
                 )
-              case _ => state.copy()
+              case _ => state
             }
           }
         case RemoveTodo(id) =>

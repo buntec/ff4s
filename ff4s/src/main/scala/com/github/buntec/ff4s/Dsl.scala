@@ -11,6 +11,7 @@ import cats.effect.kernel.Async
 import org.scalajs.dom
 
 import com.raquo.domtypes.generic.builders
+import com.raquo.domtypes.generic.codecs.BooleanAsAttrPresenceCodec
 import com.raquo.domtypes.jsdom.defs.tags._
 
 import com.github.buntec.ff4s.snabbdom.DataObject
@@ -133,7 +134,15 @@ class Dsl[F[_], State, Action]
           case Modifier.NoOp     => args
           case Modifier.Key(key) => args.copy(key = Some(key))
           case Modifier.HtmlAttr(name, value, codec) =>
-            args.copy(attrs = args.attrs + (name -> codec.encode(value)))
+            if (codec == BooleanAsAttrPresenceCodec) {
+              // this codec doesn't play nicely with snabbdom
+              // https://github.com/snabbdom/snabbdom#the-attributes-module
+              args.copy(attrs =
+                args.attrs + (name -> value.asInstanceOf[Boolean])
+              )
+            } else {
+              args.copy(attrs = args.attrs + (name -> codec.encode(value)))
+            }
           case Modifier.SvgAttr(name, value, codec) =>
             args.copy(attrs = args.attrs + (name -> codec.encode(value)))
           case Modifier.Prop(name, value, codec) =>

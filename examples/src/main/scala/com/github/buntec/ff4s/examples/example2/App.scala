@@ -97,7 +97,7 @@ class App[F[_]: Async] {
             fiber <- Async[F].start(
               ff4s
                 .WebSocketsClient[F]
-                .stream(
+                .stream( // I don't like this, but it's the only public websocket API I could find.
                   "wss://ws.bitmex.com/realtime?subscribe=instrument:XBTUSD",
                   is =>
                     is.evalMap { msg =>
@@ -353,7 +353,7 @@ class App[F[_]: Async] {
           // to something that is unique among all siblings.
           Dish.all.map(food =>
             option(
-              (if (food == Sushi) defaultSelected := true else noop),
+              selected := (food == state.favoriteDish),
               key := food.toString, // Should be unique among siblings.
               value := food.toString,
               food.toString
@@ -442,24 +442,28 @@ class App[F[_]: Async] {
     div(
       cls := "m-1 flex flex-col items-center",
       h2(cls := subHeadingCls, "A WebSocket example"),
-      p("Here we stream the latest bitcoin prices from a WebSocket API."),
+      p("Has Bitcoin gone to zero yet?"),
       div(
         cls := "flex flex-row justify-center items-center",
         button(
           cls := buttonCls,
           tpe := "button",
-          "Start",
+          "Start websocket",
           onClick := (_ => Some(StartWebsocket))
         ),
         button(
           cls := buttonCls,
           tpe := "button",
-          "Stop",
+          "Stop websocket",
           onClick := (_ => Some(StopWebsocket))
         )
       ),
       state.bitcoinPrice.fold(empty)(price =>
-        span(cls := "m-2 text-xl text-amber-600", s"$price USD")
+        span(
+          cls := "m-2 text-xl text-amber-600",
+          if (price > 0) s"No, the current price is $price USD per Bitcoin."
+          else "Hooray!"
+        )
       )
     )
   }
