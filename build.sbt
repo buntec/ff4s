@@ -1,17 +1,20 @@
+Global / onChangedBuildSource := ReloadOnSourceChanges
+
 ThisBuild / scalaVersion := "2.13.8"
 
 ThisBuild / organization := "com.github.buntec"
 ThisBuild / organizationName := "buntec"
 
-lazy val http4sVersion = "0.23.7"
-lazy val sttpVersion = "3.5.1"
 lazy val scalajsDomVersion = "2.1.0"
 lazy val domtypesVersion = "0.15.1"
-lazy val circeVersion = "0.14.1"
+lazy val circeVersion = "0.15.0-M1"
 lazy val catsVersion = "2.7.0"
 lazy val catsEffectVersion = "3.3.8"
 lazy val fs2Version = "3.2.5"
 lazy val kindProjectorVersion = "0.13.2"
+lazy val http4sDomVersion = "0.2.1"
+lazy val http4sVersion = "0.23.11"
+lazy val betterMonadicForVersion = "0.3.1"
 
 lazy val root = (project in file("."))
   .settings(publish / skip := true)
@@ -37,10 +40,13 @@ lazy val ff4s = (project in file("ff4s"))
       "org.typelevel" %%% "cats-effect-kernel" % catsEffectVersion,
       "org.typelevel" %%% "cats-effect-std" % catsEffectVersion,
       "co.fs2" %%% "fs2-core" % fs2Version,
-      "com.softwaremill.sttp.client3" %%% "core" % sttpVersion,
-      "com.softwaremill.sttp.client3" %%% "cats" % sttpVersion,
-      "com.softwaremill.sttp.client3" %%% "circe" % sttpVersion,
-      compilerPlugin("com.olegpy" %% "better-monadic-for" % "0.3.1"),
+      "org.http4s" %%% "http4s-dom" % http4sDomVersion,
+      "org.http4s" %%% "http4s-client" % http4sVersion,
+      "org.http4s" %%% "http4s-circe" % http4sVersion,
+      "io.circe" %%% "circe-generic" % circeVersion,
+      compilerPlugin(
+        "com.olegpy" %% "better-monadic-for" % betterMonadicForVersion
+      ),
       compilerPlugin(
         "org.typelevel" % "kind-projector" % kindProjectorVersion cross CrossVersion.full
       )
@@ -73,7 +79,9 @@ lazy val examples = (project in file("examples"))
       "io.circe" %%% "circe-generic" % circeVersion,
       "io.circe" %%% "circe-literal" % circeVersion,
       "io.circe" %%% "circe-parser" % circeVersion,
-      compilerPlugin("com.olegpy" %% "better-monadic-for" % "0.3.1"),
+      compilerPlugin(
+        "com.olegpy" %% "better-monadic-for" % betterMonadicForVersion
+      ),
       compilerPlugin(
         "org.typelevel" % "kind-projector" % kindProjectorVersion cross CrossVersion.full
       )
