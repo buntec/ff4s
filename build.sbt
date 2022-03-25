@@ -44,6 +44,8 @@ lazy val ff4s = (project in file("ff4s"))
       "org.http4s" %%% "http4s-client" % http4sVersion,
       "org.http4s" %%% "http4s-circe" % http4sVersion,
       "io.circe" %%% "circe-generic" % circeVersion,
+      "io.circe" %%% "circe-literal" % circeVersion,
+      "io.circe" %%% "circe-parser" % circeVersion,
       compilerPlugin(
         "com.olegpy" %% "better-monadic-for" % betterMonadicForVersion
       ),

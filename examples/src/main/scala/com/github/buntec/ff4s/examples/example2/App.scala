@@ -97,7 +97,7 @@ class App[F[_]: Async] {
             fiber <- Async[F].start(
               ff4s
                 .WebSocketsClient[F]
-                .stream( // I don't like this, but it's the only public websocket API I could find.
+                .receiveText( // I don't like this, but it's the only public websocket API I could find.
                   "wss://ws.bitmex.com/realtime?subscribe=instrument:XBTUSD",
                   is =>
                     is.evalMap { msg =>
