@@ -1,42 +1,35 @@
 package com.github.buntec.ff4s
 
-import scala.scalajs.js
-import js.JSConverters._
-
 import cats.effect.std.Dispatcher
 
 import org.scalajs.dom
 
-import com.github.buntec.ff4s.snabbdom.DataObject
-import com.github.buntec.ff4s.snabbdom.Hooks
-import com.github.buntec.ff4s.snabbdom.Snabbdom
-import com.github.buntec.ff4s.snabbdom.VNodeProxy
+import com.github.buntec.snabbdom
 
 trait VNode[F[_]] {
 
-  private[ff4s] def toSnabbdom(dispatcher: Dispatcher[F]): VNodeProxy
+  private[ff4s] def toSnabbdom(dispatcher: Dispatcher[F]): snabbdom.VNode
 
 }
 
 private[ff4s] object VNode {
 
   def empty[F[_]](tag: String) = new VNode[F] {
-    override def toSnabbdom(dispatcher: Dispatcher[F]): VNodeProxy =
-      Snabbdom.h(tag)
+    override def toSnabbdom(dispatcher: Dispatcher[F]): snabbdom.VNode =
+      snabbdom.h(tag)
   }
 
   def parentNode[F[_]](tag: String, children: VNode[F]*) = new VNode[F] {
-    override def toSnabbdom(dispatcher: Dispatcher[F]): VNodeProxy =
-      Snabbdom.h(
+    override def toSnabbdom(dispatcher: Dispatcher[F]): snabbdom.VNode =
+      snabbdom.h(
         tag,
-        js.Dynamic.literal(),
-        children.map(_.toSnabbdom(dispatcher)).toJSArray
+        children.map(_.toSnabbdom(dispatcher)).toArray
       )
   }
 
   implicit def fromString[F[_]](text: String) = new VNode[F] {
-    override def toSnabbdom(dispatcher: Dispatcher[F]): VNodeProxy =
-      VNodeProxy.fromString(text)
+    override def toSnabbdom(dispatcher: Dispatcher[F]): snabbdom.VNode =
+      text
   }
 
   implicit class VNodeOps[F[_]](vnode: VNode[F]) {
@@ -47,7 +40,7 @@ private[ff4s] object VNode {
 
     def withProps(props: Map[String, Any]): VNode[F] = setProps(vnode)(props)
 
-    def withAttrs(attrs: Map[String, DataObject.AttrValue]): VNode[F] =
+    def withAttrs(attrs: Map[String, snabbdom.AttrValue]): VNode[F] =
       setAttrs(vnode)(attrs)
 
     def withKey(key: String): VNode[F] =
@@ -60,24 +53,29 @@ private[ff4s] object VNode {
       setEventHandler(vnode, eventName)(handler)
 
     def withOnInsertHook(onInsert: dom.Element => F[Unit]): VNode[F] =
-      setOnInsertHook(vnode)((v: VNodeProxy) => onInsert(v.elm.get))
+      setOnInsertHook(vnode)((v: snabbdom.VNode) =>
+        onInsert(v.elm.get.asInstanceOf[dom.Element])
+      )
 
     def withDestroyHook(onDestroy: dom.Element => F[Unit]): VNode[F] =
-      setDestroyHook(vnode)((v: VNodeProxy) => onDestroy(v.elm.get))
+      setDestroyHook(vnode)((v: snabbdom.VNode) =>
+        onDestroy(v.elm.get.asInstanceOf[dom.Element])
+      )
 
   }
 
   def setClass[F[_]](vnode: VNode[F], cls: String): VNode[F] = new VNode[F] {
 
-    override def toSnabbdom(dispatcher: Dispatcher[F]): VNodeProxy = {
+    override def toSnabbdom(dispatcher: Dispatcher[F]): snabbdom.VNode = {
       val vp = vnode.toSnabbdom(dispatcher)
-      val data: DataObject = vp.data.toOption.getOrElse(DataObject.empty)
-      data.attrs.toOption match {
+      val data: snabbdom.VNodeData = vp.data.getOrElse(snabbdom.VNodeData.empty)
+      data.attrs match {
         case None =>
-          data.attrs = js.defined(js.Dictionary.apply("class" -> cls))
-        case Some(attrs) => { attrs.update("class", cls) }
+          data.attrs = Some(Map("class" -> cls))
+        case Some(attrs) =>
+          data.attrs = Some(attrs + ("class" -> cls))
       }
-      vp.data = data
+      vp.data = Some(data)
       vp
     }
 
@@ -86,38 +84,33 @@ private[ff4s] object VNode {
   def setEventHandler[F[_]](vnode: VNode[F], eventName: String)(
       handler: dom.Event => F[Unit]
   ): VNode[F] = new VNode[F] {
-    override def toSnabbdom(dispatcher: Dispatcher[F]): VNodeProxy = {
+    override def toSnabbdom(dispatcher: Dispatcher[F]): snabbdom.VNode = {
       val vp = vnode.toSnabbdom(dispatcher)
-      val data: DataObject = vp.data.toOption.getOrElse(DataObject.empty)
-      data.on.toOption match {
-        case Some(on) =>
-          on.update(
-            eventName,
-            ((e: dom.Event) => dispatcher.unsafeRunAndForget(handler(e)))
-          )
-        case None =>
-          data.on = js.defined(
-            js.Dictionary.apply(
-              eventName -> ((e: dom.Event) =>
-                dispatcher.unsafeRunAndForget(handler(e))
-              )
+      val data: snabbdom.VNodeData = vp.data.getOrElse(snabbdom.VNodeData.empty)
+      data.on = Some(
+        data.on.fold(
+          Map(
+            eventName -> ((e: dom.Event) =>
+              dispatcher.unsafeRunAndForget(handler(e))
             )
           )
-      }
-      vp.data = data
+        )(on =>
+          on + (eventName ->
+            ((e: dom.Event) => dispatcher.unsafeRunAndForget(handler(e))))
+        )
+      )
+      vp.data = Some(data)
       vp
     }
   }
 
   def setKey[F[_]](vnode: VNode[F])(key: String): VNode[F] = new VNode[F] {
 
-    override def toSnabbdom(dispatcher: Dispatcher[F]): VNodeProxy = {
+    override def toSnabbdom(dispatcher: Dispatcher[F]): snabbdom.VNode = {
       val vp = vnode.toSnabbdom(dispatcher)
-      val data: DataObject = vp.data.toOption.getOrElse(DataObject.empty)
-      data.key = key
-      vp.data = data
-      vp.key =
-        key // TODO: is this necessary? setting `key` on `data` object should be enough according to snabbdom docs
+      val data: snabbdom.VNodeData = vp.data.getOrElse(snabbdom.VNodeData.empty)
+      data.key = Some(key)
+      vp.data = Some(data)
       vp
     }
 
@@ -125,19 +118,32 @@ private[ff4s] object VNode {
 
   def setOnInsertHook[F[_]](
       vnode: VNode[F]
-  )(onInsert: VNodeProxy => F[Unit]): VNode[F] = new VNode[F] {
+  )(onInsert: snabbdom.VNode => F[Unit]): VNode[F] = new VNode[F] {
 
-    override def toSnabbdom(dispatcher: Dispatcher[F]): VNodeProxy = {
+    override def toSnabbdom(dispatcher: Dispatcher[F]): snabbdom.VNode = {
       val vp = vnode.toSnabbdom(dispatcher)
-      val data: DataObject = vp.data.toOption.getOrElse(DataObject.empty)
-      data.hook.toOption match {
-        case None    => data.hook = Hooks.empty
-        case Some(_) => ()
+      val data: snabbdom.VNodeData = vp.data.getOrElse(snabbdom.VNodeData.empty)
+      data.hook match {
+        case Some(hooks) =>
+          data.hook = Some(
+            hooks.copy(insert =
+              Some((n: snabbdom.VNode) =>
+                dispatcher.unsafeRunAndForget(onInsert(n))
+              )
+            )
+          )
+        case None =>
+          data.hook = Some(
+            snabbdom
+              .Hooks()
+              .copy(insert =
+                Some((n: snabbdom.VNode) =>
+                  dispatcher.unsafeRunAndForget(onInsert(n))
+                )
+              )
+          )
       }
-      data.hook.get.insert = js.defined((n: VNodeProxy) =>
-        dispatcher.unsafeRunAndForget(onInsert(n))
-      )
-      vp.data = data
+      vp.data = Some(data)
       vp
     }
 
@@ -145,19 +151,32 @@ private[ff4s] object VNode {
 
   def setDestroyHook[F[_]](
       vnode: VNode[F]
-  )(onDestroy: VNodeProxy => F[Unit]): VNode[F] = new VNode[F] {
+  )(onDestroy: snabbdom.VNode => F[Unit]): VNode[F] = new VNode[F] {
 
-    override def toSnabbdom(dispatcher: Dispatcher[F]): VNodeProxy = {
+    override def toSnabbdom(dispatcher: Dispatcher[F]): snabbdom.VNode = {
       val vp = vnode.toSnabbdom(dispatcher)
-      val data: DataObject = vp.data.toOption.getOrElse(DataObject.empty)
-      data.hook.toOption match {
-        case None    => data.hook = Hooks.empty
-        case Some(_) => ()
+      val data: snabbdom.VNodeData = vp.data.getOrElse(snabbdom.VNodeData.empty)
+      data.hook match {
+        case Some(hooks) =>
+          data.hook = Some(
+            hooks.copy(destroy =
+              Some((n: snabbdom.VNode) =>
+                dispatcher.unsafeRunAndForget(onDestroy(n))
+              )
+            )
+          )
+        case None =>
+          data.hook = Some(
+            snabbdom
+              .Hooks()
+              .copy(destroy =
+                Some((n: snabbdom.VNode) =>
+                  dispatcher.unsafeRunAndForget(onDestroy(n))
+                )
+              )
+          )
       }
-      data.hook.get.destroy = js.defined((n: VNodeProxy) =>
-        dispatcher.unsafeRunAndForget(onDestroy(n))
-      )
-      vp.data = data
+      vp.data = Some(data)
       vp
     }
 
@@ -166,11 +185,12 @@ private[ff4s] object VNode {
   def setProps[F[_]](vnode: VNode[F])(props: Map[String, Any]): VNode[F] =
     new VNode[F] {
 
-      override def toSnabbdom(dispatcher: Dispatcher[F]): VNodeProxy = {
+      override def toSnabbdom(dispatcher: Dispatcher[F]): snabbdom.VNode = {
         val vp = vnode.toSnabbdom(dispatcher)
-        val data: DataObject = vp.data.toOption.getOrElse(DataObject.empty)
-        data.props = js.defined(js.Dictionary(props.toSeq: _*))
-        vp.data = data
+        val data: snabbdom.VNodeData =
+          vp.data.getOrElse(snabbdom.VNodeData.empty)
+        data.props = Some(props)
+        vp.data = Some(data)
         vp
       }
 
@@ -178,14 +198,15 @@ private[ff4s] object VNode {
 
   def setAttrs[F[_]](
       vnode: VNode[F]
-  )(attrs: Map[String, DataObject.AttrValue]): VNode[F] =
+  )(attrs: Map[String, snabbdom.AttrValue]): VNode[F] =
     new VNode[F] {
 
-      override def toSnabbdom(dispatcher: Dispatcher[F]): VNodeProxy = {
+      override def toSnabbdom(dispatcher: Dispatcher[F]): snabbdom.VNode = {
         val vp = vnode.toSnabbdom(dispatcher)
-        val data: DataObject = vp.data.toOption.getOrElse(DataObject.empty)
-        data.attrs = js.defined(js.Dictionary(attrs.toSeq: _*))
-        vp.data = data
+        val data: snabbdom.VNodeData =
+          vp.data.getOrElse(snabbdom.VNodeData.empty)
+        data.attrs = Some(attrs)
+        vp.data = Some(data)
         vp
       }
 
@@ -194,11 +215,12 @@ private[ff4s] object VNode {
   def setStyle[F[_]](vnode: VNode[F])(style: Map[String, String]): VNode[F] =
     new VNode[F] {
 
-      override def toSnabbdom(dispatcher: Dispatcher[F]): VNodeProxy = {
+      override def toSnabbdom(dispatcher: Dispatcher[F]): snabbdom.VNode = {
         val vp = vnode.toSnabbdom(dispatcher)
-        val data: DataObject = vp.data.toOption.getOrElse(DataObject.empty)
-        data.style = js.defined(js.Dictionary(style.toSeq: _*))
-        vp.data = data
+        val data: snabbdom.VNodeData =
+          vp.data.getOrElse(snabbdom.VNodeData.empty)
+        data.style = Some(style)
+        vp.data = Some(data)
         vp
       }
 

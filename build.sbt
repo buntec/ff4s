@@ -16,22 +16,21 @@ lazy val http4sDomVersion = "0.2.1"
 lazy val http4sVersion = "0.23.11"
 lazy val betterMonadicForVersion = "0.3.1"
 
+lazy val scalaJsSnabbdomVersion = "be606b0852cca3cd6f0a0223f0a2867733e0a932"
+
 lazy val root = (project in file("."))
   .settings(publish / skip := true)
   .aggregate(ff4s, examples)
 
 lazy val ff4s = (project in file("ff4s"))
-  .enablePlugins(ScalaJSBundlerPlugin, ScalaJSPlugin, GitVersioning)
+  .enablePlugins(ScalaJSPlugin, GitVersioning)
   .settings(
     name := "ff4s",
     git.useGitDescribe := true,
     crossScalaVersions := Seq("2.12.15", "2.13.8"),
     scalacOptions -= "-Xfatal-warnings",
-    Compile / npmDependencies ++= Seq(
-      "snabbdom" -> "3.2.0",
-      "snabby" -> "4.2.4"
-    ),
     libraryDependencies ++= Seq(
+      "com.github.buntec" %%% "scala-js-snabbdom" % scalaJsSnabbdomVersion,
       "org.scala-js" %%% "scalajs-dom" % scalajsDomVersion,
       "com.raquo" %%% "domtypes" % domtypesVersion,
       "org.typelevel" %%% "cats-core" % catsVersion,
@@ -56,26 +55,12 @@ lazy val ff4s = (project in file("ff4s"))
   )
 
 lazy val examples = (project in file("examples"))
-  .enablePlugins(ScalaJSBundlerPlugin, ScalaJSPlugin)
+  .enablePlugins(ScalaJSPlugin)
   .settings(
     name := "examples",
     publish / skip := true,
     scalacOptions -= "-Xfatal-warnings",
-    useYarn := true,
     scalaJSUseMainModuleInitializer := true,
-    scalaJSLinkerConfig ~= (_.withModuleKind(
-      ModuleKind.CommonJSModule
-    )), // configure Scala.js to emit a JavaScript module instead of a top-level script
-    webpack / version := "5.65.0",
-    webpackCliVersion := "4.9.1",
-    startWebpackDevServer / version := "4.7.1",
-    webpackDevServerExtraArgs := Seq("--color"),
-    webpackDevServerPort := 8080,
-    fastOptJS / webpackConfigFile := Some(
-      baseDirectory.value / "webpack.config.dev.js"
-    ),
-    fastOptJS / webpackBundlingMode := BundlingMode
-      .LibraryOnly(), // https://scalacenter.github.io/scalajs-bundler/cookbook.html#performance
     libraryDependencies ++= Seq(
       "org.scala-js" %%% "scalajs-dom" % scalajsDomVersion,
       "io.circe" %%% "circe-generic" % circeVersion,
@@ -90,36 +75,3 @@ lazy val examples = (project in file("examples"))
     )
   )
   .dependsOn(ff4s)
-
-// hot reloading configuration:
-// https://github.com/scalacenter/scalajs-bundler/issues/180
-addCommandAlias(
-  "dev",
-  "; compile; fastOptJS::startWebpackDevServer; devwatch; fastOptJS::stopWebpackDevServer"
-)
-addCommandAlias("devwatch", "~; fastOptJS; copyFastOptJS")
-
-// See https://www.scala-sbt.org/1.x/docs/Using-Sonatype.html for instructions on how to publish to Sonatype.
-
-// when running the "dev" alias, after every fastOptJS compile all artifacts are copied into
-// a folder which is served and watched by the webpack devserver.
-// this is a workaround for: https://github.com/scalacenter/scalajs-bundler/issues/180
-lazy val copyFastOptJS =
-  TaskKey[Unit]("copyFastOptJS", "Copy javascript files to target directory")
-
-examples / copyFastOptJS := {
-  val inDir = (examples / Compile / fastOptJS / crossTarget).value
-  val outDir =
-    (examples / Compile / fastOptJS / crossTarget).value / "dev"
-  val files = Seq(
-    (examples / name).value.toLowerCase + "-fastopt-loader.js",
-    (examples / name).value.toLowerCase + "-fastopt.js",
-    (examples / name).value.toLowerCase + "-fastopt.js.map"
-  ) map { p => (inDir / p, outDir / p) }
-  IO.copy(
-    files,
-    overwrite = true,
-    preserveLastModified = true,
-    preserveExecutable = true
-  )
-}
