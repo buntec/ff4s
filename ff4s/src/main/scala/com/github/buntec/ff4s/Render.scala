@@ -8,8 +8,6 @@ import cats.effect.std.Dispatcher
 
 import org.scalajs.dom.document
 
-import com.github.buntec.snabbdom
-
 private[ff4s] object Render {
 
   val patch = snabbdom.init(

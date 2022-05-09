@@ -1,4 +1,5 @@
 Global / onChangedBuildSource := ReloadOnSourceChanges
+Global / resolvers += "Sonatype S01 OSS Snapshots" at "https://s01.oss.sonatype.org/content/repositories/snapshots"
 
 ThisBuild / scalaVersion := "2.13.8"
 
@@ -16,7 +17,7 @@ lazy val http4sDomVersion = "0.2.1"
 lazy val http4sVersion = "0.23.11"
 lazy val betterMonadicForVersion = "0.3.1"
 
-lazy val scalaJsSnabbdomVersion = "be606b0852cca3cd6f0a0223f0a2867733e0a932"
+lazy val scalaJsSnabbdomVersion = "0.0-91ac5ea-SNAPSHOT"
 
 lazy val root = (project in file("."))
   .settings(publish / skip := true)
@@ -30,7 +31,7 @@ lazy val ff4s = (project in file("ff4s"))
     crossScalaVersions := Seq("2.12.15", "2.13.8"),
     scalacOptions -= "-Xfatal-warnings",
     libraryDependencies ++= Seq(
-      "com.github.buntec" %%% "scala-js-snabbdom" % scalaJsSnabbdomVersion,
+      "io.github.buntec" %%% "scala-js-snabbdom" % scalaJsSnabbdomVersion,
       "org.scala-js" %%% "scalajs-dom" % scalajsDomVersion,
       "com.raquo" %%% "domtypes" % domtypesVersion,
       "org.typelevel" %%% "cats-core" % catsVersion,

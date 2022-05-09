@@ -7,8 +7,6 @@ import cats.effect.std.Dispatcher
 
 import org.scalajs.dom
 
-import com.github.buntec.snabbdom
-
 private[ff4s] object Compiler {
 
   def transpile[F[_], StateA, StateB, ActionA, ActionB](
@@ -99,13 +97,13 @@ private[ff4s] object Compiler {
         case Literal(html) =>
           Async[F].pure {
             new VNode[F] {
-
               override def toSnabbdom(
                   dispatcher: Dispatcher[F]
               ): snabbdom.VNode = {
-                snabbdom.VNode.fromString(html) // TODO
+                val elm = dom.document.createElement("div")
+                elm.innerHTML = html
+                snabbdom.toVNode(elm)
               }
-
             }
           }
 
@@ -184,7 +182,7 @@ private[ff4s] object Compiler {
                   ): snabbdom.VNode = snabbdom.thunk(
                     tag,
                     key.getOrElse(""): String,
-                    (args: Seq[Any]) => renderFn().toSnabbdom(dispatcher),
+                    (_: Seq[Any]) => renderFn().toSnabbdom(dispatcher), // TODO
                     Seq(args(state))
                   )
                 }

@@ -14,8 +14,6 @@ import com.raquo.domtypes.generic.builders
 import com.raquo.domtypes.generic.codecs.BooleanAsAttrPresenceCodec
 import com.raquo.domtypes.jsdom.defs.tags._
 
-import com.github.buntec.snabbdom
-
 class Dsl[F[_], State, Action]
     extends EventPropsDsl[F, State, Action]
     with HtmlAttrsDsl[F, State, Action]

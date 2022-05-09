@@ -4,8 +4,6 @@ import cats.effect.std.Dispatcher
 
 import org.scalajs.dom
 
-import com.github.buntec.snabbdom
-
 trait VNode[F[_]] {
 
   private[ff4s] def toSnabbdom(dispatcher: Dispatcher[F]): snabbdom.VNode
@@ -90,7 +88,7 @@ private[ff4s] object VNode {
       data.on = Some(
         data.on.fold(
           Map(
-            eventName -> ((e: dom.Event) =>
+            eventName -> snabbdom.EventHandler((e: dom.Event) =>
               dispatcher.unsafeRunAndForget(handler(e))
             )
           )
