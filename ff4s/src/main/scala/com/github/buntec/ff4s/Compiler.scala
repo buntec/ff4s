@@ -140,54 +140,20 @@ private[ff4s] object Compiler {
 
             val renderFn = () => {
 
-              var vn = children match {
-                case Nil => VNode.empty[F](tag)
-                case _   => VNode.parentNode[F](tag, children: _*)
-              }
+              VNode.create[F, Action](
+                tag,
+                children,
+                cls,
+                key,
+                props,
+                attrs,
+                style,
+                eventHandlers,
+                onInsert,
+                onDestroy,
+                dispatcher
+              )
 
-              if (props.nonEmpty) vn = vn.withProps(props)
-
-              if (attrs.nonEmpty) vn = vn.withAttrs(attrs)
-
-              if (style.nonEmpty) vn = vn.withStyle(style)
-
-              key match {
-                case Some(key0) => vn = vn.withKey(key0)
-                case None       => ()
-              }
-
-              cls match {
-                case Some(cls0) => vn = vn.withClass(cls0)
-                case None       => ()
-              }
-
-              vn = eventHandlers.foldLeft(vn) {
-                case (vnode, (eventName, handler)) =>
-                  vnode.withEventHandler(
-                    eventName,
-                    (ev: dom.Event) =>
-                      handler(ev) match {
-                        case Some(action) => dispatcher(action)
-                        case None         => Async[F].unit
-                      }
-                  )
-              }
-
-              onInsert match {
-                case Some(hook) =>
-                  vn =
-                    vn.withOnInsertHook((n: dom.Element) => dispatcher(hook(n)))
-                case None => ()
-              }
-
-              onDestroy match {
-                case Some(hook) =>
-                  vn =
-                    vn.withDestroyHook((n: dom.Element) => dispatcher(hook(n)))
-                case None => ()
-              }
-
-              vn
             }
 
             thunkArgs match {

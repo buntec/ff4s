@@ -28,6 +28,59 @@ trait VNode[F[_]] {
 
 private[ff4s] object VNode {
 
+  def create[F[_], Action](
+      tag: String,
+      children: Seq[VNode[F]],
+      cls: Option[String],
+      key: Option[String],
+      props: Map[String, Any],
+      attrs: Map[String, snabbdom.AttrValue],
+      style: Map[String, String],
+      handlers: Map[String, dom.Event => Option[Action]],
+      onInsert: Option[dom.Element => Action],
+      onDestroy: Option[dom.Element => Action],
+      actionDispatch: Action => F[Unit]
+  ) = new VNode[F] {
+    override def toSnabbdom(dispatcher: Dispatcher[F]): snabbdom.VNode = {
+
+      val insertHook = onInsert.map { hook =>
+        new snabbdom.InsertHook {
+          override def apply(vNode: snabbdom.VNode): Any =
+            dispatcher.unsafeRunAndForget(
+              actionDispatch(hook(vNode.elm.get.asInstanceOf[dom.Element]))
+            )
+        }
+      }
+
+      val destroyHook = onDestroy.map { hook =>
+        new snabbdom.DestroyHook {
+          override def apply(vNode: snabbdom.VNode): Any =
+            dispatcher.unsafeRunAndForget(
+              actionDispatch(hook(vNode.elm.get.asInstanceOf[dom.Element]))
+            )
+        }
+      }
+
+      val data = snabbdom.VNodeData(
+        attrs = cls.fold(attrs)(cls => attrs + ("class" -> cls)),
+        props = props,
+        style = style,
+        key = key,
+        hook = Some(snabbdom.Hooks(insert = insertHook, destroy = destroyHook)),
+        on = handlers.map { case (eventName, handler) =>
+          (eventName -> ((e: dom.Event) =>
+            handler(e).fold(())(action =>
+              dispatcher.unsafeRunAndForget(actionDispatch(action))
+            )
+          ))
+        }
+      )
+
+      snabbdom.h(tag, data, children.map(_.toSnabbdom(dispatcher)).toArray)
+
+    }
+  }
+
   def empty[F[_]](tag: String) = new VNode[F] {
     override def toSnabbdom(dispatcher: Dispatcher[F]): snabbdom.VNode =
       snabbdom.h(tag)
