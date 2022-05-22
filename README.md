@@ -22,7 +22,7 @@ If you want to try ff4s in your own project, add this to your `build.sbt`:
 ```scala
 enablePlugins(ScalaJSPlugin)
 resolvers += "jitpack" at "https://jitpack.io"
-libraryDependencies += "com.github.buntec.ff4s" %%% "ff4s" % "0.1.7"
+libraryDependencies += "com.github.buntec.ff4s" %%% "ff4s" % "0.1.8"
 ```
 (You can also use the latest short commit hash as the version string).
 Be sure to add these plugins to your `project/plugins.sbt`:
@@ -30,4 +30,4 @@ Be sure to add these plugins to your `project/plugins.sbt`:
 addSbtPlugin("org.scala-js" % "sbt-scalajs" % "1.10.0")
 ```
 
-CAVEAT: This is very much work in progress!
+Disclaimer: this is work in progress!
