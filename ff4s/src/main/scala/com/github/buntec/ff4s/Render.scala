@@ -8,9 +8,18 @@ import cats.effect.std.Dispatcher
 
 import org.scalajs.dom.document
 
-import com.github.buntec.ff4s.snabbdom.patch
-
 private[ff4s] object Render {
+
+  val patch = snabbdom.init(
+    Seq(
+      snabbdom.modules.Attributes.module,
+      snabbdom.modules.Classes.module,
+      snabbdom.modules.Props.module,
+      snabbdom.modules.Styles.module,
+      snabbdom.modules.EventListeners.module,
+      snabbdom.modules.Dataset.module
+    )
+  )
 
   def apply[F[_]: Async, State, Action](
       dsl: Dsl[F, State, Action],

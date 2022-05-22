@@ -14,8 +14,6 @@ import com.raquo.domtypes.generic.builders
 import com.raquo.domtypes.generic.codecs.BooleanAsAttrPresenceCodec
 import com.raquo.domtypes.jsdom.defs.tags._
 
-import com.github.buntec.ff4s.snabbdom.DataObject
-
 class Dsl[F[_], State, Action]
     extends EventPropsDsl[F, State, Action]
     with HtmlAttrsDsl[F, State, Action]
@@ -35,7 +33,7 @@ class Dsl[F[_], State, Action]
       onInsert: Option[dom.Element => Action],
       onDestroy: Option[dom.Element => Action],
       props: Map[String, Any],
-      attrs: Map[String, DataObject.AttrValue],
+      attrs: Map[String, snabbdom.AttrValue],
       style: Map[String, String],
       thunkArgs: Option[State => Any]
   ) extends ViewA[VNode[F]]
@@ -85,7 +83,7 @@ class Dsl[F[_], State, Action]
       onInsert: Option[dom.Element => Action] = None,
       onDestroy: Option[dom.Element => Action] = None,
       props: Map[String, Any] = Map.empty,
-      attrs: Map[String, DataObject.AttrValue] = Map.empty,
+      attrs: Map[String, snabbdom.AttrValue] = Map.empty,
       style: Map[String, String] = Map.empty,
       thunkArgs: Option[State => Any] = None
   ): View[VNode[F]] = liftF[ViewA, VNode[F]](
@@ -114,7 +112,7 @@ class Dsl[F[_], State, Action]
   private case class ElemArgs(
       key: Option[String] = None,
       children: Seq[View[VNode[F]]] = Seq.empty,
-      attrs: Map[String, DataObject.AttrValue] = Map.empty,
+      attrs: Map[String, snabbdom.AttrValue] = Map.empty,
       props: Map[String, Any] = Map.empty,
       style: Map[String, String] = Map.empty,
       eventHandlers: Map[String, dom.Event => Option[Action]] = Map.empty,

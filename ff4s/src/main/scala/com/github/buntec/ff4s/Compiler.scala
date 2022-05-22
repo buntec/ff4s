@@ -1,17 +1,11 @@
 package com.github.buntec.ff4s
 
-import scala.scalajs.js
-
 import cats.~>
 
 import cats.effect.kernel.Async
 import cats.effect.std.Dispatcher
 
 import org.scalajs.dom
-
-import com.github.buntec.ff4s.snabbdom.VNodeProxy
-import com.github.buntec.ff4s.snabbdom.Snabby
-import com.github.buntec.ff4s.snabbdom.thunk
 
 private[ff4s] object Compiler {
 
@@ -82,9 +76,7 @@ private[ff4s] object Compiler {
 
               override def toSnabbdom(
                   dispatcher: Dispatcher[F]
-              ): VNodeProxy = {
-                VNodeProxy.fromString(s)
-              }
+              ): snabbdom.VNode = { s }
 
             }
           }
@@ -95,7 +87,7 @@ private[ff4s] object Compiler {
 
               override def toSnabbdom(
                   dispatcher: Dispatcher[F]
-              ): VNodeProxy = {
+              ): snabbdom.VNode = {
                 null // Is this dangerous? An alternative would be `VNodeProxy.fromString("")`, but this results in an empty text element in the DOM
               }
 
@@ -105,13 +97,13 @@ private[ff4s] object Compiler {
         case Literal(html) =>
           Async[F].pure {
             new VNode[F] {
-
               override def toSnabbdom(
                   dispatcher: Dispatcher[F]
-              ): VNodeProxy = {
-                Snabby.apply(js.Array(html))
+              ): snabbdom.VNode = {
+                val elm = dom.document.createElement("div")
+                elm.innerHTML = html
+                snabbdom.toVNode(elm)
               }
-
             }
           }
 
@@ -187,19 +179,18 @@ private[ff4s] object Compiler {
                 new VNode[F] {
                   override def toSnabbdom(
                       dispatcher: Dispatcher[F]
-                  ): VNodeProxy = thunk(
-                    js.undefined,
+                  ): snabbdom.VNode = snabbdom.thunk(
                     tag,
                     key.getOrElse(""): String,
-                    () => renderFn().toSnabbdom(dispatcher),
-                    js.Array(args(state))
+                    (_: Seq[Any]) => renderFn().toSnabbdom(dispatcher), // TODO
+                    Seq(args(state))
                   )
                 }
               case _ =>
                 new VNode[F] {
                   override private[ff4s] def toSnabbdom(
                       dispatcher: Dispatcher[F]
-                  ): VNodeProxy = renderFn().toSnabbdom(dispatcher)
+                  ): snabbdom.VNode = renderFn().toSnabbdom(dispatcher)
                 }
             }
 
