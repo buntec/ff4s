@@ -76,3 +76,25 @@ lazy val examples = (project in file("examples"))
     )
   )
   .dependsOn(ff4s)
+
+lazy val todoMvc = (project in file("todo-mvc"))
+  .enablePlugins(ScalaJSPlugin)
+  .settings(
+    name := "todo-mvc",
+    publish / skip := true,
+    scalacOptions -= "-Xfatal-warnings",
+    scalaJSUseMainModuleInitializer := true,
+    libraryDependencies ++= Seq(
+      "org.scala-js" %%% "scalajs-dom" % scalajsDomVersion,
+      "io.circe" %%% "circe-generic" % circeVersion,
+      "io.circe" %%% "circe-literal" % circeVersion,
+      "io.circe" %%% "circe-parser" % circeVersion,
+      compilerPlugin(
+        "com.olegpy" %% "better-monadic-for" % betterMonadicForVersion
+      ),
+      compilerPlugin(
+        "org.typelevel" % "kind-projector" % kindProjectorVersion cross CrossVersion.full
+      )
+    )
+  )
+  .dependsOn(ff4s)
