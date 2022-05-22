@@ -1,4 +1,4 @@
-package com.github.buntec.ff4s
+package ff4s
 
 import org.scalajs.dom
 import com.raquo.domtypes.jsdom.defs.eventProps._

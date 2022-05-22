@@ -1,4 +1,4 @@
-package com.github.buntec.ff4s
+package ff4s
 
 import cats.effect.kernel.Async
 import cats.syntax.all._

@@ -1,4 +1,4 @@
-package com.github.buntec.ff4s.examples
+package ff4s.examples
 
 import cats.effect.{IO, IOApp}
 

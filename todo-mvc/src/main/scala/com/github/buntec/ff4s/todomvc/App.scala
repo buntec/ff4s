@@ -1,6 +1,4 @@
-package com.github.buntec.ff4s.todomvc
-
-import com.github.buntec.ff4s
+package ff4s.todomvc
 
 import org.scalajs.dom
 import cats.effect.kernel.Async

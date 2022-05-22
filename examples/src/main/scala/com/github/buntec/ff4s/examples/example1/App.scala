@@ -1,8 +1,7 @@
-package com.github.buntec.ff4s.examples.example1
+package ff4s.examples.example1
 
 import org.scalajs.dom
 import cats.effect.kernel.Async
-import com.github.buntec.ff4s
 
 // The obligatory to-do list app.
 class App[F[_]: Async] {

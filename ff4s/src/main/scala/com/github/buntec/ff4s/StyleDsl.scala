@@ -1,4 +1,4 @@
-package com.github.buntec.ff4s
+package ff4s
 
 import com.raquo.domtypes.generic.keys.Style
 import com.raquo.domtypes.generic.defs.styles.{Styles, Styles2}

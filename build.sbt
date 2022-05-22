@@ -3,7 +3,7 @@ Global / onChangedBuildSource := ReloadOnSourceChanges
 
 ThisBuild / scalaVersion := "2.13.8"
 
-ThisBuild / organization := "com.github.buntec"
+ThisBuild / organization := "io.github.buntec"
 ThisBuild / organizationName := "buntec"
 
 lazy val scalajsDomVersion = "2.2.0"
@@ -58,7 +58,6 @@ lazy val ff4s = (project in file("ff4s"))
 lazy val examples = (project in file("examples"))
   .enablePlugins(ScalaJSPlugin)
   .settings(
-    name := "examples",
     publish / skip := true,
     scalacOptions -= "-Xfatal-warnings",
     scalaJSUseMainModuleInitializer := true,
@@ -80,7 +79,6 @@ lazy val examples = (project in file("examples"))
 lazy val todoMvc = (project in file("todo-mvc"))
   .enablePlugins(ScalaJSPlugin)
   .settings(
-    name := "todo-mvc",
     publish / skip := true,
     scalacOptions -= "-Xfatal-warnings",
     scalaJSUseMainModuleInitializer := true,

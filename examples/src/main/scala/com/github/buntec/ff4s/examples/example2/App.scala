@@ -1,4 +1,4 @@
-package com.github.buntec.ff4s.examples.example2
+package ff4s.examples.example2
 
 import scala.concurrent.duration._
 
@@ -11,7 +11,6 @@ import cats.effect.std.Random
 import io.circe.parser._
 import io.circe.generic.auto._
 
-import com.github.buntec.ff4s
 import cats.effect.kernel.Fiber
 
 // This is a small demo application so show off the basic functionality of ff4s.

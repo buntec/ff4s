@@ -1,4 +1,4 @@
-package com.github.buntec.ff4s.todomvc
+package ff4s.todomvc
 
 import cats.effect.{IO, IOApp}
 

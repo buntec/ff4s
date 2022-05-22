@@ -1,4 +1,4 @@
-package com.github.buntec.ff4s
+package ff4s
 
 import com.raquo.domtypes.generic.keys.HtmlAttr
 import com.raquo.domtypes.generic.keys.Prop
