@@ -17,7 +17,7 @@ lazy val http4sDomVersion = "0.2.1"
 lazy val http4sVersion = "0.23.11"
 lazy val betterMonadicForVersion = "0.3.1"
 
-lazy val scalaJsSnabbdomVersion = "0.0-91ac5ea-SNAPSHOT"
+lazy val scalaJsSnabbdomVersion = "0.0-bf3ce4e-SNAPSHOT"
 
 lazy val root = (project in file("."))
   .settings(publish / skip := true)

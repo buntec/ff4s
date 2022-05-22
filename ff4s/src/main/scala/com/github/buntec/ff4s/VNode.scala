@@ -66,14 +66,7 @@ private[ff4s] object VNode {
 
     override def toSnabbdom(dispatcher: Dispatcher[F]): snabbdom.VNode = {
       val vp = vnode.toSnabbdom(dispatcher)
-      val data: snabbdom.VNodeData = vp.data.getOrElse(snabbdom.VNodeData.empty)
-      data.attrs match {
-        case None =>
-          data.attrs = Some(Map("class" -> cls))
-        case Some(attrs) =>
-          data.attrs = Some(attrs + ("class" -> cls))
-      }
-      vp.data = Some(data)
+      vp.data = vp.data.copy(attrs = vp.data.attrs + ("class" -> cls))
       vp
     }
 
@@ -84,20 +77,10 @@ private[ff4s] object VNode {
   ): VNode[F] = new VNode[F] {
     override def toSnabbdom(dispatcher: Dispatcher[F]): snabbdom.VNode = {
       val vp = vnode.toSnabbdom(dispatcher)
-      val data: snabbdom.VNodeData = vp.data.getOrElse(snabbdom.VNodeData.empty)
-      data.on = Some(
-        data.on.fold(
-          Map(
-            eventName -> snabbdom.EventHandler((e: dom.Event) =>
-              dispatcher.unsafeRunAndForget(handler(e))
-            )
-          )
-        )(on =>
-          on + (eventName ->
-            ((e: dom.Event) => dispatcher.unsafeRunAndForget(handler(e))))
-        )
+      vp.data = vp.data.copy(on =
+        vp.data.on + (eventName ->
+          ((e: dom.Event) => dispatcher.unsafeRunAndForget(handler(e))))
       )
-      vp.data = Some(data)
       vp
     }
   }
@@ -106,9 +89,7 @@ private[ff4s] object VNode {
 
     override def toSnabbdom(dispatcher: Dispatcher[F]): snabbdom.VNode = {
       val vp = vnode.toSnabbdom(dispatcher)
-      val data: snabbdom.VNodeData = vp.data.getOrElse(snabbdom.VNodeData.empty)
-      data.key = Some(key)
-      vp.data = Some(data)
+      vp.data = vp.data.copy(key = Some(key))
       vp
     }
 
@@ -120,18 +101,15 @@ private[ff4s] object VNode {
 
     override def toSnabbdom(dispatcher: Dispatcher[F]): snabbdom.VNode = {
       val vp = vnode.toSnabbdom(dispatcher)
-      val data: snabbdom.VNodeData = vp.data.getOrElse(snabbdom.VNodeData.empty)
-      data.hook match {
-        case Some(hooks) =>
-          data.hook = Some(
+      vp.data = vp.data.copy(
+        hook = Some(vp.data.hook match {
+          case Some(hooks) =>
             hooks.copy(insert =
               Some((n: snabbdom.VNode) =>
                 dispatcher.unsafeRunAndForget(onInsert(n))
               )
             )
-          )
-        case None =>
-          data.hook = Some(
+          case None =>
             snabbdom
               .Hooks()
               .copy(insert =
@@ -139,9 +117,8 @@ private[ff4s] object VNode {
                   dispatcher.unsafeRunAndForget(onInsert(n))
                 )
               )
-          )
-      }
-      vp.data = Some(data)
+        })
+      )
       vp
     }
 
@@ -153,28 +130,22 @@ private[ff4s] object VNode {
 
     override def toSnabbdom(dispatcher: Dispatcher[F]): snabbdom.VNode = {
       val vp = vnode.toSnabbdom(dispatcher)
-      val data: snabbdom.VNodeData = vp.data.getOrElse(snabbdom.VNodeData.empty)
-      data.hook match {
+      vp.data = vp.data.copy(hook = Some(vp.data.hook match {
         case Some(hooks) =>
-          data.hook = Some(
-            hooks.copy(destroy =
+          hooks.copy(destroy =
+            Some((n: snabbdom.VNode) =>
+              dispatcher.unsafeRunAndForget(onDestroy(n))
+            )
+          )
+        case None =>
+          snabbdom
+            .Hooks()
+            .copy(destroy =
               Some((n: snabbdom.VNode) =>
                 dispatcher.unsafeRunAndForget(onDestroy(n))
               )
             )
-          )
-        case None =>
-          data.hook = Some(
-            snabbdom
-              .Hooks()
-              .copy(destroy =
-                Some((n: snabbdom.VNode) =>
-                  dispatcher.unsafeRunAndForget(onDestroy(n))
-                )
-              )
-          )
-      }
-      vp.data = Some(data)
+      }))
       vp
     }
 
@@ -185,10 +156,7 @@ private[ff4s] object VNode {
 
       override def toSnabbdom(dispatcher: Dispatcher[F]): snabbdom.VNode = {
         val vp = vnode.toSnabbdom(dispatcher)
-        val data: snabbdom.VNodeData =
-          vp.data.getOrElse(snabbdom.VNodeData.empty)
-        data.props = Some(props)
-        vp.data = Some(data)
+        vp.data = vp.data.copy(props = props)
         vp
       }
 
@@ -201,10 +169,7 @@ private[ff4s] object VNode {
 
       override def toSnabbdom(dispatcher: Dispatcher[F]): snabbdom.VNode = {
         val vp = vnode.toSnabbdom(dispatcher)
-        val data: snabbdom.VNodeData =
-          vp.data.getOrElse(snabbdom.VNodeData.empty)
-        data.attrs = Some(attrs)
-        vp.data = Some(data)
+        vp.data = vp.data.copy(attrs = attrs)
         vp
       }
 
@@ -215,10 +180,7 @@ private[ff4s] object VNode {
 
       override def toSnabbdom(dispatcher: Dispatcher[F]): snabbdom.VNode = {
         val vp = vnode.toSnabbdom(dispatcher)
-        val data: snabbdom.VNodeData =
-          vp.data.getOrElse(snabbdom.VNodeData.empty)
-        data.style = Some(style)
-        vp.data = Some(data)
+        vp.data = vp.data.copy(style = style)
         vp
       }
 
