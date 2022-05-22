@@ -7,6 +7,7 @@ ThisBuild / crossScalaVersions := Seq("2.13.8")
 
 ThisBuild / organization := "io.github.buntec"
 ThisBuild / organizationName := "buntec"
+ThisBuild / startYear := Some(2022)
 ThisBuild / tlSonatypeUseLegacyHost := false
 
 ThisBuild / developers := List(
