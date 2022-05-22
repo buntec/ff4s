@@ -6,7 +6,7 @@ ThisBuild / scalaVersion := "2.13.8"
 ThisBuild / organization := "com.github.buntec"
 ThisBuild / organizationName := "buntec"
 
-lazy val scalajsDomVersion = "2.1.0"
+lazy val scalajsDomVersion = "2.2.0"
 lazy val domtypesVersion = "0.15.1"
 lazy val circeVersion = "0.15.0-M1"
 lazy val catsVersion = "2.7.0"
