@@ -1,10 +1,19 @@
 Global / onChangedBuildSource := ReloadOnSourceChanges
 // Global / resolvers += "Sonatype S01 OSS Snapshots" at "https://s01.oss.sonatype.org/content/repositories/snapshots"
 
-ThisBuild / scalaVersion := "2.13.8"
+ThisBuild / tlBaseVersion := "0.2"
+
+ThisBuild / crossScalaVersions := Seq("2.13.8")
 
 ThisBuild / organization := "io.github.buntec"
 ThisBuild / organizationName := "buntec"
+ThisBuild / tlSonatypeUseLegacyHost := false
+
+ThisBuild / developers := List(
+  tlGitHubDev("buntec", "Christoph Bunte")
+)
+
+ThisBuild / tlFatalWarningsInCi := false
 
 lazy val scalajsDomVersion = "2.2.0"
 lazy val domtypesVersion = "0.15.1"
@@ -19,17 +28,12 @@ lazy val betterMonadicForVersion = "0.3.1"
 
 lazy val scalaJsSnabbdomVersion = "0.1.0-M2"
 
-lazy val root = (project in file("."))
-  .settings(publish / skip := true)
-  .aggregate(ff4s, examples)
+lazy val root = tlCrossRootProject.aggregate(ff4s, examples)
 
 lazy val ff4s = (project in file("ff4s"))
-  .enablePlugins(ScalaJSPlugin, GitVersioning)
+  .enablePlugins(ScalaJSPlugin)
   .settings(
     name := "ff4s",
-    git.useGitDescribe := true,
-    crossScalaVersions := Seq("2.13.8"),
-    scalacOptions -= "-Xfatal-warnings",
     libraryDependencies ++= Seq(
       "io.github.buntec" %%% "scala-js-snabbdom" % scalaJsSnabbdomVersion,
       "org.scala-js" %%% "scalajs-dom" % scalajsDomVersion,
@@ -45,54 +49,32 @@ lazy val ff4s = (project in file("ff4s"))
       "org.http4s" %%% "http4s-circe" % http4sVersion,
       "io.circe" %%% "circe-generic" % circeVersion,
       "io.circe" %%% "circe-literal" % circeVersion,
-      "io.circe" %%% "circe-parser" % circeVersion,
-      compilerPlugin(
-        "com.olegpy" %% "better-monadic-for" % betterMonadicForVersion
-      ),
-      compilerPlugin(
-        "org.typelevel" % "kind-projector" % kindProjectorVersion cross CrossVersion.full
-      )
+      "io.circe" %%% "circe-parser" % circeVersion
     )
   )
 
 lazy val examples = (project in file("examples"))
-  .enablePlugins(ScalaJSPlugin)
+  .enablePlugins(ScalaJSPlugin, NoPublishPlugin)
   .settings(
-    publish / skip := true,
-    scalacOptions -= "-Xfatal-warnings",
     scalaJSUseMainModuleInitializer := true,
     libraryDependencies ++= Seq(
       "org.scala-js" %%% "scalajs-dom" % scalajsDomVersion,
       "io.circe" %%% "circe-generic" % circeVersion,
       "io.circe" %%% "circe-literal" % circeVersion,
-      "io.circe" %%% "circe-parser" % circeVersion,
-      compilerPlugin(
-        "com.olegpy" %% "better-monadic-for" % betterMonadicForVersion
-      ),
-      compilerPlugin(
-        "org.typelevel" % "kind-projector" % kindProjectorVersion cross CrossVersion.full
-      )
+      "io.circe" %%% "circe-parser" % circeVersion
     )
   )
   .dependsOn(ff4s)
 
 lazy val todoMvc = (project in file("todo-mvc"))
-  .enablePlugins(ScalaJSPlugin)
+  .enablePlugins(ScalaJSPlugin, NoPublishPlugin)
   .settings(
-    publish / skip := true,
-    scalacOptions -= "-Xfatal-warnings",
     scalaJSUseMainModuleInitializer := true,
     libraryDependencies ++= Seq(
       "org.scala-js" %%% "scalajs-dom" % scalajsDomVersion,
       "io.circe" %%% "circe-generic" % circeVersion,
       "io.circe" %%% "circe-literal" % circeVersion,
-      "io.circe" %%% "circe-parser" % circeVersion,
-      compilerPlugin(
-        "com.olegpy" %% "better-monadic-for" % betterMonadicForVersion
-      ),
-      compilerPlugin(
-        "org.typelevel" % "kind-projector" % kindProjectorVersion cross CrossVersion.full
-      )
+      "io.circe" %%% "circe-parser" % circeVersion
     )
   )
   .dependsOn(ff4s)
