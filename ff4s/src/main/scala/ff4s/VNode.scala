@@ -68,7 +68,7 @@ private[ff4s] object VNode {
         key = key,
         hook = Some(snabbdom.Hooks(insert = insertHook, destroy = destroyHook)),
         on = handlers.map { case (eventName, handler) =>
-          (eventName -> ((e: dom.Event) =>
+          (eventName -> snabbdom.EventHandler((e: dom.Event) =>
             handler(e).fold(())(action =>
               dispatcher.unsafeRunAndForget(actionDispatch(action))
             )

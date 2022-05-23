@@ -28,6 +28,7 @@ import io.circe.parser._
 import io.circe.generic.auto._
 
 import cats.effect.kernel.Fiber
+import ff4s.Store
 
 // This is a small demo application so show off the basic functionality of ff4s.
 // It uses tailwindcss for simple styling.
@@ -100,7 +101,7 @@ class App[F[_]: Async] {
   case object StopWebsocket extends Action
 
   // Create a store by assigning actions to effects in F.
-  implicit val store = for {
+  implicit val store: Resource[F, Store[F, State, Action]] = for {
     store <- ff4s.Store[F, State, Action](State()) { ref => (a: Action) =>
       a match {
         case StopWebsocket =>

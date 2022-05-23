@@ -18,6 +18,8 @@ package ff4s.examples.example1
 
 import org.scalajs.dom
 import cats.effect.kernel.Async
+import cats.effect.kernel.Resource
+import ff4s.Store
 
 // The obligatory to-do list app.
 class App[F[_]: Async] {
@@ -37,8 +39,8 @@ class App[F[_]: Async] {
   case class SetTodoInput(what: String) extends Action
 
   // Build our store by assigning actions to effects.
-  implicit val store = ff4s.Store[F, State, Action](State()) {
-    ref => (a: Action) =>
+  implicit val store: Resource[F, Store[F, State, Action]] =
+    ff4s.Store[F, State, Action](State()) { ref => (a: Action) =>
       a match {
         case AddTodo =>
           ref.update { state =>
@@ -59,7 +61,7 @@ class App[F[_]: Async] {
           }
         case SetTodoInput(what) => ref.update(_.copy(todoInput = Some(what)))
       }
-  }
+    }
 
   // Create the DSL for our model.
   val dsl = new ff4s.Dsl[F, State, Action]

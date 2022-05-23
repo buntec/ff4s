@@ -22,7 +22,7 @@ import com.raquo.domtypes.generic.builders.canonical.CanonicalEventPropBuilder
 import com.raquo.domtypes.generic.keys.EventProp
 
 trait EventPropsDsl[F[_], State, Action] {
-  self: ModifierDsl[F, State, Action] =>
+  self: ModifierDsl[F, State, Action] with Dsl[F, State, Action] =>
 
   trait EventPropsSyntax
       extends CanonicalEventPropBuilder[dom.Event]

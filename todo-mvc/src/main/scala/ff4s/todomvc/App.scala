@@ -3,6 +3,8 @@ package ff4s.todomvc
 import org.scalajs.dom
 import cats.effect.kernel.Async
 import scala.collection.immutable.IntMap
+import cats.effect.kernel.Resource
+import ff4s.Store
 
 class App[F[_]: Async] {
 
@@ -42,8 +44,8 @@ class App[F[_]: Async] {
   case class RemoveTodo(id: Int) extends Action
   case class SetTodoInput(what: String) extends Action
 
-  implicit val store = ff4s.Store[F, State, Action](State()) {
-    ref => (a: Action) =>
+  implicit val store: Resource[F, Store[F, State, Action]] =
+    ff4s.Store[F, State, Action](State()) { ref => (a: Action) =>
       a match {
         case SetFilter(filter) => ref.update(_.copy(filter = filter))
         case UpdateTodo(todo) =>
@@ -68,7 +70,7 @@ class App[F[_]: Async] {
           ref.update { state => state.copy(todos = state.todos - id) }
         case SetTodoInput(what) => ref.update(_.copy(todoInput = Some(what)))
       }
-  }
+    }
 
   val dsl = new ff4s.Dsl[F, State, Action]
 

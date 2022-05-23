@@ -27,7 +27,8 @@ import com.raquo.domtypes.generic.builders.PropBuilder
 import com.raquo.domtypes.generic.builders.canonical.CanonicalHtmlAttrBuilder
 import com.raquo.domtypes.generic.builders.canonical.CanonicalReflectedHtmlAttrBuilder
 
-trait HtmlAttrsDsl[F[_], State, Action] { self: ModifierDsl[F, State, Action] =>
+trait HtmlAttrsDsl[F[_], State, Action] {
+  self: ModifierDsl[F, State, Action] with Dsl[F, State, Action] =>
 
   trait HtmlAttrsSyntax
       extends HtmlAttrs[HtmlAttr]
