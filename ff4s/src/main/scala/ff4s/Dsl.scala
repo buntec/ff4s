@@ -184,8 +184,7 @@ class Dsl[F[_], State, Action]
         s"A $tag element cannot have child nodes."
       )
 
-      // toList is needed in 2.12 apparently
-      args.children.toList.sequence.flatMap { children =>
+      args.children.sequence.flatMap { children =>
         element(
           tag,
           key = args.key,
@@ -233,6 +232,7 @@ class Dsl[F[_], State, Action]
     */
   val noop = Modifier.NoOp
 
+  /** Thunks are currently broken :( */
   object thunked {
     def :=(args: State => Any): Modifier = Modifier.Thunk(args)
   }

@@ -16,9 +16,8 @@
 
 package ff4s
 
-import cats.effect.kernel.Async
+import cats.effect.kernel.Concurrent
 import cats.effect.kernel.Resource
-
 import fs2.concurrent.Signal
 import fs2.concurrent.SignallingRef
 
@@ -34,7 +33,7 @@ object Store {
 
   type Dispatcher[F[_], Action] = Action => F[Unit]
 
-  def apply[F[_]: Async, State, Action](
+  def apply[F[_]: Concurrent, State, Action](
       initial: State
   )(
       toDispatcher: SignallingRef[F, State] => Dispatcher[F, Action]

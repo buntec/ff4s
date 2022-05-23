@@ -64,7 +64,6 @@ private[ff4s] object Render {
         .compile
         .resource
         .drain
-
     } yield ()).useForever
   }
 

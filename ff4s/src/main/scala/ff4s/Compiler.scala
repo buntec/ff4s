@@ -23,53 +23,6 @@ import org.scalajs.dom
 
 private[ff4s] object Compiler {
 
-  def transpile[F[_], StateA, StateB, ActionA, ActionB](
-      dslA: Dsl[F, StateA, ActionA],
-      dslB: Dsl[F, StateB, ActionB],
-      f: StateB => StateA,
-      g: ActionA => ActionB
-  ): dslA.ViewA ~> dslB.View = {
-
-    new (dslA.ViewA ~> dslB.View) {
-
-      override def apply[A](fa: dslA.ViewA[A]): dslB.View[A] = fa match {
-        case dslA.Text(s)       => dslB.text(s)
-        case dslA.Literal(html) => dslB.literal(html)
-        case dslA.Empty()       => dslB.empty
-        case dslA.GetState()    => dslB.getState.map(f)
-        case dslA.Element(
-              tag,
-              children,
-              eventHandlers,
-              cls,
-              key,
-              onInsert,
-              onDestroy,
-              props,
-              attrs,
-              style,
-              thunkArgs
-            ) =>
-          dslB.element(
-            tag,
-            children,
-            eventHandlers.map { case (key, handler) =>
-              (key -> ((ev: dom.Event) => handler(ev).map(g)))
-            },
-            cls,
-            key,
-            onInsert.map(hook => (v: dom.Element) => g(hook(v))),
-            onDestroy.map(hook => (v: dom.Element) => g(hook(v))),
-            props,
-            attrs,
-            style,
-            thunkArgs.map(t => (s: StateB) => t(f(s)))
-          )
-      }
-
-    }
-  }
-
   def apply[F[_], State, Action](
       dsl: Dsl[F, State, Action],
       state: State,
@@ -190,6 +143,53 @@ private[ff4s] object Compiler {
 
         }
 
+      }
+
+    }
+  }
+
+  def transpile[F[_], StateA, StateB, ActionA, ActionB](
+      dslA: Dsl[F, StateA, ActionA],
+      dslB: Dsl[F, StateB, ActionB],
+      f: StateB => StateA,
+      g: ActionA => ActionB
+  ): dslA.ViewA ~> dslB.View = {
+
+    new (dslA.ViewA ~> dslB.View) {
+
+      override def apply[A](fa: dslA.ViewA[A]): dslB.View[A] = fa match {
+        case dslA.Text(s)       => dslB.text(s)
+        case dslA.Literal(html) => dslB.literal(html)
+        case dslA.Empty()       => dslB.empty
+        case dslA.GetState()    => dslB.getState.map(f)
+        case dslA.Element(
+              tag,
+              children,
+              eventHandlers,
+              cls,
+              key,
+              onInsert,
+              onDestroy,
+              props,
+              attrs,
+              style,
+              thunkArgs
+            ) =>
+          dslB.element(
+            tag,
+            children,
+            eventHandlers.map { case (key, handler) =>
+              (key -> ((ev: dom.Event) => handler(ev).map(g)))
+            },
+            cls,
+            key,
+            onInsert.map(hook => (v: dom.Element) => g(hook(v))),
+            onDestroy.map(hook => (v: dom.Element) => g(hook(v))),
+            props,
+            attrs,
+            style,
+            thunkArgs.map(t => (s: StateB) => t(f(s)))
+          )
       }
 
     }

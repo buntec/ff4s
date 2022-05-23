@@ -87,14 +87,12 @@ object WebSocketsClient {
             .use { conn =>
               (
                 conn.receiveStream
-                  .collect { case Text(data, _) =>
-                    data
-                  }
+                  .collect { case Text(data, _) => data }
                   .through(receive)
                   .compile
                   .drain,
                 send
-                  .map { text => WSFrame.Text(text) }
+                  .map(WSFrame.Text(_))
                   .through(conn.sendPipe)
                   .compile
                   .drain
