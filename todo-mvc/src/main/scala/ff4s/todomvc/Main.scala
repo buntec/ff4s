@@ -19,7 +19,7 @@ object Main extends IOApp.Simple {
     IORuntimeConfig()
   )
 
-  // override protected def runtime: IORuntime = ioRuntimeWithMicrotaskEC
+  override protected def runtime: IORuntime = ioRuntimeWithMicrotaskEC
 
   override def run: IO[Unit] = new App[IO].run
 

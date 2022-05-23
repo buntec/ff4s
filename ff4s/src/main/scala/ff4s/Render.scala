@@ -41,7 +41,7 @@ private[ff4s] object Render {
       dsl: Dsl[F, State, Action],
       store: Resource[F, Store[F, State, Action]]
   )(
-      view: dsl.View[VNode[F]],
+      view: dsl.View[VNode[F]], // must be curried b/c of this
       selector: String
   ): F[Nothing] = {
     val F = Async[F]
@@ -50,30 +50,16 @@ private[ff4s] object Render {
       root <- Resource.eval(F.delay(document.querySelector(selector)))
       s <- store
       state0 <- Resource.eval(s.state.get)
-      vnode0 <- Resource.eval(view.foldMap(Compiler(dsl, state0, s.dispatcher)))
+      vnode0 <- Resource.eval(
+        F.pure(view.foldMap(Compiler(dsl, state0, s.dispatcher)))
+      )
       proxy0 <- Resource.eval(
         F.delay(patch(root, vnode0.toSnabbdom(dispatcher)))
       )
       _ <- s.state.discrete
-        .evalMap(state =>
-          F.timed(
-            view.foldMap(Compiler(dsl, state, s.dispatcher))
-          ).flatMap { case (elapsed, vnode) =>
-            F.delay {
-              Logging.debug(s"compiling view took ${elapsed.toMillis} ms")
-              vnode
-            }
-          }
-        )
+        .map(state => view.foldMap(Compiler(dsl, state, s.dispatcher)))
         .evalMapAccumulate(proxy0) { case (prevProxy, vnode) =>
-          F.timed(
-            F.delay(patch(prevProxy, vnode.toSnabbdom(dispatcher)))
-          ).flatMap { case (elapsed, nextProxy) =>
-            F.delay {
-              Logging.debug(s"patching DOM took ${elapsed.toMillis} ms")
-              nextProxy
-            }
-          }.map((_, ()))
+          F.delay(patch(prevProxy, vnode.toSnabbdom(dispatcher))).map((_, ()))
         }
         .compile
         .resource

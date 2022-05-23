@@ -16,11 +16,9 @@
 
 package ff4s
 
-import cats.~>
-
-import cats.effect.kernel.Async
+import cats.Id
 import cats.effect.std.Dispatcher
-
+import cats.~>
 import org.scalajs.dom
 
 private[ff4s] object Compiler {
@@ -72,54 +70,50 @@ private[ff4s] object Compiler {
     }
   }
 
-  def apply[F[_]: Async, State, Action](
+  def apply[F[_], State, Action](
       dsl: Dsl[F, State, Action],
       state: State,
-      dispatcher: Action => F[Unit]
-  ): (dsl.ViewA ~> F) = {
+      actionDispatch: Action => F[Unit]
+  ): (dsl.ViewA ~> Id) = {
 
     import dsl._
 
-    new (ViewA ~> F) {
+    new (ViewA ~> Id) {
 
-      override def apply[A](fa: ViewA[A]): F[A] = fa match {
+      override def apply[A](fa: ViewA[A]): Id[A] = fa match {
 
-        case GetState() => Async[F].pure(state)
+        case GetState() => state
 
         case Text(s) =>
-          Async[F].pure {
-            new VNode[F] {
-
-              override def toSnabbdom(
-                  dispatcher: Dispatcher[F]
-              ): snabbdom.VNode = { s }
-
-            }
+          new VNode[F] {
+            override def toSnabbdom(
+                dispatcher: Dispatcher[F]
+            ): snabbdom.VNode = { s }
           }
 
         case Empty() =>
-          Async[F].pure {
-            new VNode[F] {
-
-              override def toSnabbdom(
-                  dispatcher: Dispatcher[F]
-              ): snabbdom.VNode = {
-                null // Is this dangerous? An alternative would be `VNodeProxy.fromString("")`, but this results in an empty text element in the DOM
-              }
-
+          new VNode[F] {
+            override def toSnabbdom(
+                dispatcher: Dispatcher[F]
+            ): snabbdom.VNode = {
+              snabbdom.VNode.create(
+                None,
+                snabbdom.VNodeData.empty,
+                None,
+                Some(""),
+                None
+              )
             }
           }
 
         case Literal(html) =>
-          Async[F].pure {
-            new VNode[F] {
-              override def toSnabbdom(
-                  dispatcher: Dispatcher[F]
-              ): snabbdom.VNode = {
-                val elm = dom.document.createElement("div")
-                elm.innerHTML = html
-                snabbdom.toVNode(elm)
-              }
+          new VNode[F] {
+            override def toSnabbdom(
+                dispatcher: Dispatcher[F]
+            ): snabbdom.VNode = {
+              val elm = dom.document.createElement("div")
+              elm.innerHTML = html
+              snabbdom.toVNode(elm)
             }
           }
 
@@ -135,48 +129,66 @@ private[ff4s] object Compiler {
               attrs,
               style,
               thunkArgs
-            ) =>
-          Async[F].delay {
+            ) => {
 
-            val renderFn = () => {
+          thunkArgs match {
+            case Some(args) => {
 
-              VNode.create[F, Action](
-                tag,
-                children,
-                cls,
-                key,
-                props,
-                attrs,
-                style,
-                eventHandlers,
-                onInsert,
-                onDestroy,
-                dispatcher
-              )
+              val renderFn = () => {
+                VNode.create[F, Action](
+                  tag,
+                  children,
+                  cls,
+                  key,
+                  props,
+                  attrs,
+                  style,
+                  eventHandlers,
+                  onInsert,
+                  onDestroy,
+                  actionDispatch
+                )
+              }
 
+              new VNode[F] {
+                override def toSnabbdom(
+                    dispatcher: Dispatcher[F]
+                ): snabbdom.VNode = snabbdom.thunk(
+                  tag,
+                  key.getOrElse(""): String,
+                  (_: Seq[Any]) =>
+                    renderFn().toSnabbdom(
+                      dispatcher
+                    ), // TODO: this is broken
+                  Seq(args(state))
+                )
+              }
             }
-
-            thunkArgs match {
-              case Some(args) =>
-                new VNode[F] {
-                  override def toSnabbdom(
-                      dispatcher: Dispatcher[F]
-                  ): snabbdom.VNode = snabbdom.thunk(
-                    tag,
-                    key.getOrElse(""): String,
-                    (_: Seq[Any]) => renderFn().toSnabbdom(dispatcher), // TODO
-                    Seq(args(state))
-                  )
+            case _ =>
+              new VNode[F] {
+                override private[ff4s] def toSnabbdom(
+                    dispatcher: Dispatcher[F]
+                ): snabbdom.VNode = {
+                  VNode
+                    .create[F, Action](
+                      tag,
+                      children,
+                      cls,
+                      key,
+                      props,
+                      attrs,
+                      style,
+                      eventHandlers,
+                      onInsert,
+                      onDestroy,
+                      actionDispatch
+                    )
+                    .toSnabbdom(dispatcher)
                 }
-              case _ =>
-                new VNode[F] {
-                  override private[ff4s] def toSnabbdom(
-                      dispatcher: Dispatcher[F]
-                  ): snabbdom.VNode = renderFn().toSnabbdom(dispatcher)
-                }
-            }
-
+              }
           }
+
+        }
 
       }
 
