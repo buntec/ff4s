@@ -20,7 +20,8 @@ import com.raquo.domtypes.generic.defs.props.Props
 import com.raquo.domtypes.generic.keys.Prop
 import com.raquo.domtypes.generic.builders.canonical.CanonicalPropBuilder
 
-trait PropDsl[F[_], State, Action] { self: ModifierDsl[F, State, Action] =>
+trait PropDsl[F[_], State, Action] {
+  self: ModifierDsl[F, State, Action] with Dsl[F, State, Action] =>
 
   trait PropsSyntax extends Props[Prop] with CanonicalPropBuilder {
 

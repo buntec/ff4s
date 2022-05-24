@@ -20,7 +20,8 @@ import com.raquo.domtypes.generic.keys.SvgAttr
 import com.raquo.domtypes.generic.builders.canonical.CanonicalSvgAttrBuilder
 import com.raquo.domtypes.generic.defs.attrs.SvgAttrs
 
-trait SvgAttrsDsl[F[_], State, Action] { self: ModifierDsl[F, State, Action] =>
+trait SvgAttrsDsl[F[_], State, Action] {
+  self: ModifierDsl[F, State, Action] with Dsl[F, State, Action] =>
 
   trait SvgAttrsSyntax extends SvgAttrs[SvgAttr] with CanonicalSvgAttrBuilder {
 

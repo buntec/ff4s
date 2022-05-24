@@ -22,8 +22,6 @@ serving the `index.html` using a simple development server, e.g.,
 There is also an implementation of [todomvc](https://github.com/tastejs/todomvc)
 in the `todo-mvc` folder.
 
-To use ff4s in your own project, add this to your `build.sbt`:
 ```scala
-enablePlugins(ScalaJSPlugin)
-libraryDependencies += "io.github.buntec.ff4s" %%% "ff4s" % "0.2.0"
+libraryDependencies += "io.github.buntec" %%% "ff4s" % "0.3.0"
 ```

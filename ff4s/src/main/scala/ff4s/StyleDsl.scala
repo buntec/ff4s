@@ -20,7 +20,8 @@ import com.raquo.domtypes.generic.keys.Style
 import com.raquo.domtypes.generic.defs.styles.{Styles, Styles2}
 import com.raquo.domtypes.generic.builders.StyleBuilders
 
-trait StyleDsl[F[_], State, Action] { self: ModifierDsl[F, State, Action] =>
+trait StyleDsl[F[_], State, Action] {
+  self: ModifierDsl[F, State, Action] with Dsl[F, State, Action] =>
 
   trait StylesSyntax
       extends Styles[Modifier]
