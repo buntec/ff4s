@@ -26,7 +26,7 @@ lazy val catsEffectVersion = "3.3.12"
 lazy val fs2Version = "3.2.7"
 lazy val kindProjectorVersion = "0.13.2"
 lazy val http4sDomVersion = "0.2.1"
-lazy val http4sVersion = "0.23.11"
+lazy val http4sVersion = "0.23.12"
 lazy val betterMonadicForVersion = "0.3.1"
 lazy val scalaJsSnabbdomVersion = "0.1.0-M2"
 
