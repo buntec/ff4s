@@ -49,13 +49,7 @@ private[ff4s] object Compiler {
             override def toSnabbdom(
                 dispatcher: Dispatcher[F]
             ): snabbdom.VNode = {
-              snabbdom.VNode.create(
-                None,
-                snabbdom.VNodeData.empty,
-                None,
-                Some(""),
-                None
-              )
+              snabbdom.VNode.empty
             }
           }
 
@@ -66,7 +60,7 @@ private[ff4s] object Compiler {
             ): snabbdom.VNode = {
               val elm = dom.document.createElement("div")
               elm.innerHTML = html
-              snabbdom.toVNode(elm)
+              snabbdom.toVNode(elm).toVNode
             }
           }
 
@@ -109,10 +103,14 @@ private[ff4s] object Compiler {
                 ): snabbdom.VNode = snabbdom.thunk(
                   tag,
                   key.getOrElse(""): String,
-                  (_: Seq[Any]) =>
-                    renderFn().toSnabbdom(
-                      dispatcher
-                    ), // TODO: this is broken
+                  (_: Any) =>
+                    renderFn()
+                      .toSnabbdom(
+                        dispatcher
+                      )
+                      .asInstanceOf[
+                        snabbdom.VNode.Element
+                      ], // TODO: this is broken
                   Seq(args(state))
                 )
               }

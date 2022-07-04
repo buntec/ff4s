@@ -16,6 +16,7 @@
 
 package ff4s.todomvc
 
+import cats.syntax.all._
 import org.scalajs.dom
 import cats.effect.kernel.Async
 import scala.collection.immutable.IntMap
@@ -75,8 +76,12 @@ class App[F[_]: Async] {
               case Some(what) if what.nonEmpty =>
                 state.copy(
                   nextId = nextId + 1,
-                  todos =
-                    state.todos + (nextId -> Todo(what, nextId, false, false)),
+                  todos = state.todos + (nextId -> Todo(
+                    what,
+                    nextId,
+                    false,
+                    false
+                  )),
                   todoInput = None
                 )
               case _ => state
@@ -121,6 +126,7 @@ class App[F[_]: Async] {
       case (false, true)  => "editing"
       case (false, false) => ""
     }),
+    key := todo.id.toString,
     onDblClick := (_ => Some(UpdateTodo(todo.copy(isEdit = true)))),
     if (todo.isEdit) {
       List(

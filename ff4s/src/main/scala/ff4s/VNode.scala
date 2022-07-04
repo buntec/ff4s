@@ -45,18 +45,18 @@ private[ff4s] object VNode {
 
       val insertHook = onInsert.map { hook =>
         new snabbdom.InsertHook {
-          override def apply(vNode: snabbdom.VNode): Any =
+          override def apply(vNode: snabbdom.PatchedVNode): Unit =
             dispatcher.unsafeRunAndForget(
-              actionDispatch(hook(vNode.elm.get.asInstanceOf[dom.Element]))
+              actionDispatch(hook(vNode.node.asInstanceOf[dom.Element]))
             )
         }
       }
 
       val destroyHook = onDestroy.map { hook =>
         new snabbdom.DestroyHook {
-          override def apply(vNode: snabbdom.VNode): Any =
+          override def apply(vNode: snabbdom.PatchedVNode): Unit =
             dispatcher.unsafeRunAndForget(
-              actionDispatch(hook(vNode.elm.get.asInstanceOf[dom.Element]))
+              actionDispatch(hook(vNode.node.asInstanceOf[dom.Element]))
             )
         }
       }
@@ -76,7 +76,7 @@ private[ff4s] object VNode {
         }
       )
 
-      snabbdom.h(tag, data, children.map(_.toSnabbdom(dispatcher)).toArray)
+      snabbdom.h(tag, data, children.map(_.toSnabbdom(dispatcher)).toList)
 
     }
   }
