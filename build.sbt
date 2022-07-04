@@ -28,7 +28,7 @@ lazy val kindProjectorVersion = "0.13.2"
 lazy val http4sDomVersion = "0.2.1"
 lazy val http4sVersion = "0.23.12"
 lazy val betterMonadicForVersion = "0.3.1"
-lazy val scalaJsSnabbdomVersion = "0.2-f7ce50c-20220528T183614Z-SNAPSHOT"
+lazy val scalaJsSnabbdomVersion = "0.2.0-M1"
 
 lazy val root = tlCrossRootProject.aggregate(ff4s, examples, todoMvc)
 

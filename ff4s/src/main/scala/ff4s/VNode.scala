@@ -47,7 +47,7 @@ private[ff4s] object VNode {
         new snabbdom.InsertHook {
           override def apply(vNode: snabbdom.PatchedVNode): Unit =
             dispatcher.unsafeRunAndForget(
-              actionDispatch(hook(vNode.elm.asInstanceOf[dom.Element]))
+              actionDispatch(hook(vNode.node.asInstanceOf[dom.Element]))
             )
         }
       }
@@ -56,7 +56,7 @@ private[ff4s] object VNode {
         new snabbdom.DestroyHook {
           override def apply(vNode: snabbdom.PatchedVNode): Unit =
             dispatcher.unsafeRunAndForget(
-              actionDispatch(hook(vNode.elm.asInstanceOf[dom.Element]))
+              actionDispatch(hook(vNode.node.asInstanceOf[dom.Element]))
             )
         }
       }

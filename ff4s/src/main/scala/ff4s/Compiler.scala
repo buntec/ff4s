@@ -104,9 +104,13 @@ private[ff4s] object Compiler {
                   tag,
                   key.getOrElse(""): String,
                   (_: Any) =>
-                    renderFn().toSnabbdom(
-                      dispatcher
-                    ), // TODO: this is broken
+                    renderFn()
+                      .toSnabbdom(
+                        dispatcher
+                      )
+                      .asInstanceOf[
+                        snabbdom.VNode.Element
+                      ], // TODO: this is broken
                   Seq(args(state))
                 )
               }
