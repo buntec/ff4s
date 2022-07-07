@@ -18,17 +18,16 @@ package ff4s.examples.example2
 
 import scala.concurrent.duration._
 
-import org.scalajs.dom
-
-import cats.syntax.all._
-import cats.effect.kernel.{Async, Resource}
+import cats.effect.implicits._
+import cats.effect.kernel.Async
+import cats.effect.kernel.Resource
+import cats.effect.std.Queue
 import cats.effect.std.Random
-
-import io.circe.parser._
-import io.circe.generic.auto._
-
-import cats.effect.kernel.Fiber
+import cats.syntax.all._
 import ff4s.Store
+import fs2.Stream
+import io.circe.generic.auto._
+import org.scalajs.dom
 
 // This is a small demo application so show off the basic functionality of ff4s.
 // It uses tailwindcss for simple styling.
@@ -51,8 +50,7 @@ class App[F[_]: Async] {
       favoriteDish: Dish = Sushi,
       magic: Boolean = false,
       svgCoords: SvgCoords = SvgCoords(0, 0),
-      bitcoinPrice: Option[Double] = None,
-      websocketFiber: Option[Fiber[F, Throwable, Unit]] = None
+      websocketResponse: Option[String] = None
   )
   case class SvgCoords(x: Double, y: Double)
   case class Bored(activity: String, `type`: String)
@@ -97,48 +95,19 @@ class App[F[_]: Async] {
   case object DecrementCounter extends Action
   case object GetActivity extends Action
   case class SetSvgCoords(x: Double, y: Double) extends Action
-  case object StartWebsocket extends Action
-  case object StopWebsocket extends Action
+  case class SendWebsocketMessage(msg: String) extends Action
+  case class WebsocketMessageReceived(msg: String) extends Action
 
   // Create a store by assigning actions to effects in F.
   implicit val store: Resource[F, Store[F, State, Action]] = for {
+
+    wsSendQ <- Queue.bounded[F, String](100).toResource
+
     store <- ff4s.Store[F, State, Action](State()) { ref => (a: Action) =>
       a match {
-        case StopWebsocket =>
-          ref.get.flatMap { state =>
-            state.websocketFiber.fold(Async[F].unit)(_.cancel)
-          }
-        case StartWebsocket =>
-          for {
-            fiber <- Async[F].start(
-              ff4s
-                .WebSocketsClient[F]
-                .receiveText( // I don't like this, but it's the only public websocket API I could find.
-                  "wss://ws.bitmex.com/realtime?subscribe=instrument:XBTUSD",
-                  is =>
-                    is.evalMap { msg =>
-                      (for {
-                        json <- Async[F].fromEither(parse(msg))
-                        lastPrice <- Async[F].fromEither(
-                          json.hcursor
-                            .downField("data")
-                            .downArray
-                            .downField("lastPrice")
-                            .as[Double]
-                        )
-                        _ <- ref
-                          .update(_.copy(bitcoinPrice = Some(lastPrice)))
-                      } yield ()).handleError(_ => ())
-                    }.drain
-                )
-            )
-            sPrev <- ref.getAndUpdate(
-              _.copy(
-                websocketFiber = Some(fiber)
-              )
-            )
-            _ <- sPrev.websocketFiber.fold(Async[F].unit)(_.cancel)
-          } yield ()
+        case WebsocketMessageReceived(msg) =>
+          ref.update(state => state.copy(websocketResponse = Some(msg)))
+        case SendWebsocketMessage(msg) => wsSendQ.offer(msg)
         case SetSvgCoords(x, y) =>
           ref.update(_.copy(svgCoords = SvgCoords(x, y)))
         case Magic => ref.update(_.copy(magic = true))
@@ -154,16 +123,27 @@ class App[F[_]: Async] {
         case DecrementCounter =>
           ref.update(s => s.copy(counter = s.counter - 1))
         case GetActivity =>
-          // ff4s provides a very basic HTTP client (currently using sttp under the hood).
           ff4s
             .HttpClient[F]
-            .get[Bored]("https://www.boredapi.com/api/activity")
+            .get[Bored]("http://www.boredapi.com/api/activity")
             .flatMap { bored =>
               ref.update(s => s.copy(bored = Some(bored)))
             }
-
       }
     }
+
+    _ <- ff4s
+      .WebSocketsClient[F]
+      .bidirectionalText(
+        "wss://ws.postman-echo.com/raw/",
+        is =>
+          is.evalMap { msg =>
+            store.dispatcher(WebsocketMessageReceived(msg))
+          },
+        Stream.fromQueueUnterminated(wsSendQ)
+      )
+      .background
+
     // We can do something fancy in the background.
     _ <- Async[F].background(
       (fs2.Stream.emit(()) ++ fs2.Stream.fixedDelay(5.second))
@@ -458,27 +438,25 @@ class App[F[_]: Async] {
     div(
       cls := "m-1 flex flex-col items-center",
       h2(cls := subHeadingCls, "A WebSocket example"),
-      p("Has Bitcoin gone to zero yet?"),
+      p("Echo Server"),
       div(
-        cls := "flex flex-row justify-center items-center",
-        button(
-          cls := buttonCls,
-          tpe := "button",
-          "Start websocket",
-          onClick := (_ => Some(StartWebsocket))
+        cls := "flex flex-col",
+        input(
+          tpe := "text",
+          cls := "text-center m-1 rounded font-light shadow",
+          placeholder := "type something here...",
+          value := state.name.getOrElse(""),
+          onInput := ((ev: dom.Event) =>
+            ev.target match {
+              case el: dom.HTMLInputElement =>
+                Some(SendWebsocketMessage(el.value))
+              case _ => None
+            }
+          )
         ),
-        button(
-          cls := buttonCls,
-          tpe := "button",
-          "Stop websocket",
-          onClick := (_ => Some(StopWebsocket))
-        )
-      ),
-      state.bitcoinPrice.fold(empty)(price =>
         span(
-          cls := "m-2 text-xl text-amber-600",
-          if (price > 0) s"No, the current price is $price USD per Bitcoin."
-          else "Hooray!"
+          cls := "text-center",
+          s"Websocket Response:  ${state.websocketResponse.getOrElse("")}"
         )
       )
     )
