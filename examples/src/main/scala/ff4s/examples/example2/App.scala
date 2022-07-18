@@ -445,7 +445,6 @@ class App[F[_]: Async] {
           tpe := "text",
           cls := "text-center m-1 rounded font-light shadow",
           placeholder := "type something here...",
-          value := state.name.getOrElse(""),
           onInput := ((ev: dom.Event) =>
             ev.target match {
               case el: dom.HTMLInputElement =>
