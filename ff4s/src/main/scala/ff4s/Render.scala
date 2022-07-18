@@ -16,12 +16,10 @@
 
 package ff4s
 
-import cats.syntax.all._
-
 import cats.effect.kernel.Async
 import cats.effect.kernel.Resource
 import cats.effect.std.Dispatcher
-
+import cats.syntax.all._
 import org.scalajs.dom.document
 
 private[ff4s] object Render {

@@ -42,7 +42,7 @@ object Store {
     disp = toDispatcher(ref)
   } yield (new Store[F, State, Action] {
 
-    override def dispatcher: Action => F[Unit] = disp
+    override def dispatcher: Dispatcher[F, Action] = disp
 
     override def state: Signal[F, State] = ref
 

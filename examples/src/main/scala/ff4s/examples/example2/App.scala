@@ -183,7 +183,7 @@ class App[F[_]: Async] {
   } yield store
 
   // Create a DSL for our model.
-  val dsl = new ff4s.Dsl[F, State, Action]
+  val dsl = ff4s.Dsl[F, State, Action]
 
   import dsl._ // basic dsl
   import dsl.syntax.html._ // nice syntax for html tags, attributes etc.
