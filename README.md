@@ -22,5 +22,5 @@ There is also an implementation of [todomvc](https://github.com/tastejs/todomvc)
 in the `todo-mvc` folder.
 
 ```scala
-libraryDependencies += "io.github.buntec" %%% "ff4s" % "0.4.0"
+libraryDependencies += "io.github.buntec" %%% "ff4s" % "x.y.z"
 ```
