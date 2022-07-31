@@ -93,7 +93,7 @@ class App[F[_]: Async] {
       }
     }
 
-  val dsl = new ff4s.Dsl[F, State, Action]
+  val dsl = ff4s.Dsl[F, State, Action]
 
   import dsl._
   import dsl.syntax.html._

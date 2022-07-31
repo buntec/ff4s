@@ -16,19 +16,17 @@
 
 package ff4s
 
-import cats.syntax.all._
-
+import cats.effect.kernel.Async
+import cats.effect.kernel.Resource
 import cats.free.Free
 import cats.free.Free.liftF
-
-import cats.effect.kernel.Resource
-import cats.effect.kernel.Async
-
-import org.scalajs.dom
-
+import cats.syntax.all._
 import com.raquo.domtypes.generic.builders
 import com.raquo.domtypes.generic.codecs.BooleanAsAttrPresenceCodec
 import com.raquo.domtypes.jsdom.defs.tags._
+import org.scalajs.dom
+
+import annotation.nowarn
 
 class Dsl[F[_], State, Action]
     extends EventPropsDsl[F, State, Action]
@@ -66,7 +64,7 @@ class Dsl[F[_], State, Action]
 
   implicit class ViewOps[A](view: View[A]) {
 
-    def lift[StateB, ActionB](
+    def translate[StateB, ActionB](
         dslB: Dsl[F, StateB, ActionB]
     )(implicit f: StateB => State, g: Action => ActionB): dslB.View[A] =
       view.foldMap(
@@ -74,6 +72,38 @@ class Dsl[F[_], State, Action]
       )
 
   }
+
+  def embed[A, StateB, ActionB](
+      dslB: Dsl[F, StateB, ActionB],
+      f: State => StateB,
+      g: ActionB => Action
+  )(view: dslB.View[A]): View[A] = view.foldMap(
+    Compiler.transpile[F, StateB, State, ActionB, Action](dslB, self, f, g)
+  )
+
+  @nowarn("msg=dead code")
+  def embed[A, StateB](
+      dslB: Dsl[F, StateB, Nothing],
+      f: State => StateB
+  )(view: dslB.View[A]): View[A] = view.foldMap(
+    Compiler.transpile[F, StateB, State, Nothing, Action](
+      dslB,
+      self,
+      f,
+      identity
+    )
+  )
+
+  @nowarn("msg=dead code")
+  def embed[A](dslB: Dsl[F, Unit, Nothing])(view: dslB.View[A]): View[A] =
+    view.foldMap(
+      Compiler.transpile[F, Unit, State, Nothing, Action](
+        dslB,
+        self,
+        _ => (),
+        identity
+      )
+    )
 
   implicit class ViewOfVNodeOps(view: View[VNode[F]]) {
 
@@ -276,5 +306,30 @@ class Dsl[F[_], State, Action]
         with TagBuilder
 
   }
+
+}
+
+object Dsl {
+
+  /*
+   * A fully general DSL for interactive components that depend on state.
+   */
+  def apply[F[_], State, Action] = new Dsl[F, State, Action]
+
+  /*
+   * A DSL for building components that may depend on state
+   * but are not interactive (the `Action` type is `Nothing`).
+   * Useful for writing non-interactive reusable components.
+   */
+  def pure[F[_], State] = new Dsl[F, State, Nothing]
+
+  /*
+   * A DSL for building components that don't depend on state
+   * (the `State` type is `Unit`) and are not interactive
+   * (the `Action` type is `Nothing`).
+   * Useful for writing non-interactive, non-state-dependent
+   * reusable components such as SVG icons.
+   */
+  def constant[F[_]] = new Dsl[F, Unit, Nothing]
 
 }
