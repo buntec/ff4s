@@ -16,10 +16,13 @@
 
 package ff4s
 
+import cats.effect.implicits._
 import cats.effect.kernel.Concurrent
 import cats.effect.kernel.Resource
 import fs2.concurrent.Signal
 import fs2.concurrent.SignallingRef
+import cats.effect.kernel.Async
+import org.http4s.Uri
 
 trait Store[F[_], State, Action] {
 
@@ -36,10 +39,10 @@ object Store {
   def apply[F[_]: Concurrent, State, Action](
       initial: State
   )(
-      toDispatcher: SignallingRef[F, State] => Dispatcher[F, Action]
+      builder: SignallingRef[F, State] => Dispatcher[F, Action]
   ): Resource[F, Store[F, State, Action]] = for {
     ref <- Resource.eval(SignallingRef.of[F, State](initial))
-    disp = toDispatcher(ref)
+    disp = builder(ref)
   } yield (new Store[F, State, Action] {
 
     override def dispatcher: Dispatcher[F, Action] = disp
@@ -47,5 +50,36 @@ object Store {
     override def state: Signal[F, State] = ref
 
   })
+
+  def withRouter[F[_], State, Action](initial: State)(
+      onUriChange: Uri => Action
+  )(
+      builder: (
+          SignallingRef[F, State],
+          Router[F]
+      ) => Dispatcher[F, Action]
+  )(implicit F: Async[F]) = for {
+
+    ref <- Resource.eval(SignallingRef.of[F, State](initial))
+
+    history <- History[F, Unit]
+
+    router <- Router[F](history)
+
+    disp = builder(ref, router)
+
+    _ <- router.location.discrete
+      .evalMap(uri => disp(onUriChange(uri)))
+      .compile
+      .drain
+      .background
+
+  } yield new Store[F, State, Action] {
+
+    override def dispatcher: Dispatcher[F, Action] = disp
+
+    override def state: Signal[F, State] = ref
+
+  }
 
 }
