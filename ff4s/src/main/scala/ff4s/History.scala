@@ -54,20 +54,21 @@ object History {
       dom.window.history.pushState(a.asJsAny, "", url.toString)
     }
 
+    val getState = F
+      .delay(decodeJs[A](dom.window.history.state))
+      .flatMap(F.fromEither(_))
+
     for {
-      dispatcher <- Dispatcher[F]
-
-      getState = F
-        .delay(decodeJs[A](dom.window.history.state))
-        .flatMap(F.fromEither(_))
-
       sr <- getState.flatMap(SignallingRef(_)).toResource
 
-      listener: js.Function1[dom.PopStateEvent, Unit] =
-        (ev: dom.PopStateEvent) =>
-          decodeJs[A](ev.state).foreach { a =>
-            dispatcher.unsafeRunAndForget(sr.set(a))
-          }
+      listener <- Dispatcher[F].map { dispatcher =>
+        val listener: js.Function1[dom.PopStateEvent, Unit] =
+          (ev: dom.PopStateEvent) =>
+            decodeJs[A](ev.state).foreach { a =>
+              dispatcher.unsafeRunAndForget(sr.set(a))
+            }
+        listener
+      }
 
       _ <- Resource.make(
         F.delay(dom.window.addEventListener("popstate", listener))
@@ -82,6 +83,7 @@ object History {
       override def pushState(a: A, url: dom.URL): F[Unit] = pushUrl(a, url)
 
     }
+
   }
 
 }
