@@ -39,46 +39,49 @@ object Store {
   def apply[F[_]: Concurrent, State, Action](
       initial: State
   )(
-      builder: SignallingRef[F, State] => Dispatcher[F, Action]
+      makeDispatcher: SignallingRef[F, State] => Dispatcher[F, Action]
   ): Resource[F, Store[F, State, Action]] = for {
-    ref <- Resource.eval(SignallingRef.of[F, State](initial))
-    disp = builder(ref)
+
+    state0 <- Resource.eval(SignallingRef.of[F, State](initial))
+
+    dispatcher0 = makeDispatcher(state0)
+
   } yield (new Store[F, State, Action] {
 
-    override def dispatcher: Dispatcher[F, Action] = disp
+    override def dispatcher: Dispatcher[F, Action] = dispatcher0
 
-    override def state: Signal[F, State] = ref
+    override def state: Signal[F, State] = state0
 
   })
 
   def withRouter[F[_], State, Action](initial: State)(
       onUriChange: Uri => Action
   )(
-      builder: (
+      makeDispatcher: (
           SignallingRef[F, State],
           Router[F]
       ) => Dispatcher[F, Action]
   )(implicit F: Async[F]) = for {
 
-    ref <- Resource.eval(SignallingRef.of[F, State](initial))
+    state0 <- Resource.eval(SignallingRef.of[F, State](initial))
 
-    history <- History[F, Unit]
+    history = fs2.dom.History[F, Unit]
 
     router <- Router[F](history)
 
-    disp = builder(ref, router)
+    dispatcher0 = makeDispatcher(state0, router)
 
     _ <- router.location.discrete
-      .evalMap(uri => disp(onUriChange(uri)))
+      .evalMap(uri => dispatcher0(onUriChange(uri)))
       .compile
       .drain
       .background
 
   } yield new Store[F, State, Action] {
 
-    override def dispatcher: Dispatcher[F, Action] = disp
+    override def dispatcher: Dispatcher[F, Action] = dispatcher0
 
-    override def state: Signal[F, State] = ref
+    override def state: Signal[F, State] = state0
 
   }
 

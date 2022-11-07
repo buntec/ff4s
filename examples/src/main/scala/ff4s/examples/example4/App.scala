@@ -21,6 +21,7 @@ import cats.effect.kernel.Resource
 import ff4s.Store
 import org.http4s.Uri
 
+// This example demonstrates the built-in router functionality.
 class App[F[_]: Async] {
 
   val F = Async[F]
@@ -77,7 +78,7 @@ class App[F[_]: Async] {
         p("Navigation"),
         List("foo", "bar", "baz").map { path =>
           div(
-            cls := s"m-1 w-full rounded text-center cursor-pointer ${if (matchedPath == Some(path)) "bg-purple-300"
+            cls := s"m-1 w-full rounded text-center cursor-pointer border ${if (matchedPath == Some(path)) "bg-purple-300"
               else ""}",
             path,
             onClick := (_ =>

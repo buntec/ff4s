@@ -34,7 +34,7 @@ trait Router[F[_]] {
 
 object Router {
 
-  def apply[F[_]](history: History[F, Unit])(implicit F: Async[F]) = {
+  def apply[F[_]](history: fs2.dom.History[F, Unit])(implicit F: Async[F]) = {
 
     val getLocation: F[Uri] = F
       .delay(dom.window.location.href)
@@ -59,7 +59,7 @@ object Router {
       override def navigateTo(uri: Uri): F[Unit] = for {
         absUri <- mkAbsolute(uri)
         url <- F.catchNonFatal(new dom.URL(absUri.renderString))
-        _ <- history.pushState((), url)
+        _ <- history.pushState((), url.toString)
         _ <- loc.set(absUri)
       } yield ()
 

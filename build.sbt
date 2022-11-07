@@ -29,6 +29,7 @@ lazy val http4sDomVersion = "0.2.3"
 lazy val http4sVersion = "0.23.16"
 lazy val betterMonadicForVersion = "0.3.1"
 lazy val scalaJsSnabbdomVersion = "0.2.0-M3"
+lazy val fs2DomVersion = "0.1.0-M1"
 
 lazy val root = tlCrossRootProject.aggregate(ff4s, examples, todoMvc)
 
@@ -51,7 +52,8 @@ lazy val ff4s = (project in file("ff4s"))
       "org.http4s" %%% "http4s-circe" % http4sVersion,
       "io.circe" %%% "circe-generic" % circeVersion,
       "io.circe" %%% "circe-literal" % circeVersion,
-      "io.circe" %%% "circe-parser" % circeVersion
+      "io.circe" %%% "circe-parser" % circeVersion,
+      "com.armanbilge" %%% "fs2-dom" % fs2DomVersion
     )
   )
 
