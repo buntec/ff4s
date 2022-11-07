@@ -29,16 +29,13 @@ import fs2.Stream
 import io.circe.generic.auto._
 import org.scalajs.dom
 
-// This is a small demo application so show off the basic functionality of ff4s.
+// This is a small demo SPA showcasing the basic functionality of ff4s.
 // It uses tailwindcss for simple styling.
 //
 // In a real-world project, the code would be split over several files.
 // Typically, we would have one file for defining the state types,
 // one file for defining the actions, one file for for the store,
 // and several files for the view components.
-//
-// Note that we use the "tagless final" style where `F` is a generic effect type.
-// We always require an instance of `cats.effect.Async` for `F`.
 class App[F[_]: Async] {
 
   // Define our app's state space.
