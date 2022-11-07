@@ -4,3 +4,4 @@
 metals.sbt
 target/
 yarn.lock
+.java-version
