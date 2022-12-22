@@ -5,7 +5,7 @@ ThisBuild / tlBaseVersion := "0.6"
 
 lazy val scala213 = "2.13.10"
 ThisBuild / scalaVersion := scala213
-ThisBuild / crossScalaVersions := Seq(scala213, "3.2.0")
+ThisBuild / crossScalaVersions := Seq(scala213, "3.2.1")
 
 ThisBuild / organization := "io.github.buntec"
 ThisBuild / organizationName := "buntec"
@@ -22,14 +22,14 @@ lazy val scalajsDomVersion = "2.3.0"
 lazy val domtypesVersion = "0.15.3"
 lazy val circeVersion = "0.14.3"
 lazy val catsVersion = "2.8.0"
-lazy val catsEffectVersion = "3.3.14"
+lazy val catsEffectVersion = "3.4.2"
 lazy val fs2Version = "3.3.0"
 lazy val kindProjectorVersion = "0.13.2"
 lazy val http4sDomVersion = "0.2.3"
 lazy val http4sVersion = "0.23.16"
 lazy val betterMonadicForVersion = "0.3.1"
 lazy val scalaJsSnabbdomVersion = "0.2.0-M3"
-lazy val fs2DomVersion = "0.1.0-M1"
+lazy val fs2DomVersion = "0.1.0"
 
 lazy val root = tlCrossRootProject.aggregate(ff4s, examples, todoMvc)
 
