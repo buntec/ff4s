@@ -5,7 +5,7 @@ ThisBuild / tlBaseVersion := "0.6"
 
 lazy val scala213 = "2.13.10"
 ThisBuild / scalaVersion := scala213
-ThisBuild / crossScalaVersions := Seq(scala213, "3.2.1")
+ThisBuild / crossScalaVersions := Seq(scala213, "3.2.2")
 
 ThisBuild / organization := "io.github.buntec"
 ThisBuild / organizationName := "buntec"
@@ -20,10 +20,10 @@ ThisBuild / tlFatalWarningsInCi := false
 
 lazy val scalajsDomVersion = "2.3.0"
 lazy val domtypesVersion = "0.15.3"
-lazy val circeVersion = "0.14.3"
+lazy val circeVersion = "0.14.4"
 lazy val catsVersion = "2.9.0"
 lazy val catsEffectVersion = "3.4.5"
-lazy val fs2Version = "3.5.0"
+lazy val fs2Version = "3.6.1"
 lazy val kindProjectorVersion = "0.13.2"
 lazy val http4sDomVersion = "0.2.6"
 lazy val http4sVersion = "0.23.18"
