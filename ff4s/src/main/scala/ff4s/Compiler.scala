@@ -60,7 +60,13 @@ private[ff4s] object Compiler {
             ): snabbdom.VNode = {
               val elm = dom.document.createElement("div")
               elm.innerHTML = html
-              snabbdom.toVNode(elm).toVNode
+              val vnode = snabbdom.toVNode(elm).toVNode
+              vnode match {
+                case snabbdom.VNode.Element(_, _, child :: Nil) =>
+                  child // unwrap div if there is a single child
+                case _ =>
+                  vnode // otherwise keep the wrapper div (TODO: throw instead?)
+              }
             }
           }
 
