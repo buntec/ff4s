@@ -27,7 +27,9 @@ case class State(
     svgCoords: SvgCoords = SvgCoords(0, 0),
     websocketResponse: Option[String] = None
 )
+
 case class SvgCoords(x: Double, y: Double)
+
 case class Bored(activity: String, `type`: String)
 
 sealed trait Dish

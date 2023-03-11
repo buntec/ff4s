@@ -14,13 +14,16 @@
  * limitations under the License.
  */
 
-package ff4s.examples.example5
+package ff4s.examples.example1
 
-// Define our app's state space.
-case class State(
-    todos: Seq[Todo] = Seq.empty,
-    nextId: Int = 0,
-    todoInput: Option[String] = None
-)
+sealed trait Action
 
-case class Todo(what: String, id: Int)
+object Action {
+
+  case object AddTodo extends Action
+
+  case class RemoveTodo(id: Int) extends Action
+
+  case class SetTodoInput(what: String) extends Action
+
+}

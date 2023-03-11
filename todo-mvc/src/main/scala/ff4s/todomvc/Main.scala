@@ -26,7 +26,7 @@ object Main extends IOApp.Simple {
 
   private val microtaskEC = QueueExecutionContext.promises()
 
-  @annotation.nowarn("msg=never used")
+  // @annotation.nowarn("msg=never used")
   private val ioRuntimeWithMicrotaskEC = IORuntime.apply(
     microtaskEC,
     microtaskEC,

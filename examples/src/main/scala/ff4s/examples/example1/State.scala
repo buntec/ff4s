@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-package ff4s.examples.example5
+package ff4s.examples.example1
 
-sealed trait Action
-case object AddTodo extends Action
-case class RemoveTodo(id: Int) extends Action
-case class SetTodoInput(what: String) extends Action
+case class State(
+    todos: List[Todo] = Nil,
+    nextId: Int = 0,
+    todoInput: Option[String] = None
+)
