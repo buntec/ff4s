@@ -14,6 +14,19 @@
  * limitations under the License.
  */
 
-package ff4s.examples
+package ff4s
 
-object Main extends ff4s.IOEntryPoint(new example2.App)
+import cats.effect.IO
+import cats.effect.kernel.Async
+import cats.effect.unsafe.implicits.global
+
+class IOEntryPoint[State, Action](app: App[IO, State, Action]) {
+
+  def main(args: Array[String]): Unit = {
+    import app.dsl._
+    app.root
+      .renderInto(s"#${app.roolElementId}")(Async[IO], app.store)
+      .unsafeRunAndForget()
+  }
+
+}

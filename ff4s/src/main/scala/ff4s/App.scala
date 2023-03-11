@@ -14,6 +14,20 @@
  * limitations under the License.
  */
 
-package ff4s.examples
+package ff4s
 
-object Main extends ff4s.IOEntryPoint(new example2.App)
+import cats.effect.kernel.Resource
+
+trait App[F[_], State, Action] {
+
+  final val dsl = ff4s.Dsl[F, State, Action]
+
+  import dsl._
+
+  def roolElementId = "app"
+
+  def root: View[VNode[F]]
+
+  def store: Resource[F, Store[F, State, Action]]
+
+}

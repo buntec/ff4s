@@ -14,6 +14,13 @@
  * limitations under the License.
  */
 
-package ff4s.examples
+package ff4s.examples.example5
 
-object Main extends ff4s.IOEntryPoint(new example2.App)
+// Define our app's state space.
+case class State(
+    todos: Seq[Todo] = Seq.empty,
+    nextId: Int = 0,
+    todoInput: Option[String] = None
+)
+
+case class Todo(what: String, id: Int)

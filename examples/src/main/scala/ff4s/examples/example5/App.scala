@@ -14,54 +14,16 @@
  * limitations under the License.
  */
 
-package ff4s.examples.example1
+package ff4s.examples.example5
 
-import org.scalajs.dom
-import cats.effect.kernel.Async
+import ff4s.VNode
+
 import cats.effect.kernel.Resource
 import ff4s.Store
+import cats.effect.kernel.Async
+import org.scalajs.dom
 
-// Define our app's state space.
-case class State(
-    todos: Seq[Todo] = Seq.empty,
-    nextId: Int = 0,
-    todoInput: Option[String] = None
-)
-case class Todo(what: String, id: Int)
-
-// Define a set of actions
-sealed trait Action
-case object AddTodo extends Action
-case class RemoveTodo(id: Int) extends Action
-case class SetTodoInput(what: String) extends Action
-
-// The obligatory to-do list app.
 class App[F[_]: Async] extends ff4s.App[F, State, Action] {
-
-  // Build our store by assigning actions to effects.
-  val store: Resource[F, Store[F, State, Action]] =
-    ff4s.Store[F, State, Action](State()) { ref => (a: Action) =>
-      a match {
-        case AddTodo =>
-          ref.update { state =>
-            val nextId = state.nextId
-            state.todoInput match {
-              case Some(what) if what.nonEmpty =>
-                state.copy(
-                  nextId = nextId + 1,
-                  todos = state.todos :+ Todo(what, nextId),
-                  todoInput = None
-                )
-              case _ => state
-            }
-          }
-        case RemoveTodo(id) =>
-          ref.update { state =>
-            state.copy(todos = state.todos.filterNot(_.id == id))
-          }
-        case SetTodoInput(what) => ref.update(_.copy(todoInput = Some(what)))
-      }
-    }
 
   import dsl._ // basic dsl
   import dsl.syntax.html._ // nice syntax for html tags, attributes etc.
@@ -135,11 +97,35 @@ class App[F[_]: Async] extends ff4s.App[F, State, Action] {
     )
   }
 
-  val root = div(
+  override def root: dsl.View[VNode[F]] = div(
     cls := "mb-16 flex flex-col items-center",
     heading,
     todoInput,
     todoList
   )
+
+  override def store: Resource[F, Store[F, State, Action]] =
+    ff4s.Store[F, State, Action](State()) { ref => (a: Action) =>
+      a match {
+        case AddTodo =>
+          ref.update { state =>
+            val nextId = state.nextId
+            state.todoInput match {
+              case Some(what) if what.nonEmpty =>
+                state.copy(
+                  nextId = nextId + 1,
+                  todos = state.todos :+ Todo(what, nextId),
+                  todoInput = None
+                )
+              case _ => state
+            }
+          }
+        case RemoveTodo(id) =>
+          ref.update { state =>
+            state.copy(todos = state.todos.filterNot(_.id == id))
+          }
+        case SetTodoInput(what) => ref.update(_.copy(todoInput = Some(what)))
+      }
+    }
 
 }

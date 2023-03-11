@@ -44,7 +44,7 @@ private[ff4s] object Render {
   ): F[Nothing] = {
     val F = Async[F]
     (for {
-      dispatcher <- Dispatcher[F]
+      dispatcher <- Dispatcher.parallel[F]
       root <- Resource.eval(F.delay(document.querySelector(selector)))
       s <- store
       state0 <- Resource.eval(s.state.get)

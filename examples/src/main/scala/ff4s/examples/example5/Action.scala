@@ -14,6 +14,9 @@
  * limitations under the License.
  */
 
-package ff4s.examples
+package ff4s.examples.example5
 
-object Main extends ff4s.IOEntryPoint(new example2.App)
+sealed trait Action
+case object AddTodo extends Action
+case class RemoveTodo(id: Int) extends Action
+case class SetTodoInput(what: String) extends Action
