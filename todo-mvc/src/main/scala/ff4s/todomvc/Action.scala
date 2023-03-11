@@ -14,19 +14,20 @@
  * limitations under the License.
  */
 
-package ff4s
+package ff4s.todomvc
 
-import cats.effect.IO
-import cats.effect.kernel.Async
-import cats.effect.unsafe.implicits.global
+sealed trait Action
 
-class IOEntryPoint[State, Action](app: App[IO, State, Action]) {
+object Action {
 
-  def main(args: Array[String]): Unit = {
-    import app.dsl._
-    app.root
-      .renderInto(s"#${app.rootElementId}")(Async[IO], app.store)
-      .unsafeRunAndForget()
-  }
+  case object AddTodo extends Action
+
+  case class SetFilter(filter: Filter) extends Action
+
+  case class UpdateTodo(todo: Todo) extends Action
+
+  case class RemoveTodo(id: Int) extends Action
+
+  case class SetTodoInput(what: String) extends Action
 
 }

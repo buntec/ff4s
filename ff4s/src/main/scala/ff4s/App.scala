@@ -24,7 +24,7 @@ trait App[F[_], State, Action] {
 
   import dsl._
 
-  def roolElementId = "app"
+  def rootElementId = "app"
 
   def root: View[VNode[F]]
 
