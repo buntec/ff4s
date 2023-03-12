@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package ff4s.todomvc
+package todomvc
 
 import cats.syntax.all._
 import org.scalajs.dom

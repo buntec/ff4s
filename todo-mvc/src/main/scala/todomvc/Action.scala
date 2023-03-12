@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package ff4s.todomvc
+package todomvc
 
 sealed trait Action
 
