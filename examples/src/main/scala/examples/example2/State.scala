@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package ff4s.examples.example2
+package examples.example2
 
 // Define our app's state space.
 case class State(

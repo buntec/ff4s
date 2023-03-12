@@ -14,10 +14,6 @@
  * limitations under the License.
  */
 
-package ff4s.examples.example1
+package examples.example1
 
-case class State(
-    todos: List[Todo] = Nil,
-    nextId: Int = 0,
-    todoInput: Option[String] = None
-)
+case class Todo(what: String, id: Int)

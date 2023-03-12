@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package ff4s.examples.example1
+package examples.example1
 
 import org.scalajs.dom
 import cats.effect.kernel.Async

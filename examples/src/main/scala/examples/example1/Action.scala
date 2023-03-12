@@ -14,6 +14,16 @@
  * limitations under the License.
  */
 
-package ff4s.examples.example1
+package examples.example1
 
-case class Todo(what: String, id: Int)
+sealed trait Action
+
+object Action {
+
+  case object AddTodo extends Action
+
+  case class RemoveTodo(id: Int) extends Action
+
+  case class SetTodoInput(what: String) extends Action
+
+}

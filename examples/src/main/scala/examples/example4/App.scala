@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package ff4s.examples.example4
+package examples.example4
 
 import cats.effect.kernel.Async
 import cats.effect.kernel.Resource

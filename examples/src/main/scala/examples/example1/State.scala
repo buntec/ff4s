@@ -14,6 +14,10 @@
  * limitations under the License.
  */
 
-package ff4s.examples
+package examples.example1
 
-object Main extends ff4s.IOEntryPoint(new example2.App)
+case class State(
+    todos: List[Todo] = Nil,
+    nextId: Int = 0,
+    todoInput: Option[String] = None
+)

@@ -60,22 +60,13 @@ lazy val ff4s = (project in file("ff4s"))
 lazy val examples = (project in file("examples"))
   .enablePlugins(ScalaJSPlugin, NoPublishPlugin)
   .settings(
-    scalaJSUseMainModuleInitializer := true,
-    libraryDependencies ++= Seq(
-      "org.scala-js" %%% "scalajs-dom" % scalajsDomVersion,
-      "io.circe" %%% "circe-generic" % circeVersion,
-      "io.circe" %%% "circe-literal" % circeVersion,
-      "io.circe" %%% "circe-parser" % circeVersion
-    )
+    scalaJSUseMainModuleInitializer := true
   )
   .dependsOn(ff4s)
 
 lazy val todoMvc = (project in file("todo-mvc"))
   .enablePlugins(ScalaJSPlugin, NoPublishPlugin)
   .settings(
-    scalaJSUseMainModuleInitializer := true,
-    libraryDependencies ++= Seq(
-      "org.scala-js" %%% "scalajs-dom" % scalajsDomVersion
-    )
+    scalaJSUseMainModuleInitializer := true
   )
   .dependsOn(ff4s)
