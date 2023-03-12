@@ -52,7 +52,7 @@ class App[F[_]: Async] extends ff4s.App[F, State, Action] {
   val welcome =
     h1( // All common html tags are available thanks to scala-dom-types.
       cls := "m-4 text-4xl", // Some tailwindcss utility classes.
-      "Hello 👋" // Strings are valid child nodes, of course.
+      "Hello from ff4s 👋" // Strings are valid child nodes, of course.
     )
 
   val intro = div(
@@ -304,7 +304,7 @@ class App[F[_]: Async] extends ff4s.App[F, State, Action] {
   }
 
   val root = div(
-    cls := "mb-16 flex flex-col items-center",
+    cls := "p-4 flex flex-col items-center bg-no-repeat h-full bg-gradient-to-tr from-gray-200 to-sky-300 text-gray-800 font-light",
     welcome,
     magicAlert,
     intro,

@@ -56,7 +56,7 @@ class App[F[_]: Async] extends ff4s.App[F, State, Action] {
   val heading =
     h1( // All common html tags are available thanks to scala-dom-types.
       cls := "m-4 text-4xl", // Some tailwindcss utility classes.
-      "A To-Do App" // Strings are valid child nodes, of course.
+      "A To-Do List App" // Strings are valid child nodes, of course.
     )
 
   val todoInput = useState { state =>
@@ -85,7 +85,7 @@ class App[F[_]: Async] extends ff4s.App[F, State, Action] {
         ),
         button(
           "Add",
-          cls := "mx-1 px-2 shadow bg-emerald-500 text-zinc-200 hover:bg-emerald-600 active:bg-emerald-700 rounded",
+          cls := "mx-1 px-4 py-1 shadow bg-emerald-500 text-zinc-200 hover:bg-emerald-600 active:bg-emerald-700 rounded",
           onClick := (_ => Some(Action.AddTodo))
         )
       )
@@ -105,7 +105,7 @@ class App[F[_]: Async] extends ff4s.App[F, State, Action] {
           key := todo.id,
           cls := "m-1",
           div(
-            cls := "flex flex-row justify-between",
+            cls := "flex flex-row justify-between rounded border border-gray-400",
             div(
               cls := "w-full flex flex-row justify-between",
               span(cls := "m-1 px-4 text-left", todo.what),
@@ -124,7 +124,7 @@ class App[F[_]: Async] extends ff4s.App[F, State, Action] {
   }
 
   val root = div(
-    cls := "mb-16 flex flex-col items-center",
+    cls := "p-4 flex flex-col h-screen items-center bg-gray-200 text-gray-800 font-light",
     heading,
     todoInput,
     todoList
