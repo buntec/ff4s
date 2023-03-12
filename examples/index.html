@@ -1,16 +1,19 @@
 <!DOCTYPE html>
 <html>
+
 <head>
-    <meta charset="UTF-8">
-    <title>ff4s-example</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+  <meta charset="UTF-8">
+  <title>ff4s-example</title>
+  <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-no-repeat h-full bg-gradient-to-tr from-zinc-200 to-sky-300 text-zinc-800 font-light">
-    <div id="app"></div>
-    <script type="text/javascript">
-      var process = { env: { 'CATS_EFFECT_TRACING_MODE': 'NONE' } };
-      var ff4s = { logLevel: 'DEBUG' };
-    </script>
-    <script type="text/javascript" src="target/scala-2.13/examples-fastopt/main.js"></script>
+
+<body>
+  <div id="app"></div>
+  <script type="text/javascript">
+    var process = {env: {'CATS_EFFECT_TRACING_MODE': 'NONE'}};
+    var ff4s = {logLevel: 'DEBUG'};
+  </script>
+  <script type="text/javascript" src="target/scala-2.13/examples-fastopt/main.js"></script>
 </body>
+
 </html>

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package ff4s.examples.example1
+package examples.example1
 
 import org.scalajs.dom
 import cats.effect.kernel.Async
@@ -22,27 +22,13 @@ import cats.effect.kernel.Resource
 import ff4s.Store
 
 // The obligatory to-do list app.
-class App[F[_]: Async] {
-
-  // Define our app's state space.
-  case class State(
-      todos: Seq[Todo] = Seq.empty,
-      nextId: Int = 0,
-      todoInput: Option[String] = None
-  )
-  case class Todo(what: String, id: Int)
-
-  // Define a set of actions
-  sealed trait Action
-  case object AddTodo extends Action
-  case class RemoveTodo(id: Int) extends Action
-  case class SetTodoInput(what: String) extends Action
+class App[F[_]: Async] extends ff4s.App[F, State, Action] {
 
   // Build our store by assigning actions to effects.
-  implicit val store: Resource[F, Store[F, State, Action]] =
+  val store: Resource[F, Store[F, State, Action]] =
     ff4s.Store[F, State, Action](State()) { ref => (a: Action) =>
       a match {
-        case AddTodo =>
+        case Action.AddTodo =>
           ref.update { state =>
             val nextId = state.nextId
             state.todoInput match {
@@ -55,16 +41,14 @@ class App[F[_]: Async] {
               case _ => state
             }
           }
-        case RemoveTodo(id) =>
+        case Action.RemoveTodo(id) =>
           ref.update { state =>
             state.copy(todos = state.todos.filterNot(_.id == id))
           }
-        case SetTodoInput(what) => ref.update(_.copy(todoInput = Some(what)))
+        case Action.SetTodoInput(what) =>
+          ref.update(_.copy(todoInput = Some(what)))
       }
     }
-
-  // Create the DSL for our model.
-  val dsl = ff4s.Dsl[F, State, Action]
 
   import dsl._ // basic dsl
   import dsl.syntax.html._ // nice syntax for html tags, attributes etc.
@@ -72,7 +56,7 @@ class App[F[_]: Async] {
   val heading =
     h1( // All common html tags are available thanks to scala-dom-types.
       cls := "m-4 text-4xl", // Some tailwindcss utility classes.
-      "A To-Do App" // Strings are valid child nodes, of course.
+      "A To-Do List App" // Strings are valid child nodes, of course.
     )
 
   val todoInput = useState { state =>
@@ -87,21 +71,22 @@ class App[F[_]: Async] {
           value := state.todoInput.getOrElse(""),
           onKeyUp := ((ev: dom.KeyboardEvent) =>
             ev.key match {
-              case "Enter" => Some(AddTodo)
+              case "Enter" => Some(Action.AddTodo)
               case _       => None
             }
           ),
           onInput := ((ev: dom.Event) =>
             ev.target match {
-              case el: dom.HTMLInputElement => Some(SetTodoInput(el.value))
-              case _                        => None
+              case el: dom.HTMLInputElement =>
+                Some(Action.SetTodoInput(el.value))
+              case _ => None
             }
           )
         ),
         button(
           "Add",
-          cls := "mx-1 px-2 shadow bg-emerald-500 text-zinc-200 hover:bg-emerald-600 active:bg-emerald-700 rounded",
-          onClick := (_ => Some(AddTodo))
+          cls := "mx-1 px-4 py-1 shadow bg-emerald-500 text-zinc-200 hover:bg-emerald-600 active:bg-emerald-700 rounded",
+          onClick := (_ => Some(Action.AddTodo))
         )
       )
     )
@@ -120,7 +105,7 @@ class App[F[_]: Async] {
           key := todo.id,
           cls := "m-1",
           div(
-            cls := "flex flex-row justify-between",
+            cls := "flex flex-row justify-between rounded border border-gray-400",
             div(
               cls := "w-full flex flex-row justify-between",
               span(cls := "m-1 px-4 text-left", todo.what),
@@ -130,7 +115,7 @@ class App[F[_]: Async] {
               tpe := "button",
               cls := "m-1 rounded text-red-500 hover:text-red-600",
               deleteIcon,
-              onClick := (_ => Some(RemoveTodo(todo.id)))
+              onClick := (_ => Some(Action.RemoveTodo(todo.id)))
             )
           )
         )
@@ -138,13 +123,11 @@ class App[F[_]: Async] {
     )
   }
 
-  val app = div(
-    cls := "mb-16 flex flex-col items-center",
+  val root = div(
+    cls := "p-4 flex flex-col h-screen items-center bg-gray-200 text-gray-800 font-light",
     heading,
     todoInput,
     todoList
   )
-
-  def run: F[Nothing] = app.renderInto("#app")
 
 }

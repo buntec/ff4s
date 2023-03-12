@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package ff4s.examples.example3
+package examples.example3
 
 import cats.effect.kernel.Async
 import cats.effect.kernel.Resource
@@ -77,21 +77,21 @@ trait EvenMoreReusableStuff[F[_]] {
 
 }
 
-class App[F[_]: Async] {
+case class State(
+    counter: Int = 0,
+    buttonOff: Boolean = false
+)
+
+sealed trait Action
+object Action {
+  case class ButtonClick() extends Action
+}
+
+class App[F[_]: Async] extends ff4s.App[F, State, Action] {
 
   val F = Async[F]
 
-  case class State(
-      counter: Int = 0,
-      buttonOff: Boolean = false
-  )
-
-  sealed trait Action
-  object Action {
-    case class ButtonClick() extends Action
-  }
-
-  implicit val store: Resource[F, Store[F, State, Action]] =
+  val store: Resource[F, Store[F, State, Action]] =
     ff4s.Store[F, State, Action](State()) { ref => (a: Action) =>
       a match {
         case Action.ButtonClick() =>
@@ -104,16 +104,14 @@ class App[F[_]: Async] {
       }
     }
 
-  val dsl = ff4s.Dsl[F, State, Action]
-
-  import dsl._
+  // import dsl._
   import dsl.syntax.html._
 
   object rs extends ReusableStuff[F]
   object rs2 extends MoreReusableStuff[F]
   object rs3 extends EvenMoreReusableStuff[F]
 
-  val app = div(
+  val root = div(
     cls := "mb-16 flex flex-col items-center",
     div(cls := "m-1", dsl.embed(rs.dsl)(rs.header)),
     div(
@@ -136,7 +134,5 @@ class App[F[_]: Async] {
       dsl.embed(rs.dsl)(rs.footer)
     )
   )
-
-  def run: F[Nothing] = app.renderInto("#app")
 
 }

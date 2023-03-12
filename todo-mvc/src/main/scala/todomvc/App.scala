@@ -14,62 +14,25 @@
  * limitations under the License.
  */
 
-package ff4s.todomvc
+package todomvc
 
 import cats.syntax.all._
 import org.scalajs.dom
 import cats.effect.kernel.Async
-import scala.collection.immutable.IntMap
 import cats.effect.kernel.Resource
 import ff4s.Store
 
-class App[F[_]: Async] {
+class App[F[_]: Async] extends ff4s.App[F, State, Action] {
 
-  case class State(
-      todos: Map[Int, Todo] = IntMap.empty[Todo],
-      nextId: Int = 0,
-      todoInput: Option[String] = None,
-      filter: Filter = All
-  )
-
-  case class Todo(what: String, id: Int, complete: Boolean, isEdit: Boolean)
-
-  sealed trait Filter {
-    def pred: Todo => Boolean
-  }
-
-  case object All extends Filter {
-    override def pred = (_ => true)
-  }
-  case object Active extends Filter {
-    override def pred = (todo => !todo.complete)
-  }
-
-  case object Completed extends Filter {
-    override def pred = (_.complete)
-  }
-
-  object Filter {
-    val values: List[Filter] = List(All, Active, Completed)
-  }
-
-  // Define a set of actions
-  sealed trait Action
-  case object AddTodo extends Action
-  case class SetFilter(filter: Filter) extends Action
-  case class UpdateTodo(todo: Todo) extends Action
-  case class RemoveTodo(id: Int) extends Action
-  case class SetTodoInput(what: String) extends Action
-
-  implicit val store: Resource[F, Store[F, State, Action]] =
+  val store: Resource[F, Store[F, State, Action]] =
     ff4s.Store[F, State, Action](State()) { ref => (a: Action) =>
       a match {
-        case SetFilter(filter) => ref.update(_.copy(filter = filter))
-        case UpdateTodo(todo) =>
+        case Action.SetFilter(filter) => ref.update(_.copy(filter = filter))
+        case Action.UpdateTodo(todo) =>
           ref.update { state =>
             state.copy(todos = state.todos + (todo.id -> todo))
           }
-        case AddTodo =>
+        case Action.AddTodo =>
           ref.update { state =>
             val nextId = state.nextId
             state.todoInput match {
@@ -87,13 +50,12 @@ class App[F[_]: Async] {
               case _ => state
             }
           }
-        case RemoveTodo(id) =>
+        case Action.RemoveTodo(id) =>
           ref.update { state => state.copy(todos = state.todos - id) }
-        case SetTodoInput(what) => ref.update(_.copy(todoInput = Some(what)))
+        case Action.SetTodoInput(what) =>
+          ref.update(_.copy(todoInput = Some(what)))
       }
     }
-
-  val dsl = ff4s.Dsl[F, State, Action]
 
   import dsl._
   import dsl.syntax.html._
@@ -106,13 +68,13 @@ class App[F[_]: Async] {
       value := state.todoInput.getOrElse(""),
       onInput := ((ev: dom.Event) =>
         ev.target match {
-          case el: dom.HTMLInputElement => Some(SetTodoInput(el.value))
+          case el: dom.HTMLInputElement => Some(Action.SetTodoInput(el.value))
           case _                        => None
         }
       ),
       onKeyDown := ((ev: dom.KeyboardEvent) => {
         ev.key match {
-          case "Enter" => Some(AddTodo)
+          case "Enter" => Some(Action.AddTodo)
           case _       => None
         }
       })
@@ -127,7 +89,7 @@ class App[F[_]: Async] {
       case (false, false) => ""
     }),
     key := todo.id.toString,
-    onDblClick := (_ => Some(UpdateTodo(todo.copy(isEdit = true)))),
+    onDblClick := (_ => Some(Action.UpdateTodo(todo.copy(isEdit = true)))),
     if (todo.isEdit) {
       List(
         input(
@@ -137,17 +99,17 @@ class App[F[_]: Async] {
           onInput := ((ev: dom.Event) =>
             ev.target match {
               case el: dom.HTMLInputElement =>
-                Some(UpdateTodo(todo.copy(what = el.value)))
+                Some(Action.UpdateTodo(todo.copy(what = el.value)))
               case _ => None
             }
           ),
           onKeyDown := ((ev: dom.KeyboardEvent) => {
             ev.key match {
-              case "Enter" => Some(UpdateTodo(todo.copy(isEdit = false)))
+              case "Enter" => Some(Action.UpdateTodo(todo.copy(isEdit = false)))
               case _       => None
             }
           }),
-          onBlur := (_ => Some(UpdateTodo(todo.copy(isEdit = false))))
+          onBlur := (_ => Some(Action.UpdateTodo(todo.copy(isEdit = false))))
         )
       )
     } else {
@@ -157,13 +119,13 @@ class App[F[_]: Async] {
           typ := "checkbox",
           checked := todo.complete,
           onInput := (_ =>
-            Some(UpdateTodo(todo.copy(complete = !todo.complete)))
+            Some(Action.UpdateTodo(todo.copy(complete = !todo.complete)))
           )
         ),
         label(todo.what),
         button(
           cls := "destroy",
-          onClick := (_ => Some(RemoveTodo(todo.id)))
+          onClick := (_ => Some(Action.RemoveTodo(todo.id)))
         )
       )
     }
@@ -186,7 +148,7 @@ class App[F[_]: Async] {
           li(
             a(
               cls := (if (state.filter == f) "selected" else ""),
-              onClick := (_ => Some(SetFilter(f))),
+              onClick := (_ => Some(Action.SetFilter(f))),
               f.toString
             )
           )
@@ -195,7 +157,7 @@ class App[F[_]: Async] {
     )
   }
 
-  val app = useState { state =>
+  val root = useState { state =>
     val filter = state.filter
     div(
       cls := "todoapp",
@@ -213,7 +175,5 @@ class App[F[_]: Async] {
       if (state.todos.nonEmpty) statusBar else empty
     )
   }
-
-  def run: F[Nothing] = app.renderInto("#app")
 
 }

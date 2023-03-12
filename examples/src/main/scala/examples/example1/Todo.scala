@@ -14,12 +14,6 @@
  * limitations under the License.
  */
 
-package ff4s.examples
+package examples.example1
 
-import cats.effect.{IO, IOApp}
-
-object Main extends IOApp.Simple {
-
-  override def run: IO[Unit] = new example2.App[IO].run
-
-}
+case class Todo(what: String, id: Int)

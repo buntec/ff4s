@@ -14,173 +14,17 @@
  * limitations under the License.
  */
 
-package ff4s.examples.example2
+package examples.example2
 
-import scala.concurrent.duration._
-
-import cats.effect.implicits._
 import cats.effect.kernel.Async
 import cats.effect.kernel.Resource
-import cats.effect.std.Queue
-import cats.effect.std.Random
-import cats.syntax.all._
-import ff4s.Store
-import fs2.Stream
-import io.circe.generic.auto._
 import org.scalajs.dom
 
 // This is a small demo SPA showcasing the basic functionality of ff4s.
-// It uses tailwindcss for simple styling.
-//
-// In a real-world project, the code would be split over several files.
-// Typically, we would have one file for defining the state types,
-// one file for defining the actions, one file for for the store,
-// and several files for the view components.
-class App[F[_]: Async] {
+// In a real-world project the components likely would be split across several files.
+class App[F[_]: Async] extends ff4s.App[F, State, Action] {
 
-  // Define our app's state space.
-  case class State(
-      name: Option[String] = None,
-      pets: Pets = Cats,
-      counter: Int = 0,
-      bored: Option[Bored] = None,
-      favoriteDish: Dish = Sushi,
-      magic: Boolean = false,
-      svgCoords: SvgCoords = SvgCoords(0, 0),
-      websocketResponse: Option[String] = None
-  )
-  case class SvgCoords(x: Double, y: Double)
-  case class Bored(activity: String, `type`: String)
-
-  sealed trait Dish
-  case object Sushi extends Dish
-  case object Pizza extends Dish
-  case object Pasta extends Dish
-  case object Ramen extends Dish
-
-  object Dish {
-
-    val all: Seq[Dish] = Seq(Sushi, Pizza, Pasta, Ramen)
-
-    def fromString(s: String): Option[Dish] = s match {
-      case "Sushi" => Some(Sushi)
-      case "Pizza" => Some(Pizza)
-      case "Pasta" => Some(Pasta)
-      case "Ramen" => Some(Ramen)
-      case _       => None
-    }
-
-  }
-
-  sealed trait Pets
-  case object Cats extends Pets
-  case object Dogs extends Pets
-
-  object Pets {
-
-    val all: Seq[Pets] = Seq(Cats, Dogs)
-
-  }
-
-  // Define a set of actions.
-  sealed trait Action
-  case object Magic extends Action
-  case class SetName(name: String) extends Action
-  case class SetPets(pets: Pets) extends Action
-  case class SetFavoriteDish(dish: Dish) extends Action
-  case object IncrementCounter extends Action
-  case object DecrementCounter extends Action
-  case object GetActivity extends Action
-  case class SetSvgCoords(x: Double, y: Double) extends Action
-  case class SendWebsocketMessage(msg: String) extends Action
-  case class WebsocketMessageReceived(msg: String) extends Action
-
-  // Create a store by assigning actions to effects in F.
-  implicit val store: Resource[F, Store[F, State, Action]] = for {
-
-    wsSendQ <- Queue.bounded[F, String](100).toResource
-
-    store <- ff4s.Store[F, State, Action](State()) { ref => (a: Action) =>
-      a match {
-        case WebsocketMessageReceived(msg) =>
-          ref.update(state => state.copy(websocketResponse = Some(msg)))
-        case SendWebsocketMessage(msg) => wsSendQ.offer(msg)
-        case SetSvgCoords(x, y) =>
-          ref.update(_.copy(svgCoords = SvgCoords(x, y)))
-        case Magic => ref.update(_.copy(magic = true))
-        case SetName(name) =>
-          ref.update(
-            _.copy(name = if (name.nonEmpty) Some(name) else None)
-          )
-        case SetPets(pets) =>
-          ref.update(_.copy(pets = pets))
-        case SetFavoriteDish(dish) => ref.update(_.copy(favoriteDish = dish))
-        case IncrementCounter =>
-          ref.update(s => s.copy(counter = s.counter + 1))
-        case DecrementCounter =>
-          ref.update(s => s.copy(counter = s.counter - 1))
-        case GetActivity =>
-          ff4s
-            .HttpClient[F]
-            .get[Bored]("http://www.boredapi.com/api/activity")
-            .flatMap { bored =>
-              ref.update(s => s.copy(bored = Some(bored)))
-            }
-      }
-    }
-
-    _ <- ff4s
-      .WebSocketsClient[F]
-      .bidirectionalText(
-        "wss://ws.postman-echo.com/raw/",
-        is =>
-          is.evalMap { msg =>
-            store.dispatcher(WebsocketMessageReceived(msg))
-          },
-        Stream.fromQueueUnterminated(wsSendQ)
-      )
-      .background
-
-    // We can do something fancy in the background.
-    _ <- Async[F].background(
-      (fs2.Stream.emit(()) ++ fs2.Stream.fixedDelay(5.second))
-        .covary[F]
-        .evalMap(_ => store.dispatcher(GetActivity))
-        .compile
-        .drain
-    )
-    // We can also listen to and react to state changes.
-    _ <- Async[F].background(
-      store.state.discrete
-        .map { state =>
-          // Use `toString` here to avoid having to provide a Eq typeclass instance.
-          (state.favoriteDish.toString, state.counter)
-        }
-        .changes
-        .filter(p => p._1 == Ramen.toString && p._2 == 3)
-        .evalMap(_ => store.dispatcher(Magic))
-        .compile
-        .drain
-    )
-    // Animate our SVG with some random numbers.
-    rng <- Resource.eval(Random.scalaUtilRandom)
-    _ <- Async[F].background(
-      fs2.Stream
-        .fixedDelay(1.second)
-        .evalMap { _ =>
-          for {
-            x <- rng.betweenDouble(10.0, 90.0)
-            y <- rng.betweenDouble(10.0, 90.0)
-          } yield (x, y)
-        }
-        .evalMap { case (x, y) => store.dispatcher(SetSvgCoords(x, y)) }
-        .compile
-        .drain
-    )
-  } yield store
-
-  // Create a DSL for our model.
-  val dsl = ff4s.Dsl[F, State, Action]
+  val store: Resource[F, ff4s.Store[F, State, Action]] = Store[F]
 
   import dsl._ // basic dsl
   import dsl.syntax.html._ // nice syntax for html tags, attributes etc.
@@ -195,6 +39,7 @@ class App[F[_]: Async] {
   val plusIcon = literal("""<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
 </svg>""") // taken from https://github.com/tailwindlabs/heroicons, MIT License
+
   val minusIcon = literal(
     """<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -207,7 +52,7 @@ class App[F[_]: Async] {
   val welcome =
     h1( // All common html tags are available thanks to scala-dom-types.
       cls := "m-4 text-4xl", // Some tailwindcss utility classes.
-      "Welcome to ff4s 👋" // Strings are valid child nodes, of course.
+      "Hello from ff4s 👋" // Strings are valid child nodes, of course.
     )
 
   val intro = div(
@@ -266,13 +111,13 @@ class App[F[_]: Async] {
           // We can assign callbacks to events; note that the callback
           // returns an `Option[Action]`, which, when defined, is dispatched
           // by our store. Returning `None` means we don't do anything.
-          onClick := (_ => Some(IncrementCounter)),
+          onClick := (_ => Some(Action.IncrementCounter)),
           plusIcon
         ),
         button(
           tpe := "button",
           cls := buttonCls,
-          onClick := (_ => Some(DecrementCounter)),
+          onClick := (_ => Some(Action.DecrementCounter)),
           minusIcon
         )
       )
@@ -313,7 +158,7 @@ class App[F[_]: Async] {
             // We typically have to match on the type of the target to get the desired information.
             (ev: dom.Event) =>
               ev.target match {
-                case el: dom.HTMLInputElement => Some(SetName(el.value))
+                case el: dom.HTMLInputElement => Some(Action.SetName(el.value))
                 case _                        => None
               }
           )
@@ -337,7 +182,7 @@ class App[F[_]: Async] {
           onChange := ((ev: dom.Event) =>
             ev.target match {
               case el: dom.HTMLSelectElement =>
-                Some(SetFavoriteDish(Dish.fromString(el.value).get))
+                Some(Action.SetFavoriteDish(Dish.fromString(el.value).get))
               case _ => None
             }
           ),
@@ -382,7 +227,7 @@ class App[F[_]: Async] {
               cls := "m-1",
               tpe := "radio",
               checked := (state.pets == pets),
-              onChange := (_ => Some(SetPets(pets)))
+              onChange := (_ => Some(Action.SetPets(pets)))
             ),
             pets.toString
           )
@@ -445,7 +290,7 @@ class App[F[_]: Async] {
           onInput := ((ev: dom.Event) =>
             ev.target match {
               case el: dom.HTMLInputElement =>
-                Some(SendWebsocketMessage(el.value))
+                Some(Action.SendWebsocketMessage(el.value))
               case _ => None
             }
           )
@@ -458,9 +303,8 @@ class App[F[_]: Async] {
     )
   }
 
-  // Pull everything together into our final app.
-  val app = div(
-    cls := "mb-16 flex flex-col items-center",
+  val root = div(
+    cls := "p-4 flex flex-col items-center bg-no-repeat h-full bg-gradient-to-tr from-gray-200 to-sky-300 text-gray-800 font-light",
     welcome,
     magicAlert,
     intro,
@@ -472,9 +316,5 @@ class App[F[_]: Async] {
     svgDemo,
     websocketExample
   )
-
-  // Render our app into the unique element with ID "app",
-  // which is defined in our `index.html`.
-  def run: F[Nothing] = app.renderInto("#app")
 
 }

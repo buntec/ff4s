@@ -65,7 +65,7 @@ object Store {
 
     state0 <- Resource.eval(SignallingRef.of[F, State](initial))
 
-    history = fs2.dom.History[F, Unit]
+    history = fs2.dom.Window[F].history[Unit]
 
     router <- Router[F](history)
 

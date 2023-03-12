@@ -14,30 +14,30 @@
  * limitations under the License.
  */
 
-package ff4s.examples.example4
+package examples.example4
 
 import cats.effect.kernel.Async
 import cats.effect.kernel.Resource
 import ff4s.Store
 import org.http4s.Uri
 
+case class State(
+    uri: Option[Uri] = None
+)
+
+sealed trait Action
+
+object Action {
+  case class SetUri(uri: Uri) extends Action
+  case class NavigateTo(uri: Uri) extends Action
+}
+
 // This example demonstrates the built-in router functionality.
-class App[F[_]: Async] {
+class App[F[_]: Async] extends ff4s.App[F, State, Action] {
 
   val F = Async[F]
 
-  case class State(
-      uri: Option[Uri] = None
-  )
-
-  sealed trait Action
-
-  object Action {
-    case class SetUri(uri: Uri) extends Action
-    case class NavigateTo(uri: Uri) extends Action
-  }
-
-  implicit val store: Resource[F, Store[F, State, Action]] =
+  val store: Resource[F, Store[F, State, Action]] =
     ff4s.Store.withRouter[F, State, Action](State())(uri => Action.SetUri(uri))(
       (state, router) =>
         (action: Action) =>
@@ -46,8 +46,6 @@ class App[F[_]: Async] {
             case Action.SetUri(uri)     => state.update(_.copy(uri = Some(uri)))
           }
     )
-
-  val dsl = ff4s.Dsl[F, State, Action]
 
   import dsl._
   import dsl.syntax.html._
@@ -61,7 +59,7 @@ class App[F[_]: Async] {
     )
   }
 
-  val app = useState { state =>
+  val root = useState { state =>
     val matchedPath = state.uri.flatMap { uri =>
       uri.path.segments match {
         case Vector(path) => Some(path.toString)
@@ -89,7 +87,5 @@ class App[F[_]: Async] {
       )
     )
   }
-
-  def run: F[Nothing] = app.renderInto("#app")
 
 }
