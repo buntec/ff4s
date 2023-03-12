@@ -16,8 +16,8 @@
 
 package examples.example3
 
-import cats.effect.kernel.Async
-import cats.effect.kernel.Resource
+import cats.effect.Concurrent
+import cats.effect.Resource
 import ff4s.Store
 
 // This example demonstrates how we can integrate reusable components using `embed`.
@@ -87,9 +87,8 @@ object Action {
   case class ButtonClick() extends Action
 }
 
-class App[F[_]: Async] extends ff4s.App[F, State, Action] {
-
-  val F = Async[F]
+class App[F[_]](implicit val F: Concurrent[F])
+    extends ff4s.App[F, State, Action] {
 
   val store: Resource[F, Store[F, State, Action]] =
     ff4s.Store[F, State, Action](State()) { ref => (a: Action) =>

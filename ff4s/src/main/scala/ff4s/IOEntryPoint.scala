@@ -22,7 +22,7 @@ import cats.effect.unsafe.implicits.global
 
 class IOEntryPoint[State, Action](app: App[IO, State, Action]) {
 
-  def main(args: Array[String]): Unit = {
+  final def main(args: Array[String]): Unit = {
     import app.dsl._
     app.root
       .renderInto(s"#${app.rootElementId}")(Async[IO], app.store)

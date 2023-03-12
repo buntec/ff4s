@@ -18,11 +18,12 @@ package todomvc
 
 import cats.syntax.all._
 import org.scalajs.dom
-import cats.effect.kernel.Async
-import cats.effect.kernel.Resource
+import cats.effect.Concurrent
+import cats.effect.Resource
 import ff4s.Store
 
-class App[F[_]: Async] extends ff4s.App[F, State, Action] {
+class App[F[_]](implicit val F: Concurrent[F])
+    extends ff4s.App[F, State, Action] {
 
   val store: Resource[F, Store[F, State, Action]] =
     ff4s.Store[F, State, Action](State()) { ref => (a: Action) =>

@@ -16,8 +16,8 @@
 
 package examples.example4
 
-import cats.effect.kernel.Async
-import cats.effect.kernel.Resource
+import cats.effect.Async
+import cats.effect.Resource
 import ff4s.Store
 import org.http4s.Uri
 
@@ -33,9 +33,7 @@ object Action {
 }
 
 // This example demonstrates the built-in router functionality.
-class App[F[_]: Async] extends ff4s.App[F, State, Action] {
-
-  val F = Async[F]
+class App[F[_]](implicit val F: Async[F]) extends ff4s.App[F, State, Action] {
 
   val store: Resource[F, Store[F, State, Action]] =
     ff4s.Store.withRouter[F, State, Action](State())(uri => Action.SetUri(uri))(

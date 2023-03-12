@@ -16,8 +16,8 @@
 
 package examples.example2
 
-import cats.effect.kernel.Async
-import cats.effect.kernel.Resource
+import cats.effect.Async
+import cats.effect.Resource
 import org.scalajs.dom
 
 // This is a small demo SPA showcasing the basic functionality of ff4s.

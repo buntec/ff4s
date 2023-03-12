@@ -17,12 +17,12 @@
 package examples.example1
 
 import org.scalajs.dom
-import cats.effect.kernel.Async
-import cats.effect.kernel.Resource
+import cats.effect.Concurrent
+import cats.effect.Resource
 import ff4s.Store
 
 // The obligatory to-do list app.
-class App[F[_]: Async] extends ff4s.App[F, State, Action] {
+class App[F[_]: Concurrent] extends ff4s.App[F, State, Action] {
 
   // Build our store by assigning actions to effects.
   val store: Resource[F, Store[F, State, Action]] =

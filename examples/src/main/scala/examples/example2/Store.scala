@@ -19,8 +19,8 @@ package examples.example2
 import scala.concurrent.duration._
 
 import cats.effect.implicits._
-import cats.effect.kernel.Async
-import cats.effect.kernel.Resource
+import cats.effect.Async
+import cats.effect.Resource
 import cats.effect.std.Queue
 import cats.effect.std.Random
 import cats.syntax.all._
