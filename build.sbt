@@ -19,7 +19,7 @@ ThisBuild / developers := List(
 ThisBuild / tlFatalWarningsInCi := false
 
 lazy val scalajsDomVersion = "2.4.0"
-lazy val domtypesVersion = "0.15.3"
+lazy val domtypesVersion = "17.0.0"
 lazy val circeVersion = "0.14.5"
 lazy val catsVersion = "2.9.0"
 lazy val catsEffectVersion = "3.4.8"
