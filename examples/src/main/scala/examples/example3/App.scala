@@ -91,8 +91,8 @@ class App[F[_]](implicit val F: Concurrent[F])
     extends ff4s.App[F, State, Action] {
 
   val store: Resource[F, Store[F, State, Action]] =
-    ff4s.Store[F, State, Action](State()) { ref => (a: Action) =>
-      a match {
+    ff4s.Store[F, State, Action](State()) { ref =>
+      _ match {
         case Action.ButtonClick() =>
           ref.update(state =>
             state.copy(

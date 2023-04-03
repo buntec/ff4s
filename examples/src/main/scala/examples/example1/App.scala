@@ -26,8 +26,8 @@ class App[F[_]: Concurrent] extends ff4s.App[F, State, Action] {
 
   // Build our store by assigning actions to effects.
   val store: Resource[F, Store[F, State, Action]] =
-    ff4s.Store[F, State, Action](State()) { ref => (a: Action) =>
-      a match {
+    ff4s.Store[F, State, Action](State()) { ref =>
+      _ match {
         case Action.AddTodo =>
           ref.update { state =>
             val nextId = state.nextId

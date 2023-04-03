@@ -36,9 +36,9 @@ class Dsl[F[_], State, Action]
     with StyleDsl[F, State, Action]
     with ModifierDsl[F, State, Action] { self =>
 
-  sealed trait ViewA[A]
+  private[ff4s] sealed trait ViewA[A]
 
-  case class Element(
+  private[ff4s] case class Element(
       tag: String,
       children: Seq[VNode[F]],
       eventHandlers: Map[String, dom.Event => Option[Action]],
@@ -52,13 +52,13 @@ class Dsl[F[_], State, Action]
       thunkArgs: Option[State => Any]
   ) extends ViewA[VNode[F]]
 
-  case class Literal(html: String) extends ViewA[VNode[F]]
+  private[ff4s] case class Literal(html: String) extends ViewA[VNode[F]]
 
-  case class Text(s: String) extends ViewA[VNode[F]]
+  private[ff4s] case class Text(s: String) extends ViewA[VNode[F]]
 
-  case class Empty() extends ViewA[VNode[F]]
+  private[ff4s] case class Empty() extends ViewA[VNode[F]]
 
-  case class GetState() extends ViewA[State]
+  private[ff4s] case class GetState() extends ViewA[State]
 
   type View[A] = Free[ViewA, A]
 
@@ -107,9 +107,12 @@ class Dsl[F[_], State, Action]
 
   implicit class ViewOfVNodeOps(view: View[VNode[F]]) {
 
-    def renderInto(
+    private[ff4s] def renderInto(
         selector: String
-    )(implicit async: Async[F], store: Resource[F, Store[F, State, Action]]) =
+    )(implicit
+        async: Async[F],
+        store: Resource[F, Store[F, State, Action]]
+    ): F[Nothing] =
       Render.apply(self, store)(view, selector)
 
   }
@@ -120,7 +123,7 @@ class Dsl[F[_], State, Action]
     */
   def useState[A](f: State => View[A]): View[A] = getState.flatMap(f)
 
-  def element(
+  private[ff4s] def element(
       tag: String,
       children: Seq[VNode[F]] = Seq.empty,
       eventHandlers: Map[String, dom.Event => Option[Action]] = Map.empty,
@@ -167,7 +170,7 @@ class Dsl[F[_], State, Action]
       thunkArgs: Option[State => Any] = None
   )
 
-  class ElementBuilder[A](tag: String, void: Boolean) {
+  private[ff4s] class ElementBuilder[A](tag: String, void: Boolean) {
 
     def apply(
         modifiers: Modifier*

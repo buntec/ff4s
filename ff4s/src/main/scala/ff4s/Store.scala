@@ -26,7 +26,7 @@ import org.http4s.Uri
 
 trait Store[F[_], State, Action] {
 
-  def dispatcher: Store.Dispatcher[F, Action]
+  def dispatch(action: Action): F[Unit]
 
   def state: Signal[F, State]
 
@@ -34,52 +34,50 @@ trait Store[F[_], State, Action] {
 
 object Store {
 
-  type Dispatcher[F[_], Action] = Action => F[Unit]
-
   def apply[F[_]: Concurrent, State, Action](
-      initial: State
+      initialState: State
   )(
-      makeDispatcher: SignallingRef[F, State] => Dispatcher[F, Action]
+      makeDispatcher: SignallingRef[F, State] => Action => F[Unit]
   ): Resource[F, Store[F, State, Action]] = for {
 
-    state0 <- Resource.eval(SignallingRef.of[F, State](initial))
+    state0 <- SignallingRef.of[F, State](initialState).toResource
 
-    dispatcher0 = makeDispatcher(state0)
+    dispatcher = makeDispatcher(state0)
 
   } yield (new Store[F, State, Action] {
 
-    override def dispatcher: Dispatcher[F, Action] = dispatcher0
+    override def dispatch(action: Action): F[Unit] = dispatcher(action)
 
     override def state: Signal[F, State] = state0
 
   })
 
-  def withRouter[F[_], State, Action](initial: State)(
+  def withRouter[F[_], State, Action](initialState: State)(
       onUriChange: Uri => Action
   )(
       makeDispatcher: (
           SignallingRef[F, State],
           Router[F]
-      ) => Dispatcher[F, Action]
+      ) => Action => F[Unit]
   )(implicit F: Async[F]) = for {
 
-    state0 <- Resource.eval(SignallingRef.of[F, State](initial))
+    state0 <- SignallingRef.of[F, State](initialState).toResource
 
     history = fs2.dom.Window[F].history[Unit]
 
     router <- Router[F](history)
 
-    dispatcher0 = makeDispatcher(state0, router)
+    dispatcher = makeDispatcher(state0, router)
 
     _ <- router.location.discrete
-      .evalMap(uri => dispatcher0(onUriChange(uri)))
+      .evalMap(uri => dispatcher(onUriChange(uri)))
       .compile
       .drain
       .background
 
   } yield new Store[F, State, Action] {
 
-    override def dispatcher: Dispatcher[F, Action] = dispatcher0
+    override def dispatch(action: Action): F[Unit] = dispatcher(action)
 
     override def state: Signal[F, State] = state0
 

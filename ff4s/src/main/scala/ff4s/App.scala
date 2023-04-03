@@ -20,13 +20,12 @@ import cats.effect.kernel.Resource
 
 trait App[F[_], State, Action] {
 
-  final val dsl = ff4s.Dsl[F, State, Action]
-
-  import dsl._
+  final implicit val dsl: ff4s.Dsl[F, State, Action] =
+    ff4s.Dsl[F, State, Action]
 
   def rootElementId = "app"
 
-  def root: View[VNode[F]]
+  def root: dsl.View[VNode[F]]
 
   def store: Resource[F, Store[F, State, Action]]
 

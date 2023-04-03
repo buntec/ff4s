@@ -49,13 +49,13 @@ private[ff4s] object Render {
       s <- store
       state0 <- Resource.eval(s.state.get)
       vnode0 <- Resource.eval(
-        F.pure(view.foldMap(Compiler(dsl, state0, s.dispatcher)))
+        F.pure(view.foldMap(Compiler(dsl, state0, s.dispatch _)))
       )
       proxy0 <- Resource.eval(
         F.delay(patch(root, vnode0.toSnabbdom(dispatcher)))
       )
       _ <- s.state.discrete
-        .map(state => view.foldMap(Compiler(dsl, state, s.dispatcher)))
+        .map(state => view.foldMap(Compiler(dsl, state, s.dispatch _)))
         .evalMapAccumulate(proxy0) { case (prevProxy, vnode) =>
           F.delay(patch(prevProxy, vnode.toSnabbdom(dispatcher))).map((_, ()))
         }

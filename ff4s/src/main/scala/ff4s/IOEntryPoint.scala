@@ -17,16 +17,12 @@
 package ff4s
 
 import cats.effect.IO
-import cats.effect.kernel.Async
 import cats.effect.unsafe.implicits.global
 
 class IOEntryPoint[State, Action](app: App[IO, State, Action]) {
 
-  final def main(args: Array[String]): Unit = {
-    import app.dsl._
-    app.root
-      .renderInto(s"#${app.rootElementId}")(Async[IO], app.store)
+  final def main(args: Array[String]): Unit =
+    Render(app.dsl, app.store)(app.root, s"#${app.rootElementId}")
       .unsafeRunAndForget()
-  }
 
 }

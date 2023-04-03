@@ -33,8 +33,8 @@ object Store {
 
     wsSendQ <- Queue.bounded[F, String](100).toResource
 
-    store <- ff4s.Store[F, State, Action](State()) { ref => (a: Action) =>
-      a match {
+    store <- ff4s.Store[F, State, Action](State()) { ref =>
+      _ match {
         case Action.WebsocketMessageReceived(msg) =>
           ref.update(state => state.copy(websocketResponse = Some(msg)))
         case Action.SendWebsocketMessage(msg) => wsSendQ.offer(msg)
@@ -69,7 +69,7 @@ object Store {
         "wss://ws.postman-echo.com/raw/",
         is =>
           is.evalMap { msg =>
-            store.dispatcher(Action.WebsocketMessageReceived(msg))
+            store.dispatch(Action.WebsocketMessageReceived(msg))
           },
         Stream.fromQueueUnterminated(wsSendQ)
       )
@@ -79,7 +79,7 @@ object Store {
     _ <- Async[F].background(
       (fs2.Stream.emit(()) ++ fs2.Stream.fixedDelay(5.second))
         .covary[F]
-        .evalMap(_ => store.dispatcher(Action.GetActivity))
+        .evalMap(_ => store.dispatch(Action.GetActivity))
         .compile
         .drain
     )
@@ -92,7 +92,7 @@ object Store {
         }
         .changes
         .filter(p => p._1 == Ramen.toString && p._2 == 3)
-        .evalMap(_ => store.dispatcher(Action.Magic))
+        .evalMap(_ => store.dispatch(Action.Magic))
         .compile
         .drain
     )
@@ -107,7 +107,7 @@ object Store {
             y <- rng.betweenDouble(10.0, 90.0)
           } yield (x, y)
         }
-        .evalMap { case (x, y) => store.dispatcher(Action.SetSvgCoords(x, y)) }
+        .evalMap { case (x, y) => store.dispatch(Action.SetSvgCoords(x, y)) }
         .compile
         .drain
     )

@@ -40,7 +40,7 @@ class App[F[_]](implicit F: Temporal[F]) extends ff4s.App[F, State, Action] {
       // increment the counter once per second
       Stream
         .fixedDelay[F](1.second)
-        .evalMap(_ => store.dispatcher(Inc(1)))
+        .evalMap(_ => store.dispatch(Inc(1)))
         .compile
         .drain
         .background
