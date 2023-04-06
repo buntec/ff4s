@@ -18,73 +18,65 @@ package examples.example3
 
 import cats.effect.Concurrent
 import cats.effect.Resource
+import cats.syntax.all._
 import ff4s.Store
 
-// This example demonstrates how we can integrate reusable components using `embed`.
+import monocle.syntax.all._
+import cats.Show
 
-trait ReusableStuff[F[_]] {
-
-  // constant means no state and no actions
-  val dsl = ff4s.Dsl.constant[F]
-
-  import dsl.syntax.html._
-
-  val header = div(cls := "p-1 bg-indigo-300", "Hello!")
-
-  val footer = div(cls := "p-1 bg-indigo-300", "Goodbye!")
-
-}
-
-trait MoreReusableStuff[F[_]] {
-
-  case class State(counter: Int)
-
-  // pure means state but no actions
-  val dsl = ff4s.Dsl.pure[F, State]
-
-  import dsl._
-  import dsl.syntax.html._
-
-  val counter = useState { state =>
-    div(cls := "p-1 bg-teal-400", s"counter=${state.counter}")
-  }
-
-}
-
-trait EvenMoreReusableStuff[F[_]] {
-
-  case class State(disabled: Boolean)
-
-  sealed trait Action
-
-  object Action {
-    case class ButtonClick() extends Action
-  }
-
-  val dsl = ff4s.Dsl[F, State, Action]
-
-  import dsl._
-  import dsl.syntax.html._
-
-  val fancyButton = useState { state =>
-    button(
-      cls := s"p-1 text-center shadow rounded bg-pink-400 hover:bg-pink-300 active:bg-pink-500",
-      disabled := state.disabled,
-      onClick := (_ => Some(Action.ButtonClick())),
-      "click me"
-    )
-  }
-
-}
-
+// This example shows how to create re-usable components.
 case class State(
+    weekday: Weekday = Weekday.Monday,
     counter: Int = 0,
     buttonOff: Boolean = false
 )
 
+sealed trait Weekday
+object Weekday {
+
+  case object Monday extends Weekday
+  case object Tuesday extends Weekday
+  case object Wednesday extends Weekday
+  case object Thursday extends Weekday
+  case object Friday extends Weekday
+  case object Saturday extends Weekday
+  case object Sunday extends Weekday
+
+  def fromString(s: String): Option[Weekday] = s match {
+    case "Monday"    => Monday.some
+    case "Tuesday"   => Tuesday.some
+    case "Wednesday" => Wednesday.some
+    case "Thursday"  => Thursday.some
+    case "Friday"    => Friday.some
+    case "Saturday"  => Saturday.some
+    case "Sunday"    => Sunday.some
+    case _           => none
+  }
+
+  implicit val show: Show[Weekday] = Show.fromToString
+
+  val values = List(
+    Monday,
+    Tuesday,
+    Wednesday,
+    Thursday,
+    Friday,
+    Saturday,
+    Sunday
+  )
+
+}
+
 sealed trait Action
+
 object Action {
-  case class ButtonClick() extends Action
+
+  case class Inc() extends Action
+
+  case class Dec() extends Action
+
+  case class SetWeekday(weekday: Weekday) extends Action
+
 }
 
 class App[F[_]](implicit val F: Concurrent[F])
@@ -93,45 +85,34 @@ class App[F[_]](implicit val F: Concurrent[F])
   val store: Resource[F, Store[F, State, Action]] =
     ff4s.Store[F, State, Action](State()) { ref =>
       _ match {
-        case Action.ButtonClick() =>
-          ref.update(state =>
-            state.copy(
-              counter = state.counter + 1,
-              buttonOff = if (state.counter > 5) true else false
-            )
-          )
+        case Action.SetWeekday(weekday) =>
+          ref.update(_.focus(_.weekday).replace(weekday))
+        case Action.Inc() =>
+          ref.update(_.focus(_.counter).modify(_ + 1))
+        case Action.Dec() =>
+          ref.update(_.focus(_.counter).modify(_ - 1))
       }
     }
 
-  // import dsl._
+  val components = new Components[F, State, Action]
+  import components._
+
+  import dsl._
   import dsl.syntax.html._
 
-  object rs extends ReusableStuff[F]
-  object rs2 extends MoreReusableStuff[F]
-  object rs3 extends EvenMoreReusableStuff[F]
-
-  val root = div(
-    cls := "mb-16 flex flex-col items-center",
-    div(cls := "m-1", dsl.embed(rs.dsl)(rs.header)),
+  val root = useState { state =>
     div(
-      cls := "m-1",
-      dsl.embed(rs2.dsl, state => rs2.State(state.counter))(rs2.counter)
-    ),
-    div(
-      cls := "m-1",
-      dsl.embed(
-        rs3.dsl,
-        state => rs3.State(state.buttonOff),
-        (action: rs3.Action) =>
-          action match {
-            case rs3.Action.ButtonClick() => Action.ButtonClick()
-          }
-      )(rs3.fancyButton)
-    ),
-    div(
-      cls := "m-1",
-      dsl.embed(rs.dsl)(rs.footer)
+      cls := "bg-zinc-200 h-screen flex flex-col items-center justify-center gap-2",
+      counter(_.counter, _ => Action.Inc(), _ => Action.Dec()),
+      labeledSelect[Weekday](
+        "weekday",
+        (s: String) => Weekday.fromString(s),
+        (_, l) => Action.SetWeekday(l).some,
+        Weekday.values,
+        _.weekday
+      ),
+      span(s"Weekday: ${state.weekday.show}")
     )
-  )
+  }
 
 }

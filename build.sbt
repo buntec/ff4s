@@ -60,7 +60,11 @@ lazy val ff4s = (project in file("ff4s"))
 lazy val examples = (project in file("examples"))
   .enablePlugins(ScalaJSPlugin, NoPublishPlugin)
   .settings(
-    scalaJSUseMainModuleInitializer := true
+    scalaJSUseMainModuleInitializer := true,
+    libraryDependencies ++= Seq(
+      "dev.optics" %%% "monocle-core" % "3.2.0",
+      "dev.optics" %%% "monocle-macro" % "3.2.0"
+    )
   )
   .dependsOn(ff4s)
 

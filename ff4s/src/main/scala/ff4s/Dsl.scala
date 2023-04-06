@@ -314,25 +314,7 @@ class Dsl[F[_], State, Action]
 
 object Dsl {
 
-  /*
-   * A fully general DSL for interactive components that depend on state.
-   */
-  def apply[F[_], State, Action] = new Dsl[F, State, Action]
-
-  /*
-   * A DSL for building components that may depend on state
-   * but are not interactive (the `Action` type is `Nothing`).
-   * Useful for writing non-interactive reusable components.
-   */
-  def pure[F[_], State] = new Dsl[F, State, Nothing]
-
-  /*
-   * A DSL for building components that don't depend on state
-   * (the `State` type is `Unit`) and are not interactive
-   * (the `Action` type is `Nothing`).
-   * Useful for writing non-interactive, non-state-dependent
-   * reusable components such as SVG icons.
-   */
-  def constant[F[_]] = new Dsl[F, Unit, Nothing]
+  def apply[F[_], State, Action]: Dsl[F, State, Action] =
+    new Dsl[F, State, Action]
 
 }
