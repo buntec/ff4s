@@ -17,14 +17,13 @@
 package examples.example2
 
 import cats.effect.Async
-import cats.effect.Resource
 import org.scalajs.dom
 
 // This is a small demo SPA showcasing the basic functionality of ff4s.
 // In a real-world project the components likely would be split across several files.
 class App[F[_]: Async] extends ff4s.App[F, State, Action] {
 
-  val store: Resource[F, ff4s.Store[F, State, Action]] = Store[F]
+  val store = Store[F]
 
   import dsl._ // basic dsl
   import dsl.syntax.html._ // nice syntax for html tags, attributes etc.
@@ -94,9 +93,9 @@ class App[F[_]: Async] extends ff4s.App[F, State, Action] {
     )
   )
 
-  /* If a component requires access to state, we can use `useState{ state =>
-   * ...}`, */
-  // which is just an alias for `getState.flatMap{ state => ...}`.
+  /* If a component requires access to state, we can use `useState{ state => ...}`,
+   * which is just an alias for `getState.flatMap{ state => ...}`.
+   */
   val counter = useState { state =>
     div(
       cls := "m-4",
@@ -207,13 +206,8 @@ class App[F[_]: Async] extends ff4s.App[F, State, Action] {
 
   val magicAlert = useState { state =>
     if (state.magic)
-      div(
-        span(cls := "text-xl", "✨You found the magic combination✨")
-      )
-    // The `empty` component can be convenient
-    // for conditional rendering as it doesn't result in any element
-    // being added to the DOM.
-    else empty
+      div(span(cls := "text-xl", "✨You found the magic combination✨"))
+    else empty // The `empty` component is convenient for conditional rendering
   }
 
   val radioButtons = useState { state =>
@@ -238,8 +232,8 @@ class App[F[_]: Async] extends ff4s.App[F, State, Action] {
       span(
         {
           state.pets match {
-            case Cats => "Meow!"
-            case Dogs => "Woof!"
+            case Pets.Cats => "Meow!"
+            case Pets.Dogs => "Woof!"
           }
         }
       )

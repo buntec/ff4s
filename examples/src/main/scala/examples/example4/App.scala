@@ -17,8 +17,6 @@
 package examples.example4
 
 import cats.effect.Async
-import cats.effect.Resource
-import ff4s.Store
 import org.http4s.Uri
 
 case class State(
@@ -28,22 +26,24 @@ case class State(
 sealed trait Action
 
 object Action {
+
   case class SetUri(uri: Uri) extends Action
+
   case class NavigateTo(uri: Uri) extends Action
+
 }
 
 // This example demonstrates the built-in router functionality.
 class App[F[_]](implicit val F: Async[F]) extends ff4s.App[F, State, Action] {
 
-  val store: Resource[F, Store[F, State, Action]] =
-    ff4s.Store.withRouter[F, State, Action](State())(uri => Action.SetUri(uri))(
-      (state, router) =>
-        (action: Action) =>
-          action match {
-            case Action.NavigateTo(uri) => router.navigateTo(uri)
-            case Action.SetUri(uri)     => state.update(_.copy(uri = Some(uri)))
-          }
-    )
+  val store = ff4s.Store.withRouter[F, State, Action](State())(uri =>
+    Action.SetUri(uri)
+  )((state, router) =>
+    _ match {
+      case Action.NavigateTo(uri) => router.navigateTo(uri)
+      case Action.SetUri(uri)     => state.update(_.copy(uri = Some(uri)))
+    }
+  )
 
   import dsl._
   import dsl.syntax.html._

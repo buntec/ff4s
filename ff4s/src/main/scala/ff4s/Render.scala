@@ -40,12 +40,12 @@ private[ff4s] object Render {
       store: Resource[F, Store[F, State, Action]]
   )(
       view: dsl.V, // must be curried b/c of dependent type
-      selector: String
+      rootElementId: String
   ): F[Nothing] = {
     val F = Async[F]
     (for {
       dispatcher <- Dispatcher.parallel[F]
-      root <- Resource.eval(F.delay(document.querySelector(selector)))
+      root <- Resource.eval(F.delay(document.getElementById(rootElementId)))
       s <- store
       state0 <- Resource.eval(s.state.get)
       vnode0 <- Resource.eval(

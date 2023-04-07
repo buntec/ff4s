@@ -31,28 +31,36 @@ object Store {
 
   def apply[F[_]: Async]: Resource[F, ff4s.Store[F, State, Action]] = for {
 
+    // send queue for the websockets connection
     wsSendQ <- Queue.bounded[F, String](100).toResource
 
     store <- ff4s.Store[F, State, Action](State()) { ref =>
       _ match {
         case Action.WebsocketMessageReceived(msg) =>
           ref.update(state => state.copy(websocketResponse = Some(msg)))
+
         case Action.SendWebsocketMessage(msg) => wsSendQ.offer(msg)
+
         case Action.SetSvgCoords(x, y) =>
           ref.update(_.copy(svgCoords = SvgCoords(x, y)))
+
         case Action.Magic => ref.update(_.copy(magic = true))
+
         case Action.SetName(name) =>
-          ref.update(
-            _.copy(name = if (name.nonEmpty) Some(name) else None)
-          )
+          ref.update(_.copy(name = if (name.nonEmpty) Some(name) else None))
+
         case Action.SetPets(pets) =>
           ref.update(_.copy(pets = pets))
+
         case Action.SetFavoriteDish(dish) =>
           ref.update(_.copy(favoriteDish = dish))
+
         case Action.IncrementCounter =>
           ref.update(s => s.copy(counter = s.counter + 1))
+
         case Action.DecrementCounter =>
           ref.update(s => s.copy(counter = s.counter - 1))
+
         case Action.GetActivity =>
           ff4s
             .HttpClient[F]
@@ -63,55 +71,49 @@ object Store {
       }
     }
 
+    // establish websocket connection
     _ <- ff4s
       .WebSocketsClient[F]
       .bidirectionalText(
         "wss://ws.postman-echo.com/raw/",
-        is =>
-          is.evalMap { msg =>
-            store.dispatch(Action.WebsocketMessageReceived(msg))
-          },
+        _.evalMap { msg =>
+          store.dispatch(Action.WebsocketMessageReceived(msg))
+        },
         Stream.fromQueueUnterminated(wsSendQ)
       )
       .background
 
-    // We can do something fancy in the background.
-    _ <- Async[F].background(
-      (fs2.Stream.emit(()) ++ fs2.Stream.fixedDelay(5.second))
-        .covary[F]
-        .evalMap(_ => store.dispatch(Action.GetActivity))
-        .compile
-        .drain
-    )
+    // Fetch a new activity every 5 seconds.
+    _ <- (Stream.unit ++ Stream.fixedDelay(5.second))
+      .evalMap(_ => store.dispatch(Action.GetActivity))
+      .compile
+      .drain
+      .background
+
     // We can also listen to and react to state changes.
-    _ <- Async[F].background(
-      store.state.discrete
-        .map { state =>
-          /* Use `toString` here to avoid having to provide a Eq typeclass
-           * instance. */
-          (state.favoriteDish.toString, state.counter)
-        }
-        .changes
-        .filter(p => p._1 == Ramen.toString && p._2 == 3)
-        .evalMap(_ => store.dispatch(Action.Magic))
-        .compile
-        .drain
-    )
-    // Animate our SVG with some random numbers.
-    rng <- Resource.eval(Random.scalaUtilRandom)
-    _ <- Async[F].background(
-      fs2.Stream
-        .fixedDelay(1.second)
-        .evalMap { _ =>
-          for {
-            x <- rng.betweenDouble(10.0, 90.0)
-            y <- rng.betweenDouble(10.0, 90.0)
-          } yield (x, y)
-        }
-        .evalMap { case (x, y) => store.dispatch(Action.SetSvgCoords(x, y)) }
-        .compile
-        .drain
-    )
+    _ <- store.state.discrete
+      .map(state => (state.favoriteDish, state.counter))
+      .changes
+      .filter { case (dish, counter) => dish == Dish.Ramen && counter == 3 }
+      .evalMap(_ => store.dispatch(Action.Magic))
+      .compile
+      .drain
+      .background
+
+    rng <- Random.scalaUtilRandom.toResource
+
+    // Animate the SVG with some random numbers.
+    _ <- Stream
+      .fixedDelay(1.second)
+      .evalMap { _ =>
+        val u = rng.betweenDouble(10.0, 90.0)
+        (u, u).tupled
+      }
+      .evalMap { case (x, y) => store.dispatch(Action.SetSvgCoords(x, y)) }
+      .compile
+      .drain
+      .background
+
   } yield store
 
 }

@@ -109,13 +109,12 @@ class Dsl[F[_], State, Action]
 
   implicit class VOps(view: V) {
 
-    private[ff4s] def renderInto(
+    def renderInto(
         selector: String
     )(implicit
         async: Async[F],
         store: Resource[F, Store[F, State, Action]]
-    ): F[Nothing] =
-      Render.apply(self, store)(view, selector)
+    ): F[Nothing] = Render(self, store)(view, selector)
 
   }
 

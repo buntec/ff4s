@@ -17,9 +17,7 @@
 package examples.example3
 
 import cats.effect.Concurrent
-import cats.effect.Resource
 import cats.syntax.all._
-import ff4s.Store
 
 import monocle.syntax.all._
 
@@ -27,17 +25,16 @@ import monocle.syntax.all._
 class App[F[_]](implicit val F: Concurrent[F])
     extends ff4s.App[F, State, Action] {
 
-  val store: Resource[F, Store[F, State, Action]] =
-    ff4s.Store[F, State, Action](State()) { ref =>
-      _ match {
-        case Action.SetWeekday(weekday) =>
-          ref.update(_.focus(_.weekday).replace(weekday))
-        case Action.Inc() =>
-          ref.update(_.focus(_.counter).modify(_ + 1))
-        case Action.Dec() =>
-          ref.update(_.focus(_.counter).modify(_ - 1))
-      }
+  val store = ff4s.Store[F, State, Action](State()) { ref =>
+    _ match {
+      case Action.SetWeekday(weekday) =>
+        ref.update(_.focus(_.weekday).replace(weekday))
+      case Action.Inc() =>
+        ref.update(_.focus(_.counter).modify(_ + 1))
+      case Action.Dec() =>
+        ref.update(_.focus(_.counter).modify(_ - 1))
     }
+  }
 
   // instantiate components with concrete State and Action types
   val components = new Components[F, State, Action]

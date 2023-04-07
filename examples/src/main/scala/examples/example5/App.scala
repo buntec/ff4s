@@ -29,7 +29,7 @@ case class Inc(amount: Int) extends Action
 
 class App[F[_]](implicit F: Temporal[F]) extends ff4s.App[F, State, Action] {
 
-  override def store = ff4s
+  val store = ff4s
     .Store[F, State, Action](State()) { ref =>
       _ match {
         case Inc(amount) =>
@@ -49,7 +49,7 @@ class App[F[_]](implicit F: Temporal[F]) extends ff4s.App[F, State, Action] {
   import dsl._
   import dsl.syntax.html._
 
-  override def root = useState { state =>
+  val root = useState { state =>
     div(
       cls := "m-2 flex flex-col items-center",
       h1("A counter"),
