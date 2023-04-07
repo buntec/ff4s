@@ -1,7 +1,7 @@
 Global / onChangedBuildSource := ReloadOnSourceChanges
 Global / resolvers += "Sonatype S01 OSS Snapshots" at "https://s01.oss.sonatype.org/content/repositories/snapshots"
 
-ThisBuild / tlBaseVersion := "0.9"
+ThisBuild / tlBaseVersion := "0.10"
 
 lazy val scala213 = "2.13.10"
 ThisBuild / scalaVersion := scala213
@@ -60,7 +60,11 @@ lazy val ff4s = (project in file("ff4s"))
 lazy val examples = (project in file("examples"))
   .enablePlugins(ScalaJSPlugin, NoPublishPlugin)
   .settings(
-    scalaJSUseMainModuleInitializer := true
+    scalaJSUseMainModuleInitializer := true,
+    libraryDependencies ++= Seq(
+      "dev.optics" %%% "monocle-core" % "3.2.0",
+      "dev.optics" %%% "monocle-macro" % "3.2.0"
+    )
   )
   .dependsOn(ff4s)
 

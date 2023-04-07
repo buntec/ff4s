@@ -18,37 +18,11 @@ package examples.example1
 
 import org.scalajs.dom
 import cats.effect.Concurrent
-import cats.effect.Resource
-import ff4s.Store
 
 // The obligatory to-do list app.
 class App[F[_]: Concurrent] extends ff4s.App[F, State, Action] {
 
-  // Build our store by assigning actions to effects.
-  val store: Resource[F, Store[F, State, Action]] =
-    ff4s.Store[F, State, Action](State()) { ref =>
-      _ match {
-        case Action.AddTodo =>
-          ref.update { state =>
-            val nextId = state.nextId
-            state.todoInput match {
-              case Some(what) if what.nonEmpty =>
-                state.copy(
-                  nextId = nextId + 1,
-                  todos = state.todos :+ Todo(what, nextId),
-                  todoInput = None
-                )
-              case _ => state
-            }
-          }
-        case Action.RemoveTodo(id) =>
-          ref.update { state =>
-            state.copy(todos = state.todos.filterNot(_.id == id))
-          }
-        case Action.SetTodoInput(what) =>
-          ref.update(_.copy(todoInput = Some(what)))
-      }
-    }
+  val store = Store[F]
 
   import dsl._ // basic dsl
   import dsl.syntax.html._ // nice syntax for html tags, attributes etc.

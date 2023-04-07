@@ -17,121 +17,52 @@
 package examples.example3
 
 import cats.effect.Concurrent
-import cats.effect.Resource
-import ff4s.Store
+import cats.syntax.all._
 
-// This example demonstrates how we can integrate reusable components using `embed`.
+import monocle.syntax.all._
 
-trait ReusableStuff[F[_]] {
-
-  // constant means no state and no actions
-  val dsl = ff4s.Dsl.constant[F]
-
-  import dsl.syntax.html._
-
-  val header = div(cls := "p-1 bg-indigo-300", "Hello!")
-
-  val footer = div(cls := "p-1 bg-indigo-300", "Goodbye!")
-
-}
-
-trait MoreReusableStuff[F[_]] {
-
-  case class State(counter: Int)
-
-  // pure means state but no actions
-  val dsl = ff4s.Dsl.pure[F, State]
-
-  import dsl._
-  import dsl.syntax.html._
-
-  val counter = useState { state =>
-    div(cls := "p-1 bg-teal-400", s"counter=${state.counter}")
-  }
-
-}
-
-trait EvenMoreReusableStuff[F[_]] {
-
-  case class State(disabled: Boolean)
-
-  sealed trait Action
-
-  object Action {
-    case class ButtonClick() extends Action
-  }
-
-  val dsl = ff4s.Dsl[F, State, Action]
-
-  import dsl._
-  import dsl.syntax.html._
-
-  val fancyButton = useState { state =>
-    button(
-      cls := s"p-1 text-center shadow rounded bg-pink-400 hover:bg-pink-300 active:bg-pink-500",
-      disabled := state.disabled,
-      onClick := (_ => Some(Action.ButtonClick())),
-      "click me"
-    )
-  }
-
-}
-
-case class State(
-    counter: Int = 0,
-    buttonOff: Boolean = false
-)
-
-sealed trait Action
-object Action {
-  case class ButtonClick() extends Action
-}
-
+// This example shows how to create and use reusable components.
 class App[F[_]](implicit val F: Concurrent[F])
     extends ff4s.App[F, State, Action] {
 
-  val store: Resource[F, Store[F, State, Action]] =
-    ff4s.Store[F, State, Action](State()) { ref =>
-      _ match {
-        case Action.ButtonClick() =>
-          ref.update(state =>
-            state.copy(
-              counter = state.counter + 1,
-              buttonOff = if (state.counter > 5) true else false
-            )
-          )
-      }
+  val store = ff4s.Store[F, State, Action](State()) { ref =>
+    _ match {
+      case Action.SetWeekday(weekday) =>
+        ref.update(_.focus(_.weekday).replace(weekday))
+      case Action.Inc() =>
+        ref.update(_.focus(_.counter).modify(_ + 1))
+      case Action.Dec() =>
+        ref.update(_.focus(_.counter).modify(_ - 1))
     }
+  }
 
-  // import dsl._
+  // instantiate components with concrete State and Action types
+  val components = new Components[F, State, Action]
+  import components._
+
+  import dsl._
   import dsl.syntax.html._
 
-  object rs extends ReusableStuff[F]
-  object rs2 extends MoreReusableStuff[F]
-  object rs3 extends EvenMoreReusableStuff[F]
-
-  val root = div(
-    cls := "mb-16 flex flex-col items-center",
-    div(cls := "m-1", dsl.embed(rs.dsl)(rs.header)),
-    div(
-      cls := "m-1",
-      dsl.embed(rs2.dsl, state => rs2.State(state.counter))(rs2.counter)
-    ),
-    div(
-      cls := "m-1",
-      dsl.embed(
-        rs3.dsl,
-        state => rs3.State(state.buttonOff),
-        (action: rs3.Action) =>
-          action match {
-            case rs3.Action.ButtonClick() => Action.ButtonClick()
-          }
-      )(rs3.fancyButton)
-    ),
-    div(
-      cls := "m-1",
-      dsl.embed(rs.dsl)(rs.footer)
+  // build our app using the imported components
+  val root = useState { state =>
+    pageWithHeaderAndFooter(dsl)("ff4s Reusable Components")(
+      div(
+        cls := "flex flex-col items-center",
+        fancyWrapper(dsl)("A simple counter")(
+          counter(_.counter, _ => Action.Inc(), _ => Action.Dec())
+        ),
+        fancyWrapper(dsl)("A drop-down select")(
+          labeledSelect[Weekday](
+            "Weekday",
+            (s: String) => Weekday.fromString(s),
+            (_, l) => Action.SetWeekday(l).some,
+            Weekday.values,
+            _.weekday
+          ),
+          span(s"Your selection: ${state.weekday.show}")
+        )
+      )
     )
-  )
+  }
 
 }

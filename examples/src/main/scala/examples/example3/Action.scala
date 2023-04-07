@@ -14,21 +14,16 @@
  * limitations under the License.
  */
 
-package ff4s
+package examples.example3
 
-import cats.effect.kernel.Resource
+sealed trait Action
 
-trait App[F[_], State, Action] {
+object Action {
 
-  final implicit val dsl: ff4s.Dsl[F, State, Action] =
-    ff4s.Dsl[F, State, Action]
+  case class Inc() extends Action
 
-  /* The id of the "root" DOM node into which your app will be rendered. */
-  def rootElementId = "app"
+  case class Dec() extends Action
 
-  /* The top-level component of your app. */
-  def root: dsl.V
-
-  def store: Resource[F, Store[F, State, Action]]
+  case class SetWeekday(weekday: Weekday) extends Action
 
 }

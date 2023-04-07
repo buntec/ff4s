@@ -62,6 +62,9 @@ class Dsl[F[_], State, Action]
 
   type View[A] = Free[ViewA, A]
 
+  /* The type of an ff4s program. */
+  type V = View[VNode[F]]
+
   implicit class ViewOps[A](view: View[A]) {
 
     def translate[StateB, ActionB](
@@ -105,22 +108,23 @@ class Dsl[F[_], State, Action]
       )
     )
 
-  implicit class ViewOfVNodeOps(view: View[VNode[F]]) {
+  implicit class VOps(view: V) {
 
-    private[ff4s] def renderInto(
-        selector: String
+    /** Runs this ff4s program and renders it into the unique DOM node with the
+      * given id. Prefer to use [[ff4s.IOEntryPoint]].
+      */
+    def renderInto(
+        rootElementId: String
     )(implicit
         async: Async[F],
         store: Resource[F, Store[F, State, Action]]
-    ): F[Nothing] =
-      Render.apply(self, store)(view, selector)
+    ): F[Nothing] = Render(self, store)(view, rootElementId)
 
   }
 
   def getState: View[State] = liftF[ViewA, State](GetState())
 
-  /** Alias for `getState.flatMap(f)`.
-    */
+  /** Alias for `getState.flatMap(f)`. */
   def useState[A](f: State => View[A]): View[A] = getState.flatMap(f)
 
   private[ff4s] def element(
@@ -135,7 +139,7 @@ class Dsl[F[_], State, Action]
       attrs: Map[String, snabbdom.AttrValue] = Map.empty,
       style: Map[String, String] = Map.empty,
       thunkArgs: Option[State => Any] = None
-  ): View[VNode[F]] = liftF[ViewA, VNode[F]](
+  ): V = liftF[ViewA, VNode[F]](
     Element(
       tag,
       children,
@@ -151,16 +155,19 @@ class Dsl[F[_], State, Action]
     )
   )
 
-  def literal(html: String): View[VNode[F]] =
-    liftF[ViewA, VNode[F]](Literal(html))
+  /** Constructs a ff4s program from a literal html string. This can be useful
+    * for things like SVG icons. Note that this methods is unsafe in the sense
+    * that the validity of the html string is only checked at render time.
+    */
+  def literal(html: String): V = liftF[ViewA, VNode[F]](Literal(html))
 
-  def text(s: String): View[VNode[F]] = liftF[ViewA, VNode[F]](Text(s))
+  def text(s: String): V = liftF[ViewA, VNode[F]](Text(s))
 
-  def empty: View[VNode[F]] = liftF[ViewA, VNode[F]](Empty())
+  def empty: V = liftF[ViewA, VNode[F]](Empty())
 
   private case class ElemArgs(
       key: Option[String] = None,
-      children: Seq[View[VNode[F]]] = Seq.empty,
+      children: Seq[V] = Seq.empty,
       attrs: Map[String, snabbdom.AttrValue] = Map.empty,
       props: Map[String, Any] = Map.empty,
       style: Map[String, String] = Map.empty,
@@ -172,9 +179,7 @@ class Dsl[F[_], State, Action]
 
   private[ff4s] class ElementBuilder[A](tag: String, void: Boolean) {
 
-    def apply(
-        modifiers: Modifier*
-    ): View[VNode[F]] = {
+    def apply(modifiers: Modifier*): V = {
 
       val args = modifiers.foldLeft(ElemArgs()) { case (args, mod) =>
         mod match {
@@ -314,25 +319,7 @@ class Dsl[F[_], State, Action]
 
 object Dsl {
 
-  /*
-   * A fully general DSL for interactive components that depend on state.
-   */
-  def apply[F[_], State, Action] = new Dsl[F, State, Action]
-
-  /*
-   * A DSL for building components that may depend on state
-   * but are not interactive (the `Action` type is `Nothing`).
-   * Useful for writing non-interactive reusable components.
-   */
-  def pure[F[_], State] = new Dsl[F, State, Nothing]
-
-  /*
-   * A DSL for building components that don't depend on state
-   * (the `State` type is `Unit`) and are not interactive
-   * (the `Action` type is `Nothing`).
-   * Useful for writing non-interactive, non-state-dependent
-   * reusable components such as SVG icons.
-   */
-  def constant[F[_]] = new Dsl[F, Unit, Nothing]
+  def apply[F[_], State, Action]: Dsl[F, State, Action] =
+    new Dsl[F, State, Action]
 
 }

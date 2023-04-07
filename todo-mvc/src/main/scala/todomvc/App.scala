@@ -61,7 +61,7 @@ class App[F[_]](implicit val F: Concurrent[F])
   import dsl._
   import dsl.syntax.html._
 
-  val todoInput: View[ff4s.VNode[F]] = useState { state =>
+  val todoInput = useState { state =>
     input(
       cls := "new-todo",
       placeholder := "What needs to be done?",
@@ -82,7 +82,7 @@ class App[F[_]](implicit val F: Concurrent[F])
     )
   }
 
-  def todoItem(todo: Todo): View[ff4s.VNode[F]] = li(
+  def todoItem(todo: Todo) = li(
     cls := ((todo.complete, todo.isEdit) match {
       case (true, true)   => "completed editing"
       case (true, false)  => "completed"

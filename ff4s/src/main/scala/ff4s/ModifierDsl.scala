@@ -54,23 +54,22 @@ trait ModifierDsl[F[_], State, Action] { self: Dsl[F, State, Action] =>
         codec: Codec[V, DomV]
     ) extends Modifier
 
-    case class ChildNode(view: View[VNode[F]]) extends Modifier
+    case class ChildNode(view: V) extends Modifier
 
-    implicit def fromView(view: View[VNode[F]]): Modifier = ChildNode(view)
+    implicit def fromView(view: V): Modifier = ChildNode(view)
 
-    implicit def fromVNode(
-        vnode: VNode[F]
-    ): Modifier =
-      ChildNode(Free.pure[ViewA, VNode[F]](vnode))
+    implicit def fromVNode(vnode: VNode[F]): Modifier = ChildNode(
+      Free.pure[ViewA, VNode[F]](vnode)
+    )
 
     implicit def fromString(
         text: String
     ): Modifier =
       fromVNode(VNode.fromString(text))
 
-    case class ChildNodes(vnodes: Seq[View[VNode[F]]]) extends Modifier
+    case class ChildNodes(vnodes: Seq[V]) extends Modifier
 
-    implicit def fromViews(views: Seq[View[VNode[F]]]): Modifier =
+    implicit def fromViews(views: Seq[V]): Modifier =
       ChildNodes(views)
 
     implicit def fromVNodes(

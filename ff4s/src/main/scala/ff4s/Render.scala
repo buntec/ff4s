@@ -39,13 +39,13 @@ private[ff4s] object Render {
       dsl: Dsl[F, State, Action],
       store: Resource[F, Store[F, State, Action]]
   )(
-      view: dsl.View[VNode[F]], // must be curried b/c of this
-      selector: String
+      view: dsl.V, // must be curried b/c of dependent type
+      rootElementId: String
   ): F[Nothing] = {
     val F = Async[F]
     (for {
       dispatcher <- Dispatcher.parallel[F]
-      root <- Resource.eval(F.delay(document.querySelector(selector)))
+      root <- Resource.eval(F.delay(document.getElementById(rootElementId)))
       s <- store
       state0 <- Resource.eval(s.state.get)
       vnode0 <- Resource.eval(
