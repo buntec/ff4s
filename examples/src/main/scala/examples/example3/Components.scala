@@ -102,12 +102,12 @@ class Components[F[_], S, A] {
   }
 
   /* A drop-down select with label. */
-  def labeledSelect[V: Show](
+  def labeledSelect[O: Show](
       label0: String,
-      fromString: String => Option[V],
-      onChange0: (S, V) => Option[A],
-      options: List[V],
-      selected0: S => V
+      fromString: String => Option[O],
+      onChange0: (S, O) => Option[A],
+      options: List[O],
+      selected0: S => O
   )(implicit dsl: ff4s.Dsl[F, S, A]): dsl.V = {
     import dsl._
     import dsl.syntax.html._
