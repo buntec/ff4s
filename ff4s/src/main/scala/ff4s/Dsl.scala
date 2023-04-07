@@ -62,6 +62,7 @@ class Dsl[F[_], State, Action]
 
   type View[A] = Free[ViewA, A]
 
+  /* The type of an ff4s program. */
   type V = View[VNode[F]]
 
   implicit class ViewOps[A](view: View[A]) {
@@ -109,19 +110,21 @@ class Dsl[F[_], State, Action]
 
   implicit class VOps(view: V) {
 
+    /** Runs this ff4s program and renders it into the unique DOM node with the
+      * given id. Prefer to use [[ff4s.IOEntryPoint]].
+      */
     def renderInto(
-        selector: String
+        rootElementId: String
     )(implicit
         async: Async[F],
         store: Resource[F, Store[F, State, Action]]
-    ): F[Nothing] = Render(self, store)(view, selector)
+    ): F[Nothing] = Render(self, store)(view, rootElementId)
 
   }
 
   def getState: View[State] = liftF[ViewA, State](GetState())
 
-  /** Alias for `getState.flatMap(f)`.
-    */
+  /** Alias for `getState.flatMap(f)`. */
   def useState[A](f: State => View[A]): View[A] = getState.flatMap(f)
 
   private[ff4s] def element(
@@ -152,8 +155,11 @@ class Dsl[F[_], State, Action]
     )
   )
 
-  def literal(html: String): V =
-    liftF[ViewA, VNode[F]](Literal(html))
+  /** Constructs a ff4s program from a literal html string. This can be useful
+    * for things like SVG icons. Note that this methods is unsafe in the sense
+    * that the validity of the html string is only checked at render time.
+    */
+  def literal(html: String): V = liftF[ViewA, VNode[F]](Literal(html))
 
   def text(s: String): V = liftF[ViewA, VNode[F]](Text(s))
 
