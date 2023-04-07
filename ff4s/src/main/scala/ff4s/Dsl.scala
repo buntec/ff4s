@@ -1,18 +1,16 @@
-/*
- * Copyright 2022 buntec
+/* Copyright 2022 buntec
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+ * limitations under the License. */
 
 package ff4s
 
@@ -62,6 +60,8 @@ class Dsl[F[_], State, Action]
 
   type View[A] = Free[ViewA, A]
 
+  type V = View[VNode[F]]
+
   implicit class ViewOps[A](view: View[A]) {
 
     def translate[StateB, ActionB](
@@ -105,7 +105,7 @@ class Dsl[F[_], State, Action]
       )
     )
 
-  implicit class ViewOfVNodeOps(view: View[VNode[F]]) {
+  implicit class VOps(view: V) {
 
     private[ff4s] def renderInto(
         selector: String
@@ -135,7 +135,7 @@ class Dsl[F[_], State, Action]
       attrs: Map[String, snabbdom.AttrValue] = Map.empty,
       style: Map[String, String] = Map.empty,
       thunkArgs: Option[State => Any] = None
-  ): View[VNode[F]] = liftF[ViewA, VNode[F]](
+  ): V = liftF[ViewA, VNode[F]](
     Element(
       tag,
       children,
@@ -151,16 +151,16 @@ class Dsl[F[_], State, Action]
     )
   )
 
-  def literal(html: String): View[VNode[F]] =
+  def literal(html: String): V =
     liftF[ViewA, VNode[F]](Literal(html))
 
-  def text(s: String): View[VNode[F]] = liftF[ViewA, VNode[F]](Text(s))
+  def text(s: String): V = liftF[ViewA, VNode[F]](Text(s))
 
-  def empty: View[VNode[F]] = liftF[ViewA, VNode[F]](Empty())
+  def empty: V = liftF[ViewA, VNode[F]](Empty())
 
   private case class ElemArgs(
       key: Option[String] = None,
-      children: Seq[View[VNode[F]]] = Seq.empty,
+      children: Seq[V] = Seq.empty,
       attrs: Map[String, snabbdom.AttrValue] = Map.empty,
       props: Map[String, Any] = Map.empty,
       style: Map[String, String] = Map.empty,
@@ -172,9 +172,7 @@ class Dsl[F[_], State, Action]
 
   private[ff4s] class ElementBuilder[A](tag: String, void: Boolean) {
 
-    def apply(
-        modifiers: Modifier*
-    ): View[VNode[F]] = {
+    def apply(modifiers: Modifier*): V = {
 
       val args = modifiers.foldLeft(ElemArgs()) { case (args, mod) =>
         mod match {

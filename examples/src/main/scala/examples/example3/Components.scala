@@ -1,30 +1,29 @@
 package examples.example3
 
-import ff4s.VNode
 import org.scalajs.dom
 import cats.Show
 import cats.syntax.all._
 
-// S = State, A = Action
+/* A set of reusable components.
+ *
+ * Note that everything is polymorphic in the State and Action types S and A.
+ * Due to how dependent types work, we cannot pass the dsl into the class
+ * constructor and instead pass it to every method. For convenience, we do this
+ * implicitly where possible. */
 class Components[F[_], S, A] {
 
-  // no state, no actions
-  def hello(implicit dsl: ff4s.Dsl[F, S, A]): dsl.View[VNode[F]] = {
-
+  def hello(implicit dsl: ff4s.Dsl[F, S, A]): dsl.V = {
     import dsl.syntax.html._
 
     div("hello")
   }
 
-  // a simple button
+  /* A simple button. */
   def btn(
       label0: String,
-      onClikk: S => Option[A],
+      onClick0: S => Option[A],
       isDisabled: S => Boolean
-  )(implicit
-      dsl: ff4s.Dsl[F, S, A]
-  ): dsl.View[VNode[F]] = {
-
+  )(implicit dsl: ff4s.Dsl[F, S, A]): dsl.V = {
     import dsl._
     import dsl.syntax.html._
 
@@ -32,17 +31,46 @@ class Components[F[_], S, A] {
       button(
         cls := s"px-3 py-1 text-center shadow rounded bg-pink-400 hover:bg-pink-300 active:bg-pink-500 disabled:bg-gray-400",
         disabled := isDisabled(state),
-        onClick := (_ => onClikk(state)),
+        onClick := (_ => onClick0(state)),
         label0
       )
     }
   }
 
-  // state but no actions
+  /* Note that if we want to pass in child components, then the dsl cannot be
+   * passed implicitly due to type dependence. */
+  def fancyWrapper(
+      dsl: ff4s.Dsl[F, S, A]
+  )(description: String)(children: dsl.V*): dsl.V = {
+    import dsl.syntax.html._
+
+    div(
+      cls := "m-1 p-1 border border-purple-500 rounded flex flex-col items-center",
+      description,
+      children
+    )
+  }
+
+  def pageWithHeaderAndFooter(
+      dsl: ff4s.Dsl[F, S, A]
+  )(title0: String)(children: dsl.V*): dsl.V = {
+    import dsl.syntax.html._
+
+    div(
+      cls := "bg-zinc-100 text-zinc-900 w-full h-screen flex flex-col justify-between font-light",
+      div(
+        cls := "h-10 bg-zinc-300 text-indigo-500 text-lg flex flex-row items-center justify-center shadow",
+        title0
+      ),
+      children,
+      div(cls := "h-10 bg-zinc-300 shadow")
+    )
+  }
+
+  /* A counter that can be incremented and decremented. */
   def counter(count: S => Int, inc: S => A, dec: S => A)(implicit
       dsl: ff4s.Dsl[F, S, A]
-  ): dsl.View[VNode[F]] = {
-
+  ): dsl.V = {
     import dsl._
     import dsl.syntax.html._
 
@@ -59,23 +87,20 @@ class Components[F[_], S, A] {
     }
   }
 
-  // a drop-down with label
+  /* A drop-down select with label. */
   def labeledSelect[V: Show](
       label0: String,
       fromString: String => Option[V],
       onChange0: (S, V) => Option[A],
       options: List[V],
       selected0: S => V
-  )(implicit
-      dsl: ff4s.Dsl[F, S, A]
-  ): dsl.View[VNode[F]] = {
-
+  )(implicit dsl: ff4s.Dsl[F, S, A]): dsl.V = {
     import dsl._
     import dsl.syntax.html._
 
     useState { state =>
       div(
-        cls := "font-light flex flex-row items-center p-2 gap-1 border border-zinc-400 rounded uppercase",
+        cls := "font-light flex flex-row items-center p-1 gap-1 border border-zinc-400 rounded",
         label(span(label0)),
         select(
           cls := "m-1 rounded appearance-none",
