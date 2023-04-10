@@ -27,7 +27,7 @@ import ff4s.codecs._
 
 import annotation.nowarn
 
-class Dsl[F[_], State, Action] extends ModifierDsl[F, State, Action] { self =>
+class Dsl[F[_], State, Action] { self =>
 
   private[ff4s] sealed trait ViewA[A]
 
@@ -169,6 +169,72 @@ class Dsl[F[_], State, Action] extends ModifierDsl[F, State, Action] { self =>
       destroyHook: Option[dom.Element => Action] = None,
       thunkArgs: Option[State => Any] = None
   )
+
+  sealed trait Modifier
+
+  object Modifier {
+
+    case object NoOp extends Modifier
+
+    case class Key(key: String) extends Modifier
+
+    case class EventHandler(
+        eventName: String,
+        handler: dom.Event => Option[Action]
+    ) extends Modifier
+
+    case class HtmlAttr[V](
+        name: String,
+        value: V,
+        codec: Codec[V, String]
+    ) extends Modifier
+
+    case class SvgAttr[V](
+        name: String,
+        value: V,
+        codec: Codec[V, String]
+    ) extends Modifier
+
+    case class Prop[V, DomV](
+        name: String,
+        value: V,
+        codec: Codec[V, DomV]
+    ) extends Modifier
+
+    case class ChildNode(view: V) extends Modifier
+
+    implicit def fromView(view: V): Modifier = ChildNode(view)
+
+    implicit def fromVNode(vnode: VNode[F]): Modifier = ChildNode(
+      Free.pure[ViewA, VNode[F]](vnode)
+    )
+
+    implicit def fromString(
+        text: String
+    ): Modifier =
+      fromVNode(VNode.fromString(text))
+
+    case class ChildNodes(vnodes: Seq[V]) extends Modifier
+
+    implicit def fromViews(views: Seq[V]): Modifier =
+      ChildNodes(views)
+
+    implicit def fromVNodes(
+        vnodes: Seq[VNode[F]]
+    ): Modifier =
+      ChildNodes(vnodes.map(v => Free.pure[ViewA, VNode[F]](v)))
+
+    case class InsertHook(onInsert: dom.Element => Action) extends Modifier
+
+    case class DestroyHook(
+        onDestroy: dom.Element => Action
+    ) extends Modifier
+
+    case class Style(name: String, value: String) extends Modifier
+
+    case class Thunk(args: State => Any) extends Modifier
+
+  }
 
   object key {
     def :=(s: String): Modifier = Modifier.Key(s)
@@ -354,9 +420,21 @@ class Dsl[F[_], State, Action] extends ModifierDsl[F, State, Action] { self =>
         with HtmlProps
         with GlobalEventProps {
 
-      lazy val cls = new HtmlAttr("class", StringAsIsCodec)
+      // Alternative: new HtmlAttr("class", StringAsIsCodec)
+      lazy val cls = new HtmlProp[String, String]("className", StringAsIsCodec)
 
       lazy val `class` = cls
+
+      lazy val styleAttr = new HtmlAttr("style", StringAsIsCodec)
+
+      lazy val role = new HtmlAttr("role", StringAsIsCodec)
+
+      lazy val rel = new HtmlAttr("rel", StringAsIsCodec)
+
+      def aria(suffix: String) = new HtmlAttr("aria-" + suffix, StringAsIsCodec)
+
+      def dataAttr(suffix: String) =
+        new HtmlAttr("data-" + suffix, StringAsIsCodec)
 
     }
 

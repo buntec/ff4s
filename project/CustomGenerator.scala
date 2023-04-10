@@ -32,8 +32,6 @@ class CustomGenerator(srcManaged: File)
 
   override def scalaJsElementTypeParam: String = "Ref"
 
-  // override val baseScalaJsHtmlElementType: String = "HtmlElement[F]"
-
   override def defsPackagePath: String = basePackagePath
 
   override def tagDefsPackagePath: String = defsPackagePath

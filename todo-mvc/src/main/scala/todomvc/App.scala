@@ -125,6 +125,7 @@ class App[F[_]](implicit val F: Concurrent[F])
         ),
         label(todo.what),
         button(
+          tpe := "button",
           cls := "destroy",
           onClick := (_ => Some(Action.RemoveTodo(todo.id)))
         )

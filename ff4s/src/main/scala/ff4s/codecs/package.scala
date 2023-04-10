@@ -77,35 +77,4 @@ package object codecs {
         if (scalaValue) "on" else "off"
     }
 
-  // Iterable Codecs
-
-  @deprecated(
-    "Laminar no longer uses IterableAsSpaceSeparatedStringCodec so I plan to remove it; if you need it, please let me know",
-    "15.0.0-M7"
-  )
-  lazy val IterableAsSpaceSeparatedStringCodec
-      : Codec[Iterable[String], String] =
-    new Codec[Iterable[String], String] { // could use for e.g. className
-
-      override def decode(domValue: String): Iterable[String] =
-        if (domValue == "") Nil else domValue.split(' ')
-
-      override def encode(scalaValue: Iterable[String]): String =
-        scalaValue.mkString(" ")
-    }
-
-  @deprecated(
-    "Laminar no longer uses IterableAsCommaSeparatedStringCodec so I plan to remove it; if you need it, please let me know",
-    "15.0.0-M7"
-  )
-  lazy val IterableAsCommaSeparatedStringCodec
-      : Codec[Iterable[String], String] =
-    new Codec[Iterable[String], String] { // could use for lists of IDs
-
-      override def decode(domValue: String): Iterable[String] =
-        if (domValue == "") Nil else domValue.split(',')
-
-      override def encode(scalaValue: Iterable[String]): String =
-        scalaValue.mkString(",")
-    }
 }

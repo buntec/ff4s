@@ -347,7 +347,7 @@ object DomDefsGenerator {
         baseImplName = "styleProp",
         defType = LazyVal,
         lengthUnitsNumType = "Int",
-        outputUnitTraits = true
+        outputUnitTraits = false
       )
 
       writeToFile(
@@ -394,10 +394,10 @@ object DomDefsGenerator {
         svgAttrs,
         ariaAttrs,
         htmlProps,
-        //styleProps
+        // styleProps
       ).sequence,
       eventProps,
-      //styleTrait
+      // styleTrait
     ).parFlatSequence
 
   }

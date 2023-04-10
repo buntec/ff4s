@@ -19,7 +19,6 @@ ThisBuild / developers := List(
 ThisBuild / tlFatalWarningsInCi := false
 
 lazy val scalajsDomVersion = "2.4.0"
-lazy val domtypesVersion = "0.15.3"
 lazy val circeVersion = "0.14.5"
 lazy val catsVersion = "2.9.0"
 lazy val catsEffectVersion = "3.4.8"
@@ -42,7 +41,6 @@ lazy val ff4s = (project in file("ff4s"))
     libraryDependencies ++= Seq(
       "io.github.buntec" %%% "scala-js-snabbdom" % scalaJsSnabbdomVersion,
       "org.scala-js" %%% "scalajs-dom" % scalajsDomVersion,
-      "com.raquo" %%% "domtypes" % domtypesVersion,
       "org.typelevel" %%% "cats-core" % catsVersion,
       "org.typelevel" %%% "cats-free" % catsVersion,
       "org.typelevel" %%% "cats-effect" % catsEffectVersion,
