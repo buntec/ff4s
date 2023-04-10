@@ -59,7 +59,7 @@ class App[F[_]](implicit val F: Concurrent[F])
     }
 
   import dsl._
-  import dsl.syntax.html._
+  import dsl.html._
 
   val todoInput = useState { state =>
     input(

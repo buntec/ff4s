@@ -47,7 +47,7 @@ class App[F[_]](implicit F: Temporal[F]) extends ff4s.App[F, State, Action] {
     }
 
   import dsl._
-  import dsl.syntax.html._
+  import dsl.html._
 
   val root = useState { state =>
     div(

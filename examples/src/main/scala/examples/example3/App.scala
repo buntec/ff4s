@@ -41,7 +41,7 @@ class App[F[_]](implicit val F: Concurrent[F])
   import components._
 
   import dsl._
-  import dsl.syntax.html._
+  import dsl.html._
 
   // build our app using the imported components
   val root = useState { state =>

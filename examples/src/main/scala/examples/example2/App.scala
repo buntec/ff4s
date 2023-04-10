@@ -26,7 +26,7 @@ class App[F[_]: Async] extends ff4s.App[F, State, Action] {
   val store = Store[F]
 
   import dsl._ // basic dsl
-  import dsl.syntax.html._ // nice syntax for html tags, attributes etc.
+  import dsl.html._ // nice syntax for html tags, attributes etc.
 
   // Define some classes for easy re-use.
   val linkCls = "text-pink-500"
@@ -99,7 +99,10 @@ class App[F[_]: Async] extends ff4s.App[F, State, Action] {
   val counter = useState { state =>
     div(
       cls := "m-4",
-      h2(cls := subHeadingCls, "A simple counter"),
+      h2(
+        cls := subHeadingCls,
+        "A simple counter"
+      ),
       p(
         s"The counter stands at ${state.counter}. Click the buttons to increment or decrement the counter."
       ),
@@ -248,8 +251,7 @@ class App[F[_]: Async] extends ff4s.App[F, State, Action] {
         // separate import for SVG tags and attributes.
         // Note the curly braces defining a new scope.
         // Html syntax can still be accessed through fully-qualified names.
-        import dsl._
-        import dsl.syntax.svg._
+        import dsl.svg._
         svg(
           height := "100",
           width := "100",

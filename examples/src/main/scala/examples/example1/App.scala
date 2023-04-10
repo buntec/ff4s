@@ -25,7 +25,7 @@ class App[F[_]: Concurrent] extends ff4s.App[F, State, Action] {
   val store = Store[F]
 
   import dsl._ // basic dsl
-  import dsl.syntax.html._ // nice syntax for html tags, attributes etc.
+  import dsl.html._ // nice syntax for html tags, attributes etc.
 
   val foo = div
 

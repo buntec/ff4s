@@ -412,35 +412,33 @@ class Dsl[F[_], State, Action] { self =>
       Modifier.SvgAttr(attr.name, value, attr.codec)
   }
 
-  object syntax {
+  object html
+      extends HtmlTags
+      with HtmlAttrs
+      with HtmlProps
+      with GlobalEventProps {
 
-    object html
-        extends HtmlTags
-        with HtmlAttrs
-        with HtmlProps
-        with GlobalEventProps {
+    // Alternative: new HtmlAttr("class", StringAsIsCodec)
+    lazy val cls = new HtmlProp[String, String]("className", StringAsIsCodec)
 
-      // Alternative: new HtmlAttr("class", StringAsIsCodec)
-      lazy val cls = new HtmlProp[String, String]("className", StringAsIsCodec)
+    lazy val `class` = cls
 
-      lazy val `class` = cls
+    lazy val className = cls
 
-      lazy val styleAttr = new HtmlAttr("style", StringAsIsCodec)
+    lazy val styleAttr = new HtmlAttr("style", StringAsIsCodec)
 
-      lazy val role = new HtmlAttr("role", StringAsIsCodec)
+    lazy val role = new HtmlAttr("role", StringAsIsCodec)
 
-      lazy val rel = new HtmlAttr("rel", StringAsIsCodec)
+    lazy val rel = new HtmlAttr("rel", StringAsIsCodec)
 
-      def aria(suffix: String) = new HtmlAttr("aria-" + suffix, StringAsIsCodec)
+    def aria(suffix: String) = new HtmlAttr("aria-" + suffix, StringAsIsCodec)
 
-      def dataAttr(suffix: String) =
-        new HtmlAttr("data-" + suffix, StringAsIsCodec)
-
-    }
-
-    object svg extends SvgTags with SvgAttrs
+    def dataAttr(suffix: String) =
+      new HtmlAttr("data-" + suffix, StringAsIsCodec)
 
   }
+
+  object svg extends SvgTags with SvgAttrs
 
 }
 
