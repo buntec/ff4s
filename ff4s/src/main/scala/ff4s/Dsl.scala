@@ -30,9 +30,6 @@ import annotation.nowarn
 
 class Dsl[F[_], State, Action]
     extends EventPropsDsl[F, State, Action]
-    with HtmlAttrsDsl[F, State, Action]
-    with SvgAttrsDsl[F, State, Action]
-    with PropDsl[F, State, Action]
     with StyleDsl[F, State, Action]
     with ModifierDsl[F, State, Action] { self =>
 
@@ -296,17 +293,90 @@ class Dsl[F[_], State, Action]
 
   object syntax {
 
-    object html
-        extends tagsSyntax
-        with StylesSyntax
-        with EventPropsSyntax
-        with PropsSyntax
-        with HtmlAttrsSyntax
+    implicit class HtmlAttrsOps[V](attr: HtmlAttr[V]) {
+      def :=(value: V): Modifier =
+        Modifier.HtmlAttr(attr.name, value, attr.codec)
+    }
 
-    object svg
-        extends SvgTags[ElementBuilder]
-        with TagBuilder
-        with SvgAttrsSyntax
+    implicit class PropOps[V, DomV](prop: HtmlProp[V, DomV]) {
+      def :=(value: V): Modifier =
+        Modifier.Prop[V, DomV](prop.name, value, prop.codec)
+    }
+
+    implicit class HtmlTagOps(tag: HtmlTag[_]) {
+
+      def apply(modifiers: Modifier*): V = {
+
+        val args = modifiers.foldLeft(ElemArgs()) { case (args, mod) =>
+          mod match {
+            case Modifier.NoOp     => args
+            case Modifier.Key(key) => args.copy(key = Some(key))
+            case Modifier.HtmlAttr(name, value, codec) =>
+              if (codec == BooleanAsAttrPresenceCodec) {
+                // this codec doesn't play nicely with snabbdom
+                // https://github.com/snabbdom/snabbdom#the-attributes-module
+                args.copy(attrs =
+                  args.attrs + (name -> value.asInstanceOf[Boolean])
+                )
+              } else {
+                args.copy(attrs = args.attrs + (name -> codec.encode(value)))
+              }
+            case Modifier.SvgAttr(name, value, codec) =>
+              args.copy(attrs = args.attrs + (name -> codec.encode(value)))
+            case Modifier.Prop(name, value, codec) =>
+              args.copy(props = args.props + (name -> codec.encode(value)))
+            case Modifier.EventHandler(eventName, handler) =>
+              args.copy(eventHandlers =
+                args.eventHandlers + (eventName -> handler)
+              )
+            case Modifier.ChildNode(vnode) =>
+              args.copy(children = args.children :+ vnode)
+            case Modifier.ChildNodes(vnodes) =>
+              args.copy(children = args.children ++ vnodes)
+            case Modifier.InsertHook(onInsert) =>
+              args.copy(insertHook = Some(onInsert))
+            case Modifier.DestroyHook(onDestroy) =>
+              args.copy(destroyHook = Some(onDestroy))
+            case Modifier.Style(name, value) =>
+              args.copy(style = args.style + (name -> value))
+            case Modifier.Thunk(tArgs) => args.copy(thunkArgs = Some(tArgs))
+          }
+        }
+
+        require(
+          !tag.void || args.children.isEmpty,
+          s"A $tag element cannot have child nodes."
+        )
+
+        args.children.sequence.flatMap { children =>
+          element(
+            tag.name,
+            key = args.key,
+            children = children,
+            eventHandlers = args.eventHandlers,
+            attrs = args.attrs,
+            props = args.props,
+            style = args.style,
+            onInsert = args.insertHook,
+            onDestroy = args.destroyHook,
+            thunkArgs = args.thunkArgs
+          )
+        }
+
+      }
+
+    }
+
+    object html extends HtmlTags with HtmlAttrs with HtmlProps
+
+    // object html
+    //    extends tagsSyntax
+    //    with StylesSyntax
+    //    with EventPropsSyntax
+    //    with PropsSyntax
+    //    with HtmlAttrsSyntax
+
+    object svg extends SvgTags with SvgAttrs
 
     object extras
         extends DocumentTags[ElementBuilder]

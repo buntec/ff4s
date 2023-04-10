@@ -291,7 +291,7 @@ object DomDefsGenerator {
         )
       }
 
-      val foo = subTraits.traverse { case (traitName, eventPropsDefGroups) =>
+      val local = subTraits.traverse { case (traitName, eventPropsDefGroups) =>
         val fileContent = generator.generateEventPropsTrait(
           defSources = eventPropsDefGroups,
           printDefGroupComments = true,
@@ -314,7 +314,7 @@ object DomDefsGenerator {
         )
       }
 
-      List(foo, global.map(List(_))).parFlatSequence
+      List(local, global.map(List(_))).parFlatSequence
 
     }
 
@@ -359,8 +359,8 @@ object DomDefsGenerator {
 
     // -- Style keyword traits
 
-    {
-      StyleTraitDefs.defs.foreach { styleTrait =>
+    val styleTrait = {
+      StyleTraitDefs.defs.traverse { styleTrait =>
         val fileContent = generator.generateStyleKeywordsTrait(
           defSources = styleTrait.keywordDefGroups,
           printDefGroupComments = styleTrait.keywordDefGroups.length > 1,
@@ -378,7 +378,7 @@ object DomDefsGenerator {
           allowSuperCallInOverride = false // can't access lazy val from `super`
         )
 
-        generator.writeToFile(
+        writeToFile(
           packagePath = generator.styleTraitsPackagePath(),
           fileName = styleTrait.scalaName.replace("[_]", ""),
           fileContent = fileContent
@@ -387,8 +387,17 @@ object DomDefsGenerator {
     }
 
     List(
-      List(htmlTags, htmlAttrs, ariaAttrs, htmlProps).sequence,
-      eventProps
+      List(
+        htmlTags,
+        htmlAttrs,
+        svgTags,
+        svgAttrs,
+        ariaAttrs,
+        htmlProps,
+        styleProps
+      ).sequence,
+      eventProps,
+      styleTrait
     ).parFlatSequence
 
   }

@@ -18,7 +18,7 @@ package ff4s
 
 import org.scalajs.dom
 
-import com.raquo.domtypes.generic.codecs.Codec
+import ff4s.codecs.Codec
 import cats.free.Free
 
 trait ModifierDsl[F[_], State, Action] { self: Dsl[F, State, Action] =>
