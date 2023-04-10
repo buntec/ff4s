@@ -27,6 +27,8 @@ class App[F[_]: Concurrent] extends ff4s.App[F, State, Action] {
   import dsl._ // basic dsl
   import dsl.syntax.html._ // nice syntax for html tags, attributes etc.
 
+  val foo = div
+
   val heading =
     h1( // All common html tags are available thanks to scala-dom-types.
       cls := "m-4 text-4xl", // Some tailwindcss utility classes.

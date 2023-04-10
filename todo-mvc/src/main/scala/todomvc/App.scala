@@ -134,7 +134,7 @@ class App[F[_]](implicit val F: Concurrent[F])
 
   val statusBar = useState { state =>
     val activeCount = state.todos.filterNot(_._2.complete).size
-    footer(
+    footerTag(
       cls := "footer",
       span(
         cls := "todo-count",

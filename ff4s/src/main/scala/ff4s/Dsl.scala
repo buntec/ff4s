@@ -27,10 +27,7 @@ import ff4s.codecs._
 
 import annotation.nowarn
 
-class Dsl[F[_], State, Action]
-    extends EventPropsDsl[F, State, Action]
-    with StyleDsl[F, State, Action]
-    with ModifierDsl[F, State, Action] { self =>
+class Dsl[F[_], State, Action] extends ModifierDsl[F, State, Action] { self =>
 
   private[ff4s] sealed trait ViewA[A]
 
@@ -173,7 +170,55 @@ class Dsl[F[_], State, Action]
       thunkArgs: Option[State => Any] = None
   )
 
-  private[ff4s] class ElementBuilder[A](tag: String, void: Boolean) {
+  object key {
+    def :=(s: String): Modifier = Modifier.Key(s)
+    def :=(n: Int): Modifier = Modifier.Key(n.toString)
+    def :=(x: Double): Modifier = Modifier.Key(x.toString)
+  }
+
+  /** This modifier does nothing. Can be useful in conditionals, e.g.,
+    * ```
+    * option(if (someCondition) defaultSelected := true else noop)
+    * ```
+    */
+  val noop = Modifier.NoOp
+
+  /** Thunks are currently broken :( */
+  object thunked {
+    def :=(args: State => Any): Modifier = Modifier.Thunk(args)
+  }
+
+  object insertHook {
+    def :=(onInsert: dom.Element => Action): Modifier =
+      Modifier.InsertHook(onInsert)
+  }
+
+  object destroyHook {
+    def :=(onDestroy: dom.Element => Action): Modifier =
+      Modifier.DestroyHook(onDestroy)
+  }
+
+  implicit class HtmlAttrsOps[V](attr: HtmlAttr[V]) {
+    def :=(value: V): Modifier =
+      Modifier.HtmlAttr(attr.name, value, attr.codec)
+  }
+
+  implicit class HtmlPropOps[V, DomV](prop: HtmlProp[V, DomV]) {
+    def :=(value: V): Modifier =
+      Modifier.Prop[V, DomV](prop.name, value, prop.codec)
+  }
+
+  implicit class EventPropOps[Ev](prop: EventProp[Ev]) {
+
+    def :=(handler: Ev => Option[Action]): Modifier =
+      Modifier.EventHandler(
+        prop.name,
+        (ev: dom.Event) => handler(ev.asInstanceOf[Ev])
+      )
+
+  }
+
+  implicit class HtmlTagOps(tag: HtmlTag[_]) {
 
     def apply(modifiers: Modifier*): V = {
 
@@ -214,13 +259,13 @@ class Dsl[F[_], State, Action]
       }
 
       require(
-        !void || args.children.isEmpty,
+        !tag.void || args.children.isEmpty,
         s"A $tag element cannot have child nodes."
       )
 
       args.children.sequence.flatMap { children =>
         element(
-          tag,
+          tag.name,
           key = args.key,
           children = children,
           eventHandlers = args.eventHandlers,
@@ -237,125 +282,85 @@ class Dsl[F[_], State, Action]
 
   }
 
-  object key {
-    def :=(s: String): Modifier = Modifier.Key(s)
-    def :=(n: Int): Modifier = Modifier.Key(n.toString)
-    def :=(x: Double): Modifier = Modifier.Key(x.toString)
-  }
+  implicit class SvgTagOps(tag: SvgTag[_]) {
 
-  /** This modifier does nothing. Can be useful in conditionals, e.g.,
-    * ```
-    * option(if (someCondition) defaultSelected := true else noop)
-    * ```
-    */
-  val noop = Modifier.NoOp
+    def apply(modifiers: Modifier*): V = {
 
-  /** Thunks are currently broken :( */
-  object thunked {
-    def :=(args: State => Any): Modifier = Modifier.Thunk(args)
-  }
-
-  object insertHook {
-    def :=(onInsert: dom.Element => Action): Modifier =
-      Modifier.InsertHook(onInsert)
-  }
-
-  object destroyHook {
-    def :=(onDestroy: dom.Element => Action): Modifier =
-      Modifier.DestroyHook(onDestroy)
-  }
-
-  object syntax {
-
-    implicit class HtmlAttrsOps[V](attr: HtmlAttr[V]) {
-      def :=(value: V): Modifier =
-        Modifier.HtmlAttr(attr.name, value, attr.codec)
-    }
-
-    implicit class PropOps[V, DomV](prop: HtmlProp[V, DomV]) {
-      def :=(value: V): Modifier =
-        Modifier.Prop[V, DomV](prop.name, value, prop.codec)
-    }
-
-    implicit class HtmlTagOps(tag: HtmlTag[_]) {
-
-      def apply(modifiers: Modifier*): V = {
-
-        val args = modifiers.foldLeft(ElemArgs()) { case (args, mod) =>
-          mod match {
-            case Modifier.NoOp     => args
-            case Modifier.Key(key) => args.copy(key = Some(key))
-            case Modifier.HtmlAttr(name, value, codec) =>
-              if (codec == BooleanAsAttrPresenceCodec) {
-                // this codec doesn't play nicely with snabbdom
-                // https://github.com/snabbdom/snabbdom#the-attributes-module
-                args.copy(attrs =
-                  args.attrs + (name -> value.asInstanceOf[Boolean])
-                )
-              } else {
-                args.copy(attrs = args.attrs + (name -> codec.encode(value)))
-              }
-            case Modifier.SvgAttr(name, value, codec) =>
-              args.copy(attrs = args.attrs + (name -> codec.encode(value)))
-            case Modifier.Prop(name, value, codec) =>
-              args.copy(props = args.props + (name -> codec.encode(value)))
-            case Modifier.EventHandler(eventName, handler) =>
-              args.copy(eventHandlers =
-                args.eventHandlers + (eventName -> handler)
+      val args = modifiers.foldLeft(ElemArgs()) { case (args, mod) =>
+        mod match {
+          case Modifier.NoOp     => args
+          case Modifier.Key(key) => args.copy(key = Some(key))
+          case Modifier.HtmlAttr(name, value, codec) =>
+            if (codec == BooleanAsAttrPresenceCodec) {
+              // this codec doesn't play nicely with snabbdom
+              // https://github.com/snabbdom/snabbdom#the-attributes-module
+              args.copy(attrs =
+                args.attrs + (name -> value.asInstanceOf[Boolean])
               )
-            case Modifier.ChildNode(vnode) =>
-              args.copy(children = args.children :+ vnode)
-            case Modifier.ChildNodes(vnodes) =>
-              args.copy(children = args.children ++ vnodes)
-            case Modifier.InsertHook(onInsert) =>
-              args.copy(insertHook = Some(onInsert))
-            case Modifier.DestroyHook(onDestroy) =>
-              args.copy(destroyHook = Some(onDestroy))
-            case Modifier.Style(name, value) =>
-              args.copy(style = args.style + (name -> value))
-            case Modifier.Thunk(tArgs) => args.copy(thunkArgs = Some(tArgs))
-          }
+            } else {
+              args.copy(attrs = args.attrs + (name -> codec.encode(value)))
+            }
+          case Modifier.SvgAttr(name, value, codec) =>
+            args.copy(attrs = args.attrs + (name -> codec.encode(value)))
+          case Modifier.Prop(name, value, codec) =>
+            args.copy(props = args.props + (name -> codec.encode(value)))
+          case Modifier.EventHandler(eventName, handler) =>
+            args.copy(eventHandlers =
+              args.eventHandlers + (eventName -> handler)
+            )
+          case Modifier.ChildNode(vnode) =>
+            args.copy(children = args.children :+ vnode)
+          case Modifier.ChildNodes(vnodes) =>
+            args.copy(children = args.children ++ vnodes)
+          case Modifier.InsertHook(onInsert) =>
+            args.copy(insertHook = Some(onInsert))
+          case Modifier.DestroyHook(onDestroy) =>
+            args.copy(destroyHook = Some(onDestroy))
+          case Modifier.Style(name, value) =>
+            args.copy(style = args.style + (name -> value))
+          case Modifier.Thunk(tArgs) => args.copy(thunkArgs = Some(tArgs))
         }
+      }
 
-        require(
-          !tag.void || args.children.isEmpty,
-          s"A $tag element cannot have child nodes."
+      args.children.sequence.flatMap { children =>
+        element(
+          tag.name,
+          key = args.key,
+          children = children,
+          eventHandlers = args.eventHandlers,
+          attrs = args.attrs,
+          props = args.props,
+          style = args.style,
+          onInsert = args.insertHook,
+          onDestroy = args.destroyHook,
+          thunkArgs = args.thunkArgs
         )
-
-        args.children.sequence.flatMap { children =>
-          element(
-            tag.name,
-            key = args.key,
-            children = children,
-            eventHandlers = args.eventHandlers,
-            attrs = args.attrs,
-            props = args.props,
-            style = args.style,
-            onInsert = args.insertHook,
-            onDestroy = args.destroyHook,
-            thunkArgs = args.thunkArgs
-          )
-        }
-
       }
 
     }
 
-    object html extends HtmlTags with HtmlAttrs with HtmlProps
+  }
 
-    // object html
-    //    extends tagsSyntax
-    //    with StylesSyntax
-    //    with EventPropsSyntax
-    //    with PropsSyntax
-    //    with HtmlAttrsSyntax
+  implicit class SvgAttrsOps[V](attr: SvgAttr[V]) {
+    def :=(value: V): Modifier =
+      Modifier.SvgAttr(attr.name, value, attr.codec)
+  }
+
+  object syntax {
+
+    object html
+        extends HtmlTags
+        with HtmlAttrs
+        with HtmlProps
+        with GlobalEventProps {
+
+      lazy val cls = new HtmlAttr("class", StringAsIsCodec)
+
+      lazy val `class` = cls
+
+    }
 
     object svg extends SvgTags with SvgAttrs
-
-    // object extras
-    //    extends DocumentTags[ElementBuilder]
-    //    with MiscTags[ElementBuilder]
-    //    with TagBuilder
 
   }
 

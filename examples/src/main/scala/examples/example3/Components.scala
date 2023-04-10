@@ -29,6 +29,7 @@ import cats.syntax.all._
 class Components[F[_], S, A] {
 
   def hello(implicit dsl: ff4s.Dsl[F, S, A]): dsl.V = {
+    import dsl._
     import dsl.syntax.html._
 
     div("hello")
@@ -58,6 +59,7 @@ class Components[F[_], S, A] {
   def fancyWrapper(
       dsl: ff4s.Dsl[F, S, A]
   )(description: String)(children: dsl.V*): dsl.V = {
+    import dsl._
     import dsl.syntax.html._
 
     div(
@@ -70,6 +72,7 @@ class Components[F[_], S, A] {
   def pageWithHeaderAndFooter(
       dsl: ff4s.Dsl[F, S, A]
   )(title0: String)(children: dsl.V*): dsl.V = {
+    import dsl._
     import dsl.syntax.html._
 
     div(

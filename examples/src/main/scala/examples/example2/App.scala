@@ -248,6 +248,7 @@ class App[F[_]: Async] extends ff4s.App[F, State, Action] {
         // separate import for SVG tags and attributes.
         // Note the curly braces defining a new scope.
         // Html syntax can still be accessed through fully-qualified names.
+        import dsl._
         import dsl.syntax.svg._
         svg(
           height := "100",
