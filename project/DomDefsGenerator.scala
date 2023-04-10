@@ -9,42 +9,34 @@ import com.raquo.domtypes.codegen.{
 import com.raquo.domtypes.common.{HtmlTagType, SvgTagType}
 import com.raquo.domtypes.defs.styles.StyleTraitDefs
 
+import cats.effect.IO
+import cats.syntax.all._
+
+import java.io.File
+
 object DomDefsGenerator {
 
-  private object generator
-      extends CanonicalGenerator(
-        baseOutputDirectoryPath = "ff4s/src/main/scala/ff4s/",
-        basePackagePath = "ff4s",
-        standardTraitCommentLines = List(
-          "#NOTE: GENERATED CODE",
-          s" - This file is generated at compile time from the data in Scala DOM Types",
-          " - See `project/DomDefsGenerator.scala` for code generation params",
-          " - Contribute to https://github.com/raquo/scala-dom-types to add missing tags / attrs / props / etc."
-        ),
-        format = CodeFormatting()
-      ) {
+  def generate(srcManaged: File): IO[List[File]] = {
 
-    override def settersPackagePath: String =
-      basePackagePath + ".modifiers.KeySetter"
-
-    override def scalaJsElementTypeParam: String = "Ref"
-  }
-
-  private val cache = new CanonicalCache("project")
-
-  def cachedGenerate(): Unit = {
-    cache.triggerIfCacheKeyUpdated(
-      metaProject.BuildInfo.scalaDomTypesVersion,
-      forceOnEverySnapshot = false
-    )(_ => generate())
-  }
-
-  def generate(): Unit = {
+    val generator = new CustomGenerator(srcManaged)
     val defGroups = new CanonicalDefGroups()
+
+    def writeToFile(
+        packagePath: String,
+        fileName: String,
+        fileContent: String
+    ): IO[File] =
+      IO {
+        generator.writeToFile(
+          packagePath = packagePath,
+          fileName = fileName,
+          fileContent = fileContent
+        )
+      }
 
     // -- HTML tags --
 
-    {
+    val htmlTags = {
       val traitName = "HtmlTags"
 
       val fileContent = generator.generateTagsTrait(
@@ -71,7 +63,7 @@ object DomDefsGenerator {
         defType = LazyVal
       )
 
-      generator.writeToFile(
+      writeToFile(
         packagePath = generator.tagDefsPackagePath,
         fileName = traitName,
         fileContent = fileContent
@@ -80,7 +72,7 @@ object DomDefsGenerator {
 
     // -- SVG tags --
 
-    {
+    val svgTags = {
       val traitName = "SvgTags"
 
       val fileContent = generator.generateTagsTrait(
@@ -105,7 +97,7 @@ object DomDefsGenerator {
         defType = LazyVal
       )
 
-      generator.writeToFile(
+      writeToFile(
         packagePath = generator.tagDefsPackagePath,
         fileName = traitName,
         fileContent = fileContent
@@ -114,7 +106,7 @@ object DomDefsGenerator {
 
     // -- HTML attributes --
 
-    {
+    val htmlAttrs = {
       val traitName = "HtmlAttrs"
 
       val fileContent = generator.generateAttrsTrait(
@@ -140,7 +132,7 @@ object DomDefsGenerator {
         defType = LazyVal
       )
 
-      generator.writeToFile(
+      writeToFile(
         packagePath = generator.attrDefsPackagePath,
         fileName = traitName,
         fileContent = fileContent
@@ -149,7 +141,7 @@ object DomDefsGenerator {
 
     // -- SVG attributes --
 
-    {
+    val svgAttrs = {
       val traitName = "SvgAttrs"
 
       val fileContent = generator.generateAttrsTrait(
@@ -175,7 +167,7 @@ object DomDefsGenerator {
         defType = LazyVal
       )
 
-      generator.writeToFile(
+      writeToFile(
         packagePath = generator.attrDefsPackagePath,
         fileName = traitName,
         fileContent = fileContent
@@ -184,7 +176,7 @@ object DomDefsGenerator {
 
     // -- ARIA attributes --
 
-    {
+    val ariaAttrs = {
       val traitName = "AriaAttrs"
 
       def transformAttrDomName(ariaAttrName: String): String = {
@@ -220,7 +212,7 @@ object DomDefsGenerator {
         defType = LazyVal
       )
 
-      generator.writeToFile(
+      writeToFile(
         packagePath = generator.attrDefsPackagePath,
         fileName = traitName,
         fileContent = fileContent
@@ -229,7 +221,7 @@ object DomDefsGenerator {
 
     // -- HTML props --
 
-    {
+    val htmlProps = {
       val traitName = "HtmlProps"
 
       val fileContent = generator.generatePropsTrait(
@@ -253,7 +245,7 @@ object DomDefsGenerator {
         defType = LazyVal
       )
 
-      generator.writeToFile(
+      writeToFile(
         packagePath = generator.propDefsPackagePath,
         fileName = traitName,
         fileContent = fileContent
@@ -262,7 +254,7 @@ object DomDefsGenerator {
 
     // -- Event props --
 
-    {
+    val eventProps = {
       val baseTraitName = "GlobalEventProps"
 
       val subTraits = List(
@@ -270,7 +262,7 @@ object DomDefsGenerator {
         "DocumentEventProps" -> defGroups.documentEventPropDefGroups
       )
 
-      {
+      val global = {
         val fileContent = generator.generateEventPropsTrait(
           defSources = defGroups.globalEventPropDefGroups,
           printDefGroupComments = true,
@@ -292,14 +284,14 @@ object DomDefsGenerator {
           defType = LazyVal
         )
 
-        generator.writeToFile(
+        writeToFile(
           packagePath = generator.eventPropDefsPackagePath,
           fileName = baseTraitName,
           fileContent = fileContent
         )
       }
 
-      subTraits.foreach { case (traitName, eventPropsDefGroups) =>
+      val foo = subTraits.traverse { case (traitName, eventPropsDefGroups) =>
         val fileContent = generator.generateEventPropsTrait(
           defSources = eventPropsDefGroups,
           printDefGroupComments = true,
@@ -315,17 +307,20 @@ object DomDefsGenerator {
           defType = LazyVal
         )
 
-        generator.writeToFile(
+        writeToFile(
           packagePath = generator.eventPropDefsPackagePath,
           fileName = traitName,
           fileContent = fileContent
         )
       }
+
+      List(foo, global.map(List(_))).parFlatSequence
+
     }
 
     // -- Style props --
 
-    {
+    val styleProps = {
       val traitName = "StyleProps"
 
       val fileContent = generator.generateStylePropsTrait(
@@ -355,7 +350,7 @@ object DomDefsGenerator {
         outputUnitTraits = true
       )
 
-      generator.writeToFile(
+      writeToFile(
         packagePath = generator.stylePropDefsPackagePath,
         fileName = traitName,
         fileContent = fileContent
@@ -390,6 +385,12 @@ object DomDefsGenerator {
         )
       }
     }
+
+    List(
+      List(htmlTags, htmlAttrs, ariaAttrs, htmlProps).sequence,
+      eventProps
+    ).parFlatSequence
+
   }
 
 }

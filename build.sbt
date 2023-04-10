@@ -31,11 +31,7 @@ lazy val betterMonadicForVersion = "0.3.1"
 lazy val scalaJsSnabbdomVersion = "0.2.0-M3"
 lazy val fs2DomVersion = "0.2.0-RC3"
 
-lazy val precompile = taskKey[Unit]("runs Laminar-specific pre-compile tasks")
-
-precompile := DomDefsGenerator.cachedGenerate()
-
-(Compile / compile) := ((Compile / compile) dependsOn precompile).value
+lazy val generateDomDefs = taskKey[Seq[File]]("Generate SDT sources")
 
 lazy val root = tlCrossRootProject.aggregate(ff4s, examples, todoMvc)
 
@@ -60,7 +56,17 @@ lazy val ff4s = (project in file("ff4s"))
       "io.circe" %%% "circe-literal" % circeVersion,
       "io.circe" %%% "circe-parser" % circeVersion,
       "com.armanbilge" %%% "fs2-dom" % fs2DomVersion
-    )
+    ),
+    Compile / generateDomDefs := {
+      import cats.effect.unsafe.implicits.global
+      import sbt.util.CacheImplicits._
+      (Compile / generateDomDefs).previous(sbt.fileJsonFormatter).getOrElse {
+        DomDefsGenerator
+          .generate((Compile / sourceManaged).value / "domdefs")
+          .unsafeRunSync()
+      }
+    },
+    Compile / sourceGenerators += (Compile / generateDomDefs)
   )
 
 lazy val examples = (project in file("examples"))
