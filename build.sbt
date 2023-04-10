@@ -31,6 +31,12 @@ lazy val betterMonadicForVersion = "0.3.1"
 lazy val scalaJsSnabbdomVersion = "0.2.0-M3"
 lazy val fs2DomVersion = "0.2.0-RC3"
 
+lazy val precompile = taskKey[Unit]("runs Laminar-specific pre-compile tasks")
+
+precompile := DomDefsGenerator.cachedGenerate()
+
+(Compile / compile) := ((Compile / compile) dependsOn precompile).value
+
 lazy val root = tlCrossRootProject.aggregate(ff4s, examples, todoMvc)
 
 lazy val ff4s = (project in file("ff4s"))
