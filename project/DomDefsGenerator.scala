@@ -393,10 +393,10 @@ object DomDefsGenerator {
         svgTags,
         svgAttrs,
         ariaAttrs,
-        htmlProps,
+        htmlProps
         // styleProps
       ).sequence,
-      eventProps,
+      eventProps
       // styleTrait
     ).parFlatSequence
 
