@@ -394,10 +394,10 @@ object DomDefsGenerator {
         svgAttrs,
         ariaAttrs,
         htmlProps,
-        styleProps
+        //styleProps
       ).sequence,
       eventProps,
-      styleTrait
+      //styleTrait
     ).parFlatSequence
 
   }

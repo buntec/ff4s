@@ -21,10 +21,9 @@ import cats.effect.kernel.Resource
 import cats.free.Free
 import cats.free.Free.liftF
 import cats.syntax.all._
-import com.raquo.domtypes.generic.builders
-import com.raquo.domtypes.generic.codecs.BooleanAsAttrPresenceCodec
-import com.raquo.domtypes.jsdom.defs.tags._
 import org.scalajs.dom
+
+import ff4s.codecs._
 
 import annotation.nowarn
 
@@ -238,22 +237,6 @@ class Dsl[F[_], State, Action]
 
   }
 
-  trait TagBuilder
-      extends builders.HtmlTagBuilder[ElementBuilder, dom.html.Element]
-      with builders.SvgTagBuilder[ElementBuilder, dom.svg.Element] {
-
-    @inline override protected def htmlTag[Ref <: dom.html.Element](
-        tagName: String,
-        void: Boolean
-    ): ElementBuilder[Ref] = new ElementBuilder(tagName, void)
-
-    @inline override protected def svgTag[Ref <: dom.svg.Element](
-        tagName: String,
-        void: Boolean
-    ): ElementBuilder[Ref] = new ElementBuilder(tagName, void)
-
-  }
-
   object key {
     def :=(s: String): Modifier = Modifier.Key(s)
     def :=(n: Int): Modifier = Modifier.Key(n.toString)
@@ -281,15 +264,6 @@ class Dsl[F[_], State, Action]
     def :=(onDestroy: dom.Element => Action): Modifier =
       Modifier.DestroyHook(onDestroy)
   }
-
-  trait tagsSyntax
-      extends GroupingTags[ElementBuilder]
-      with TextTags[ElementBuilder]
-      with EmbedTags[ElementBuilder]
-      with FormTags[ElementBuilder]
-      with SectionTags[ElementBuilder]
-      with TableTags[ElementBuilder]
-      with TagBuilder
 
   object syntax {
 
@@ -378,10 +352,10 @@ class Dsl[F[_], State, Action]
 
     object svg extends SvgTags with SvgAttrs
 
-    object extras
-        extends DocumentTags[ElementBuilder]
-        with MiscTags[ElementBuilder]
-        with TagBuilder
+    // object extras
+    //    extends DocumentTags[ElementBuilder]
+    //    with MiscTags[ElementBuilder]
+    //    with TagBuilder
 
   }
 
