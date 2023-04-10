@@ -420,9 +420,7 @@ class Dsl[F[_], State, Action] { self =>
 
     // Alternative: new HtmlAttr("class", StringAsIsCodec)
     lazy val cls = new HtmlProp[String, String]("className", StringAsIsCodec)
-
     lazy val `class` = cls
-
     lazy val className = cls
 
     lazy val styleAttr = new HtmlAttr("style", StringAsIsCodec)
@@ -438,7 +436,13 @@ class Dsl[F[_], State, Action] { self =>
 
   }
 
-  object svg extends SvgTags with SvgAttrs
+  object svg extends SvgTags with SvgAttrs {
+
+    lazy val cls = new SvgAttr("class", StringAsIsCodec, None)
+    lazy val `class` = cls
+    lazy val className = cls
+
+  }
 
 }
 
