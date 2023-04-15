@@ -53,6 +53,10 @@ class Dsl[F[_], State, Action] { self =>
 
   private[ff4s] case class GetState() extends ViewA[State]
 
+  private[ff4s] case class GetUUID() extends ViewA[java.util.UUID]
+
+  private[ff4s] case class GetId() extends ViewA[Long]
+
   type View[A] = Free[ViewA, A]
 
   /* The type of an ff4s program. */
@@ -115,10 +119,29 @@ class Dsl[F[_], State, Action] { self =>
 
   }
 
+  /** Produces the current state. */
   def getState: View[State] = liftF[ViewA, State](GetState())
 
   /** Alias for `getState.flatMap(f)`. */
   def useState[A](f: State => View[A]): View[A] = getState.flatMap(f)
+
+  /** Produces random UUIDs. For uses cases see
+    * https://react.dev/reference/react/useId
+    */
+  def getUUID: View[java.util.UUID] = liftF[ViewA, java.util.UUID](GetUUID())
+
+  /** Alias for `getUUID.flatMap(f)`. */
+  def useUUID[A](f: java.util.UUID => View[A]): View[A] = getUUID.flatMap(f)
+
+  /** Produces an increasing sequence of Ids: 1, 2, 3,... The advantage over
+    * `getUUID` is that the IDs are stable across renders provided the order of
+    * `getId` calls is stable. If global uniqueness is not required, this is
+    * better for performance.
+    */
+  def getId: View[Long] = liftF[ViewA, Long](GetId())
+
+  /** Alias for `getId.flatMap(f)`. */
+  def useId[A](f: Long => View[A]): View[A] = getId.flatMap(f)
 
   private[ff4s] def element(
       tag: String,
@@ -247,7 +270,7 @@ class Dsl[F[_], State, Action] { self =>
     * option(if (someCondition) defaultSelected := true else noop)
     * ```
     */
-  val noop = Modifier.NoOp
+  val noop: Modifier = Modifier.NoOp
 
   /** Thunks are currently broken :( */
   object thunked {
@@ -275,13 +298,11 @@ class Dsl[F[_], State, Action] { self =>
   }
 
   implicit class EventPropOps[Ev](prop: EventProp[Ev]) {
-
     def :=(handler: Ev => Option[Action]): Modifier =
       Modifier.EventHandler(
         prop.name,
         (ev: dom.Event) => handler(ev.asInstanceOf[Ev])
       )
-
   }
 
   implicit class HtmlTagOps(tag: HtmlTag[_]) {

@@ -1,7 +1,7 @@
 Global / onChangedBuildSource := ReloadOnSourceChanges
 Global / resolvers += "Sonatype S01 OSS Snapshots" at "https://s01.oss.sonatype.org/content/repositories/snapshots"
 
-ThisBuild / tlBaseVersion := "0.10"
+ThisBuild / tlBaseVersion := "0.11"
 
 lazy val scala213 = "2.13.10"
 ThisBuild / scalaVersion := scala213
@@ -39,6 +39,8 @@ lazy val ff4s = (project in file("ff4s"))
   .settings(
     name := "ff4s",
     libraryDependencies ++= Seq(
+      ("org.scala-js" %%% "scalajs-java-securerandom" % "1.0.0")
+        .cross(CrossVersion.for3Use2_13),
       "io.github.buntec" %%% "scala-js-snabbdom" % scalaJsSnabbdomVersion,
       "org.scala-js" %%% "scalajs-dom" % scalajsDomVersion,
       "org.typelevel" %%% "cats-core" % catsVersion,

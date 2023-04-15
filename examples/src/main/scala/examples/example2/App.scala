@@ -302,6 +302,29 @@ class App[F[_]: Async] extends ff4s.App[F, State, Action] {
     )
   }
 
+  val idExample =
+    useId { uid =>
+      div(
+        cls := "m-1 flex flex-col items-center",
+        h2(cls := subHeadingCls, "Unique IDs"),
+        div(s"Some id: ${uid}"),
+        useId { uid =>
+          div(s"Another id: $uid")
+        },
+        useId { uid =>
+          div(s"Yet another id: $uid")
+        }
+      )
+    }
+
+  val uuidExample = useUUID { uid =>
+    div(
+      cls := "m-1 flex flex-col items-center",
+      h2(cls := subHeadingCls, "A random UUID"),
+      div(uid.toString)
+    )
+  }
+
   val root = div(
     cls := "p-4 flex flex-col items-center bg-no-repeat h-full bg-gradient-to-tr from-gray-200 to-sky-300 text-gray-800 font-light",
     welcome,
@@ -313,7 +336,9 @@ class App[F[_]: Async] extends ff4s.App[F, State, Action] {
     dropDown,
     radioButtons,
     svgDemo,
-    websocketExample
+    websocketExample,
+    idExample,
+    uuidExample
   )
 
 }
