@@ -1,7 +1,7 @@
 Global / onChangedBuildSource := ReloadOnSourceChanges
 Global / resolvers += "Sonatype S01 OSS Snapshots" at "https://s01.oss.sonatype.org/content/repositories/snapshots"
 
-ThisBuild / tlBaseVersion := "0.10"
+ThisBuild / tlBaseVersion := "0.11"
 
 lazy val scala213 = "2.13.10"
 ThisBuild / scalaVersion := scala213
@@ -19,7 +19,6 @@ ThisBuild / developers := List(
 ThisBuild / tlFatalWarningsInCi := false
 
 lazy val scalajsDomVersion = "2.4.0"
-lazy val domtypesVersion = "0.15.3"
 lazy val circeVersion = "0.14.5"
 lazy val catsVersion = "2.9.0"
 lazy val catsEffectVersion = "3.4.8"
@@ -31,6 +30,8 @@ lazy val betterMonadicForVersion = "0.3.1"
 lazy val scalaJsSnabbdomVersion = "0.2.0-M3"
 lazy val fs2DomVersion = "0.2.0-RC3"
 
+lazy val generateDomDefs = taskKey[Seq[File]]("Generate SDT sources")
+
 lazy val root = tlCrossRootProject.aggregate(ff4s, examples, todoMvc)
 
 lazy val ff4s = (project in file("ff4s"))
@@ -38,9 +39,10 @@ lazy val ff4s = (project in file("ff4s"))
   .settings(
     name := "ff4s",
     libraryDependencies ++= Seq(
+      ("org.scala-js" %%% "scalajs-java-securerandom" % "1.0.0")
+        .cross(CrossVersion.for3Use2_13),
       "io.github.buntec" %%% "scala-js-snabbdom" % scalaJsSnabbdomVersion,
       "org.scala-js" %%% "scalajs-dom" % scalajsDomVersion,
-      "com.raquo" %%% "domtypes" % domtypesVersion,
       "org.typelevel" %%% "cats-core" % catsVersion,
       "org.typelevel" %%% "cats-free" % catsVersion,
       "org.typelevel" %%% "cats-effect" % catsEffectVersion,
@@ -54,7 +56,17 @@ lazy val ff4s = (project in file("ff4s"))
       "io.circe" %%% "circe-literal" % circeVersion,
       "io.circe" %%% "circe-parser" % circeVersion,
       "com.armanbilge" %%% "fs2-dom" % fs2DomVersion
-    )
+    ),
+    Compile / generateDomDefs := {
+      import cats.effect.unsafe.implicits.global
+      import sbt.util.CacheImplicits._
+      (Compile / generateDomDefs).previous(sbt.fileJsonFormatter).getOrElse {
+        DomDefsGenerator
+          .generate((Compile / sourceManaged).value / "domdefs")
+          .unsafeRunSync()
+      }
+    },
+    Compile / sourceGenerators += (Compile / generateDomDefs)
   )
 
 lazy val examples = (project in file("examples"))

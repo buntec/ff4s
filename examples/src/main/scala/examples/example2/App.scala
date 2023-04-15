@@ -26,7 +26,7 @@ class App[F[_]: Async] extends ff4s.App[F, State, Action] {
   val store = Store[F]
 
   import dsl._ // basic dsl
-  import dsl.syntax.html._ // nice syntax for html tags, attributes etc.
+  import dsl.html._ // nice syntax for html tags, attributes etc.
 
   // Define some classes for easy re-use.
   val linkCls = "text-pink-500"
@@ -99,7 +99,10 @@ class App[F[_]: Async] extends ff4s.App[F, State, Action] {
   val counter = useState { state =>
     div(
       cls := "m-4",
-      h2(cls := subHeadingCls, "A simple counter"),
+      h2(
+        cls := subHeadingCls,
+        "A simple counter"
+      ),
       p(
         s"The counter stands at ${state.counter}. Click the buttons to increment or decrement the counter."
       ),
@@ -248,7 +251,7 @@ class App[F[_]: Async] extends ff4s.App[F, State, Action] {
         // separate import for SVG tags and attributes.
         // Note the curly braces defining a new scope.
         // Html syntax can still be accessed through fully-qualified names.
-        import dsl.syntax.svg._
+        import dsl.svg._
         svg(
           height := "100",
           width := "100",
@@ -299,6 +302,29 @@ class App[F[_]: Async] extends ff4s.App[F, State, Action] {
     )
   }
 
+  val idExample =
+    useId { uid =>
+      div(
+        cls := "m-1 flex flex-col items-center",
+        h2(cls := subHeadingCls, "Unique IDs"),
+        div(s"Some id: ${uid}"),
+        useId { uid =>
+          div(s"Another id: $uid")
+        },
+        useId { uid =>
+          div(s"Yet another id: $uid")
+        }
+      )
+    }
+
+  val uuidExample = useUUID { uid =>
+    div(
+      cls := "m-1 flex flex-col items-center",
+      h2(cls := subHeadingCls, "A random UUID"),
+      div(uid.toString)
+    )
+  }
+
   val root = div(
     cls := "p-4 flex flex-col items-center bg-no-repeat h-full bg-gradient-to-tr from-gray-200 to-sky-300 text-gray-800 font-light",
     welcome,
@@ -310,7 +336,9 @@ class App[F[_]: Async] extends ff4s.App[F, State, Action] {
     dropDown,
     radioButtons,
     svgDemo,
-    websocketExample
+    websocketExample,
+    idExample,
+    uuidExample
   )
 
 }

@@ -29,7 +29,8 @@ import cats.syntax.all._
 class Components[F[_], S, A] {
 
   def hello(implicit dsl: ff4s.Dsl[F, S, A]): dsl.V = {
-    import dsl.syntax.html._
+    import dsl._
+    import dsl.html._
 
     div("hello")
   }
@@ -41,7 +42,7 @@ class Components[F[_], S, A] {
       isDisabled: S => Boolean
   )(implicit dsl: ff4s.Dsl[F, S, A]): dsl.V = {
     import dsl._
-    import dsl.syntax.html._
+    import dsl.html._
 
     useState { state =>
       button(
@@ -58,7 +59,8 @@ class Components[F[_], S, A] {
   def fancyWrapper(
       dsl: ff4s.Dsl[F, S, A]
   )(description: String)(children: dsl.V*): dsl.V = {
-    import dsl.syntax.html._
+    import dsl._
+    import dsl.html._
 
     div(
       cls := "m-1 p-1 border border-purple-500 rounded flex flex-col items-center",
@@ -70,7 +72,8 @@ class Components[F[_], S, A] {
   def pageWithHeaderAndFooter(
       dsl: ff4s.Dsl[F, S, A]
   )(title0: String)(children: dsl.V*): dsl.V = {
-    import dsl.syntax.html._
+    import dsl._
+    import dsl.html._
 
     div(
       cls := "bg-zinc-100 text-zinc-900 w-full h-screen flex flex-col justify-between font-light",
@@ -88,7 +91,7 @@ class Components[F[_], S, A] {
       dsl: ff4s.Dsl[F, S, A]
   ): dsl.V = {
     import dsl._
-    import dsl.syntax.html._
+    import dsl.html._
 
     useState { state =>
       div(
@@ -112,7 +115,7 @@ class Components[F[_], S, A] {
       selected0: S => O
   )(implicit dsl: ff4s.Dsl[F, S, A]): dsl.V = {
     import dsl._
-    import dsl.syntax.html._
+    import dsl.html._
 
     useState { state =>
       div(

@@ -16,19 +16,10 @@
 
 package ff4s
 
-import com.raquo.domtypes.generic.keys.SvgAttr
-import com.raquo.domtypes.generic.builders.canonical.CanonicalSvgAttrBuilder
-import com.raquo.domtypes.generic.defs.attrs.SvgAttrs
+import ff4s.codecs.Codec
 
-trait SvgAttrsDsl[F[_], State, Action] {
-  self: ModifierDsl[F, State, Action] with Dsl[F, State, Action] =>
-
-  trait SvgAttrsSyntax extends SvgAttrs[SvgAttr] with CanonicalSvgAttrBuilder {
-
-    implicit class SvgAttrsOps[V](attr: SvgAttr[V]) {
-      def :=(value: V): Modifier =
-        Modifier.SvgAttr[V](attr.name, value, attr.codec)
-    }
-
-  }
-}
+class SvgAttr[V](
+    val name: String,
+    val codec: Codec[V, String],
+    val namespace: Option[String]
+)

@@ -14,9 +14,6 @@
  * limitations under the License.
  */
 
-package examples
+package ff4s
 
-object Main
-    extends ff4s.IOEntryPoint(
-      new example2.App // replace with `example<N>.App` to try other examples
-    )
+class SvgTag[A](val name: String)

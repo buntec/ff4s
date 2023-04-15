@@ -59,7 +59,7 @@ class App[F[_]](implicit val F: Concurrent[F])
     }
 
   import dsl._
-  import dsl.syntax.html._
+  import dsl.html._
 
   val todoInput = useState { state =>
     input(
@@ -125,6 +125,7 @@ class App[F[_]](implicit val F: Concurrent[F])
         ),
         label(todo.what),
         button(
+          tpe := "button",
           cls := "destroy",
           onClick := (_ => Some(Action.RemoveTodo(todo.id)))
         )
@@ -134,7 +135,7 @@ class App[F[_]](implicit val F: Concurrent[F])
 
   val statusBar = useState { state =>
     val activeCount = state.todos.filterNot(_._2.complete).size
-    footer(
+    footerTag(
       cls := "footer",
       span(
         cls := "todo-count",

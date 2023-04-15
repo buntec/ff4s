@@ -33,6 +33,8 @@ private[ff4s] object Compiler {
 
     new (ViewA ~> Id) {
 
+      private var id0 = 0L
+
       override def apply[A](fa: ViewA[A]): Id[A] = fa match {
 
         case GetState() => state
@@ -147,6 +149,10 @@ private[ff4s] object Compiler {
 
         }
 
+        case GetUUID() => java.util.UUID.randomUUID()
+
+        case GetId() => { id0 += 1; id0 }
+
       }
 
     }
@@ -194,6 +200,10 @@ private[ff4s] object Compiler {
             style,
             thunkArgs.map(t => (s: StateB) => t(f(s)))
           )
+
+        case dslA.GetUUID() => dslB.getUUID
+
+        case dslA.GetId() => dslB.getId
       }
 
     }

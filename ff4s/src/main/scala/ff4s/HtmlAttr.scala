@@ -14,9 +14,8 @@
  * limitations under the License.
  */
 
-package examples
+package ff4s
 
-object Main
-    extends ff4s.IOEntryPoint(
-      new example2.App // replace with `example<N>.App` to try other examples
-    )
+import ff4s.codecs.Codec
+
+class HtmlAttr[V](val name: String, val codec: Codec[V, String])
