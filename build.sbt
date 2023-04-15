@@ -60,11 +60,13 @@ lazy val ff4s = (project in file("ff4s"))
     Compile / generateDomDefs := {
       import cats.effect.unsafe.implicits.global
       import sbt.util.CacheImplicits._
-      (Compile / generateDomDefs).previous(sbt.fileJsonFormatter).getOrElse {
+      val store = (streams.value.cacheStoreFactory / "ff4s").make("dom-defs")
+      val cachedDomDefs = Cache.cached(store)((_: String) =>
         DomDefsGenerator
           .generate((Compile / sourceManaged).value / "domdefs")
           .unsafeRunSync()
-      }
+      )
+      cachedDomDefs((Compile / scalaVersion).value)
     },
     Compile / sourceGenerators += (Compile / generateDomDefs)
   )
