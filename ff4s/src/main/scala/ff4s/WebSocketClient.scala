@@ -27,9 +27,12 @@ import io.circe.syntax._
 import org.http4s.Uri
 import org.http4s.client.websocket.WSFrame.Text
 import org.http4s.client.websocket._
-import org.http4s.dom._
+import org.http4s.dom.{WebSocketClient => Http4sWsClient}
 
-trait WebSocketsClient[F[_]] {
+/** A convenience wrapper around [[org.http4s.dom.WebSocketClient]] for simple
+  * use cases. For more advanced use cases, directly use the http4s client!
+  */
+trait WebSocketClient[F[_]] {
 
   def receiveJson[R: Decoder](
       uri: String,
@@ -55,10 +58,10 @@ trait WebSocketsClient[F[_]] {
 
 }
 
-object WebSocketsClient {
+object WebSocketClient {
 
-  def apply[F[_]](implicit F: Async[F]): WebSocketsClient[F] =
-    new WebSocketsClient[F] {
+  def apply[F[_]](implicit F: Async[F]): WebSocketClient[F] =
+    new WebSocketClient[F] {
 
       override def bidirectionalJson[R: Decoder, S: Encoder](
           uri: String,
@@ -82,7 +85,7 @@ object WebSocketsClient {
       ): F[Unit] = {
 
         Async[F].fromEither(Uri.fromString(uri)).flatMap { uri =>
-          WebSocketClient[F]
+          Http4sWsClient[F]
             .connectHighLevel(WSRequest(uri))
             .use { conn =>
               (

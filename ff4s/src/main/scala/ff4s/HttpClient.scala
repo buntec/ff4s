@@ -26,11 +26,14 @@ import org.http4s.circe.CirceEntityCodec._
 import org.http4s.client.dsl.Http4sClientDsl
 import org.http4s.dom.FetchClientBuilder
 
+/** A convenience wrapper around the http4s client for very simple use cases.
+  * For more advanced use cases, directly use the http4s client!
+  */
 trait HttpClient[F[_]] {
 
   def get[R: Decoder](url: String): F[R]
 
-  def post[R: Decoder, P: Encoder](url: String, payload: P): F[R]
+  def post[R: Decoder, P: Encoder](url: String, body: P): F[R]
 
 }
 

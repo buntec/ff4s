@@ -75,7 +75,7 @@ object Store {
 
     // establish websocket connection
     _ <- ff4s
-      .WebSocketsClient[F]
+      .WebSocketClient[F]
       .bidirectionalText(
         "wss://ws.postman-echo.com/raw/",
         _.evalMap { msg =>
