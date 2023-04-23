@@ -22,7 +22,7 @@ import cats.syntax.all._
 import fs2.concurrent.Signal
 import fs2.concurrent.SignallingRef
 import org.http4s.Uri
-import org.scalajs.dom
+import cats.effect.kernel.Resource
 
 trait Router[F[_]] {
 
@@ -34,15 +34,18 @@ trait Router[F[_]] {
 
 object Router {
 
-  def apply[F[_]](history: fs2.dom.History[F, Unit])(implicit F: Async[F]) = {
+  def apply[F[_]](
+      window: fs2.dom.Window[F]
+  )(implicit F: Async[F]): Resource[F, Router[F]] = {
 
-    val getLocation: F[Uri] = F
-      .delay(dom.window.location.href)
-      .flatMap(Uri.fromString(_).liftTo[F])
+    val history = window.history[Unit]
+
+    val getLocation: F[Uri] =
+      window.location.href.get.flatMap(Uri.fromString(_).liftTo[F])
 
     def mkAbsolute(uri: Uri): F[Uri] =
-      F.delay(dom.window.location.toString)
-        .flatMap(Uri.fromString(_).liftTo)
+      window.location.href.get
+        .flatMap(Uri.fromString(_).liftTo[F])
         .map(_.resolve(uri))
 
     for {
@@ -56,10 +59,9 @@ object Router {
 
       override def location: Signal[F, Uri] = loc
 
-      override def navigateTo(uri: Uri): F[Unit] = for {
+      def navigateTo(uri: Uri): F[Unit] = for {
         absUri <- mkAbsolute(uri)
-        url <- F.catchNonFatal(new dom.URL(absUri.renderString))
-        _ <- history.pushState((), url.toString)
+        _ <- history.pushState((), absUri.renderString)
         _ <- loc.set(absUri)
       } yield ()
 

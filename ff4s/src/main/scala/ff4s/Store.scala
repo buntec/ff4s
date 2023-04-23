@@ -63,9 +63,9 @@ object Store {
 
     state0 <- SignallingRef.of[F, State](initialState).toResource
 
-    history = fs2.dom.Window[F].history[Unit]
+    window = fs2.dom.Window[F]
 
-    router <- Router[F](history)
+    router <- Router[F](window)
 
     dispatcher = makeDispatcher(state0, router)
 
