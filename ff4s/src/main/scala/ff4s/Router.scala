@@ -18,11 +18,11 @@ package ff4s
 
 import cats.effect.implicits._
 import cats.effect.kernel.Async
+import cats.effect.kernel.Resource
 import cats.syntax.all._
 import fs2.concurrent.Signal
 import fs2.concurrent.SignallingRef
 import org.http4s.Uri
-import cats.effect.kernel.Resource
 
 trait Router[F[_]] {
 

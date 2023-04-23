@@ -16,9 +16,9 @@
 
 package examples.example3
 
-import org.scalajs.dom
 import cats.Show
 import cats.syntax.all._
+import org.scalajs.dom
 
 /* A set of reusable components.
  *

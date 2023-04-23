@@ -17,11 +17,11 @@
 package ff4s
 
 import cats.effect.implicits._
+import cats.effect.kernel.Async
 import cats.effect.kernel.Concurrent
 import cats.effect.kernel.Resource
 import fs2.concurrent.Signal
 import fs2.concurrent.SignallingRef
-import cats.effect.kernel.Async
 import org.http4s.Uri
 
 trait Store[F[_], State, Action] {

@@ -16,18 +16,18 @@
 
 package ff4s
 
+import cats.effect.implicits._
 import cats.effect.kernel.Async
 import cats.syntax.all._
-import cats.effect.implicits._
 import fs2.Stream
-import org.http4s.Uri
-import org.http4s.client.websocket.WSFrame.Text
-import org.http4s.client.websocket._
-import org.http4s.dom._
 import io.circe.Decoder
 import io.circe.Encoder
 import io.circe.parser._
 import io.circe.syntax._
+import org.http4s.Uri
+import org.http4s.client.websocket.WSFrame.Text
+import org.http4s.client.websocket._
+import org.http4s.dom._
 
 trait WebSocketsClient[F[_]] {
 

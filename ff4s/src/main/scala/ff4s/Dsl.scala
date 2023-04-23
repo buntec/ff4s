@@ -21,9 +21,8 @@ import cats.effect.kernel.Resource
 import cats.free.Free
 import cats.free.Free.liftF
 import cats.syntax.all._
-import org.scalajs.dom
-
 import ff4s.codecs._
+import org.scalajs.dom
 
 import annotation.nowarn
 

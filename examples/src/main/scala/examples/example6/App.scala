@@ -18,13 +18,14 @@ package examples.example6
 
 import cats.effect.Temporal
 import cats.effect.implicits._
-import concurrent.duration._
+import cats.effect.kernel.Fiber
+import cats.effect.std.MapRef
+import cats.effect.std.Supervisor
 import cats.syntax.all._
 
 import scala.concurrent.duration.FiniteDuration
-import cats.effect.std.MapRef
-import cats.effect.kernel.Fiber
-import cats.effect.std.Supervisor
+
+import concurrent.duration._
 
 // A minimal example showing how actions can be made cancellable.
 

@@ -17,10 +17,11 @@
 package examples.example5
 
 import cats.effect.Temporal
-import fs2.Stream
 import cats.effect.implicits._
-import concurrent.duration._
 import cats.syntax.all._
+import fs2.Stream
+
+import concurrent.duration._
 
 case class State(counter: Int = 0)
 

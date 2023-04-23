@@ -16,11 +16,11 @@
 
 package todomvc
 
-import cats.syntax.all._
-import org.scalajs.dom
 import cats.effect.Concurrent
 import cats.effect.Resource
+import cats.syntax.all._
 import ff4s.Store
+import org.scalajs.dom
 
 class App[F[_]](implicit val F: Concurrent[F])
     extends ff4s.App[F, State, Action] {

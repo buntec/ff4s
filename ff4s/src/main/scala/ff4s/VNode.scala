@@ -17,7 +17,6 @@
 package ff4s
 
 import cats.effect.std.Dispatcher
-
 import org.scalajs.dom
 
 trait VNode[F[_]] {

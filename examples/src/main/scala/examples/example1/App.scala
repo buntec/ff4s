@@ -16,8 +16,8 @@
 
 package examples.example1
 
-import org.scalajs.dom
 import cats.effect.Concurrent
+import org.scalajs.dom
 
 // The obligatory to-do list app.
 class App[F[_]: Concurrent] extends ff4s.App[F, State, Action] {

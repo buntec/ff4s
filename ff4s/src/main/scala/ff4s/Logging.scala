@@ -16,10 +16,9 @@
 
 package ff4s
 
-import scala.scalajs.js
-
 import org.scalajs.dom.console
 
+import scala.scalajs.js
 import scala.util.Try
 
 sealed trait LogLevel {

@@ -16,8 +16,8 @@
 
 package examples.example3
 
-import cats.syntax.all._
 import cats.Show
+import cats.syntax.all._
 
 sealed trait Weekday
 object Weekday {

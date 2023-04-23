@@ -16,16 +16,16 @@
 
 package examples.example2
 
-import scala.concurrent.duration._
-
-import cats.effect.implicits._
 import cats.effect.Async
 import cats.effect.Resource
+import cats.effect.implicits._
 import cats.effect.std.Queue
 import cats.effect.std.Random
 import cats.syntax.all._
 import fs2.Stream
 import io.circe.generic.auto._
+
+import scala.concurrent.duration._
 
 object Store {
 

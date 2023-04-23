@@ -18,6 +18,8 @@ ThisBuild / developers := List(
 
 ThisBuild / tlFatalWarningsInCi := false
 
+ThisBuild / scalafixDependencies += "com.github.liancheng" %% "organize-imports" % "0.6.0"
+
 lazy val scalajsDomVersion = "2.4.0"
 lazy val circeVersion = "0.14.5"
 lazy val catsVersion = "2.9.0"

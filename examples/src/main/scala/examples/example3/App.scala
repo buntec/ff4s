@@ -18,7 +18,6 @@ package examples.example3
 
 import cats.effect.Concurrent
 import cats.syntax.all._
-
 import monocle.syntax.all._
 
 // This example shows how to create and use reusable components.
