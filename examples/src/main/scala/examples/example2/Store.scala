@@ -34,39 +34,41 @@ object Store {
     // send queue for the websockets connection
     wsSendQ <- Queue.bounded[F, String](100).toResource
 
-    store <- ff4s.Store[F, State, Action](State()) { ref =>
+    store <- ff4s.Store[F, State, Action](State()) { state =>
       _ match {
         case Action.WebsocketMessageReceived(msg) =>
-          ref.update(state => state.copy(websocketResponse = Some(msg)))
+          state.update(state => state.copy(websocketResponse = Some(msg)))
 
         case Action.SendWebsocketMessage(msg) => wsSendQ.offer(msg)
 
         case Action.SetSvgCoords(x, y) =>
-          ref.update(_.copy(svgCoords = SvgCoords(x, y)))
+          state.update(_.copy(svgCoords = SvgCoords(x, y)))
 
-        case Action.Magic => ref.update(_.copy(magic = true))
+        case Action.Magic => state.update(_.copy(magic = true))
 
         case Action.SetName(name) =>
-          ref.update(_.copy(name = if (name.nonEmpty) Some(name) else None))
+          state.update(
+            _.copy(name = if (name.nonEmpty) Some(name) else None)
+          )
 
         case Action.SetPets(pets) =>
-          ref.update(_.copy(pets = pets))
+          state.update(_.copy(pets = pets))
 
         case Action.SetFavoriteDish(dish) =>
-          ref.update(_.copy(favoriteDish = dish))
+          state.update(_.copy(favoriteDish = dish))
 
         case Action.IncrementCounter =>
-          ref.update(s => s.copy(counter = s.counter + 1))
+          state.update(s => s.copy(counter = s.counter + 1))
 
         case Action.DecrementCounter =>
-          ref.update(s => s.copy(counter = s.counter - 1))
+          state.update(s => s.copy(counter = s.counter - 1))
 
         case Action.GetActivity =>
           ff4s
             .HttpClient[F]
             .get[Bored]("http://www.boredapi.com/api/activity")
             .flatMap { bored =>
-              ref.update(s => s.copy(bored = Some(bored)))
+              state.update(s => s.copy(bored = Some(bored)))
             }
       }
     }

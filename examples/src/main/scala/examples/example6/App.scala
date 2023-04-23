@@ -53,13 +53,13 @@ class App[F[_]](implicit F: Temporal[F]) extends ff4s.App[F, State, Action] {
       .ofSingleImmutableMap[F, String, Fiber[F, Throwable, Unit]]()
       .toResource
 
-    store <- ff4s.Store[F, State, Action](State()) { stateRef =>
+    store <- ff4s.Store[F, State, Action](State()) { state =>
       _ match {
         // repeated dispatch of `Inc` will cancel previous invocations if they haven't completed yet.
         case Inc(delay, amount, cancelKey) =>
           supervisor
             .supervise(
-              F.sleep(delay) >> stateRef.update(s =>
+              F.sleep(delay) >> state.update(s =>
                 s.copy(counter = s.counter + amount)
               )
             )
@@ -81,7 +81,7 @@ class App[F[_]](implicit F: Temporal[F]) extends ff4s.App[F, State, Action] {
   import dsl._
   import dsl.html._
 
-  override val root = useState { state =>
+  override val view = useState { state =>
     val btnCls = "m-1 p-2 border rounded"
     div(
       span(s"count: ${state.counter}"),

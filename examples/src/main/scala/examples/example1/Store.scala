@@ -20,10 +20,10 @@ import cats.effect.Concurrent
 
 object Store {
 
-  def apply[F[_]: Concurrent] = ff4s.Store[F, State, Action](State()) { ref =>
+  def apply[F[_]: Concurrent] = ff4s.Store[F, State, Action](State()) { state =>
     _ match {
       case Action.AddTodo =>
-        ref.update { state =>
+        state.update { state =>
           val nextId = state.nextId
           state.todoInput match {
             case Some(what) if what.nonEmpty =>
@@ -37,12 +37,12 @@ object Store {
         }
 
       case Action.RemoveTodo(id) =>
-        ref.update { state =>
+        state.update { state =>
           state.copy(todos = state.todos.filterNot(_.id == id))
         }
 
       case Action.SetTodoInput(what) =>
-        ref.update(_.copy(todoInput = Some(what)))
+        state.update(_.copy(todoInput = Some(what)))
     }
   }
 

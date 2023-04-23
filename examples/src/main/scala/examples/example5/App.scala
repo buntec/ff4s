@@ -30,11 +30,11 @@ case class Inc(amount: Int) extends Action
 
 class App[F[_]](implicit F: Temporal[F]) extends ff4s.App[F, State, Action] {
 
-  val store = ff4s
-    .Store[F, State, Action](State()) { ref =>
+  override val store = ff4s
+    .Store[F, State, Action](State()) { state =>
       _ match {
         case Inc(amount) =>
-          ref.update(state => state.copy(counter = state.counter + amount))
+          state.update(state => state.copy(counter = state.counter + amount))
       }
     }
     .flatTap { store =>
@@ -50,7 +50,7 @@ class App[F[_]](implicit F: Temporal[F]) extends ff4s.App[F, State, Action] {
   import dsl._
   import dsl.html._
 
-  val root = useState { state =>
+  override val view = useState { state =>
     div(
       cls := "m-2 flex flex-col items-center",
       h1("A counter"),

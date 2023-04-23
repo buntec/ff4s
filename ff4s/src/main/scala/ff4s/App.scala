@@ -23,11 +23,11 @@ trait App[F[_], State, Action] {
   final implicit val dsl: ff4s.Dsl[F, State, Action] =
     ff4s.Dsl[F, State, Action]
 
-  /* The id of the "root" DOM node into which your app will be rendered. */
+  /* The id of the "root" DOM node into which this app will be rendered. */
   def rootElementId = "app"
 
-  /* The top-level component of your app. */
-  def root: dsl.V
+  /* The top-level component of this app. */
+  def view: dsl.V
 
   def store: Resource[F, Store[F, State, Action]]
 

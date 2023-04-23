@@ -23,7 +23,7 @@ import org.scalajs.dom
 // In a real-world project the components likely would be split across several files.
 class App[F[_]: Async] extends ff4s.App[F, State, Action] {
 
-  val store = Store[F]
+  override val store = Store[F]
 
   import dsl._ // basic dsl
   import dsl.html._ // nice syntax for html tags, attributes etc.
@@ -325,7 +325,7 @@ class App[F[_]: Async] extends ff4s.App[F, State, Action] {
     )
   }
 
-  val root = div(
+  override val view = div(
     cls := "p-4 flex flex-col items-center bg-no-repeat h-full bg-gradient-to-tr from-gray-200 to-sky-300 text-gray-800 font-light",
     welcome,
     magicAlert,

@@ -17,24 +17,23 @@
 package todomvc
 
 import cats.effect.Concurrent
-import cats.effect.Resource
 import cats.syntax.all._
-import ff4s.Store
 import org.scalajs.dom
 
 class App[F[_]](implicit val F: Concurrent[F])
     extends ff4s.App[F, State, Action] {
 
-  val store: Resource[F, Store[F, State, Action]] =
-    ff4s.Store[F, State, Action](State()) { ref => (a: Action) =>
+  override val store = ff4s.Store[F, State, Action](State()) {
+    state => (a: Action) =>
       a match {
-        case Action.SetFilter(filter) => ref.update(_.copy(filter = filter))
+        case Action.SetFilter(filter) =>
+          state.update(_.copy(filter = filter))
         case Action.UpdateTodo(todo) =>
-          ref.update { state =>
+          state.update { state =>
             state.copy(todos = state.todos + (todo.id -> todo))
           }
         case Action.AddTodo =>
-          ref.update { state =>
+          state.update { state =>
             val nextId = state.nextId
             state.todoInput match {
               case Some(what) if what.nonEmpty =>
@@ -52,11 +51,11 @@ class App[F[_]](implicit val F: Concurrent[F])
             }
           }
         case Action.RemoveTodo(id) =>
-          ref.update { state => state.copy(todos = state.todos - id) }
+          state.update { state => state.copy(todos = state.todos - id) }
         case Action.SetTodoInput(what) =>
-          ref.update(_.copy(todoInput = Some(what)))
+          state.update(_.copy(todoInput = Some(what)))
       }
-    }
+  }
 
   import dsl._
   import dsl.html._
@@ -159,7 +158,7 @@ class App[F[_]](implicit val F: Concurrent[F])
     )
   }
 
-  val root = useState { state =>
+  override val view = useState { state =>
     val filter = state.filter
     div(
       cls := "todoapp",

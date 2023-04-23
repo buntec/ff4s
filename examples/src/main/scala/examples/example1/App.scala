@@ -22,12 +22,10 @@ import org.scalajs.dom
 // The obligatory to-do list app.
 class App[F[_]: Concurrent] extends ff4s.App[F, State, Action] {
 
-  val store = Store[F]
+  override val store = Store[F]
 
   import dsl._ // basic dsl
-  import dsl.html._ // nice syntax for html tags, attributes etc.
-
-  val foo = div
+  import dsl.html._ // nice syntax for html tags
 
   val heading =
     h1( // All common html tags are available thanks to scala-dom-types.
@@ -99,7 +97,7 @@ class App[F[_]: Concurrent] extends ff4s.App[F, State, Action] {
     )
   }
 
-  val root = div(
+  override val view = div(
     cls := "p-4 flex flex-col h-screen items-center bg-gray-200 text-gray-800 font-light",
     heading,
     todoInput,

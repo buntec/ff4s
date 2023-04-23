@@ -36,7 +36,7 @@ object Action {
 // This example demonstrates the built-in router functionality.
 class App[F[_]](implicit val F: Async[F]) extends ff4s.App[F, State, Action] {
 
-  val store = ff4s.Store.withRouter[F, State, Action](State())(uri =>
+  override val store = ff4s.Store.withRouter[F, State, Action](State())(uri =>
     Action.SetUri(uri)
   )((state, router) =>
     _ match {
@@ -57,7 +57,7 @@ class App[F[_]](implicit val F: Async[F]) extends ff4s.App[F, State, Action] {
     )
   }
 
-  val root = useState { state =>
+  override val view = useState { state =>
     val matchedPath = state.uri.flatMap { uri =>
       uri.path.segments match {
         case Vector(path) => Some(path.toString)

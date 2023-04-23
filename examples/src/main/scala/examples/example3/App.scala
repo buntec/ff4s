@@ -24,14 +24,14 @@ import monocle.syntax.all._
 class App[F[_]](implicit val F: Concurrent[F])
     extends ff4s.App[F, State, Action] {
 
-  val store = ff4s.Store[F, State, Action](State()) { ref =>
+  override val store = ff4s.Store[F, State, Action](State()) { state =>
     _ match {
       case Action.SetWeekday(weekday) =>
-        ref.update(_.focus(_.weekday).replace(weekday))
+        state.update(_.focus(_.weekday).replace(weekday))
       case Action.Inc() =>
-        ref.update(_.focus(_.counter).modify(_ + 1))
+        state.update(_.focus(_.counter).modify(_ + 1))
       case Action.Dec() =>
-        ref.update(_.focus(_.counter).modify(_ - 1))
+        state.update(_.focus(_.counter).modify(_ - 1))
     }
   }
 
@@ -43,7 +43,7 @@ class App[F[_]](implicit val F: Concurrent[F])
   import dsl.html._
 
   // build our app using the imported components
-  val root = useState { state =>
+  override val view = useState { state =>
     pageWithHeaderAndFooter(dsl)("ff4s Reusable Components")(
       div(
         cls := "flex flex-col items-center",

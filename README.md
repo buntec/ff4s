@@ -75,17 +75,19 @@ val store = Resource[F, ff4s.Store[F, State, Action]] =
 ```
 
 The fact that `store` is a `Resource` is extremely useful because it allows
-us to do interesting things in the background (think WebSockets).
+us to do interesting things in the background (think WebSockets,
+subscribing to state changes, etc.).
 Be sure to check out the examples provided in this repo to see more elaborate
 store logic, including WebSockets messaging and REST calls.
 
-Finally, we describe our page using the built-in DSL for HTML markup:
+Finally, we describe how our page should be rendered using the built-in DSL
+for HTML markup:
 
 ```scala
 import dsl._ // `dsl` is provided by `ff4s.App`, see below
 import dsl.html._
 
-val root = useState { state =>
+val view = useState { state =>
     div(
         cls := "m-2 flex flex-col items-center", // tailwindcss classes
         h1("A counter"),
@@ -109,7 +111,10 @@ val root = useState { state =>
 }
 ```
 
-To turn this into an app, we wrap `store` and `root` in a class extending `ff4s.App`:
+To turn this into an app, all we need to do is implement the `ff4s.App`
+trait using `store` and `view` from above and pass an
+instance of it to the `IOEntryPoint` class, which in turn defines an
+appropriate `main` method for us:
 
 ```scala
 // App.scala
@@ -118,7 +123,7 @@ To turn this into an app, we wrap `store` and `root` in a class extending `ff4s.
 // In real-world applications we usually need the more powerful `cats.effect.Async[F]`.
 class App[F[_]](implicit F: Concurrent[F]) extends ff4s.App[F, State, Action] {
     override val state = ??? // as above
-    override val root = ??? // as above
+    override val view = ??? // as above
 }
 
 // Main.scala
