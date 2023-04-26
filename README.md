@@ -1,6 +1,8 @@
 # ff4s
 ![Maven Central](https://img.shields.io/maven-central/v/io.github.buntec/ff4s_sjs1_2.13)
 
+Thanks to amazing work by @yurique, you can now [try out ff4s from your browser](https://scribble.ninja/).
+
 A minimal purely-functional web frontend framework for [Scala.js](https://www.scala-js.org/).
 
 Based on these wonderful libraries:
