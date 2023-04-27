@@ -28,7 +28,6 @@ private[ff4s] object Compiler {
       state: State,
       actionDispatch: Action => F[Unit]
   ): (dsl.ViewA ~> Id) = {
-
     import dsl._
 
     new (ViewA ~> Id) {
@@ -43,16 +42,14 @@ private[ff4s] object Compiler {
           new VNode[F] {
             override def toSnabbdom(
                 dispatcher: Dispatcher[F]
-            ): snabbdom.VNode = { s }
+            ): snabbdom.VNode = snabbdom.VNode.text(s)
           }
 
         case Empty() =>
           new VNode[F] {
             override def toSnabbdom(
                 dispatcher: Dispatcher[F]
-            ): snabbdom.VNode = {
-              snabbdom.VNode.empty
-            }
+            ): snabbdom.VNode = snabbdom.VNode.empty
           }
 
         case Literal(html) =>
@@ -84,11 +81,9 @@ private[ff4s] object Compiler {
               attrs,
               style,
               thunkArgs
-            ) => {
-
+            ) =>
           thunkArgs match {
             case Some(args) => {
-
               val renderFn = () => {
                 VNode.create[F, Action](
                   tag,
@@ -123,11 +118,12 @@ private[ff4s] object Compiler {
                 )
               }
             }
+
             case _ =>
               new VNode[F] {
                 override private[ff4s] def toSnabbdom(
                     dispatcher: Dispatcher[F]
-                ): snabbdom.VNode = {
+                ): snabbdom.VNode =
                   VNode
                     .create[F, Action](
                       tag,
@@ -143,16 +139,12 @@ private[ff4s] object Compiler {
                       actionDispatch
                     )
                     .toSnabbdom(dispatcher)
-                }
               }
           }
-
-        }
 
         case GetUUID() => java.util.UUID.randomUUID()
 
         case GetId() => { id0 += 1; id0 }
-
       }
 
     }
