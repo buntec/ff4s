@@ -19,7 +19,7 @@ package ff4s
 import cats.effect.std.Dispatcher
 import org.scalajs.dom
 
-trait VNode[F[_]] {
+sealed trait VNode[F[_]] {
 
   private[ff4s] def toSnabbdom(dispatcher: Dispatcher[F]): snabbdom.VNode
 
@@ -27,7 +27,19 @@ trait VNode[F[_]] {
 
 private[ff4s] object VNode {
 
-  def create[F[_], Action](
+  def apply[F[_]](snabbdomVNode: snabbdom.VNode): VNode[F] =
+    new VNode[F] {
+      override def toSnabbdom(dispatcher: Dispatcher[F]): snabbdom.VNode =
+        snabbdomVNode
+    }
+
+  def apply[F[_]](mkSnabbdomVNode: Dispatcher[F] => snabbdom.VNode): VNode[F] =
+    new VNode[F] {
+      override def toSnabbdom(dispatcher: Dispatcher[F]): snabbdom.VNode =
+        mkSnabbdomVNode(dispatcher)
+    }
+
+  def apply[F[_], Action](
       tag: String,
       children: Seq[VNode[F]],
       cls: Option[String],
@@ -39,7 +51,7 @@ private[ff4s] object VNode {
       onInsert: Option[dom.Element => Action],
       onDestroy: Option[dom.Element => Action],
       actionDispatch: Action => F[Unit]
-  ) = new VNode[F] {
+  ): VNode[F] = new VNode[F] {
     override def toSnabbdom(dispatcher: Dispatcher[F]): snabbdom.VNode = {
 
       val insertHook = onInsert.map { hook =>

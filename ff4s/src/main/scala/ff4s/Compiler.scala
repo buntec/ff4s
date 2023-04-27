@@ -28,7 +28,6 @@ private[ff4s] object Compiler {
       state: State,
       actionDispatch: Action => F[Unit]
   ): (dsl.ViewA ~> Id) = {
-
     import dsl._
 
     new (ViewA ~> Id) {
@@ -39,36 +38,20 @@ private[ff4s] object Compiler {
 
         case GetState() => state
 
-        case Text(s) =>
-          new VNode[F] {
-            override def toSnabbdom(
-                dispatcher: Dispatcher[F]
-            ): snabbdom.VNode = { s }
-          }
+        case Text(s) => VNode[F](snabbdom.VNode.text(s))
 
-        case Empty() =>
-          new VNode[F] {
-            override def toSnabbdom(
-                dispatcher: Dispatcher[F]
-            ): snabbdom.VNode = {
-              snabbdom.VNode.empty
-            }
-          }
+        case Empty() => VNode[F](snabbdom.VNode.empty)
 
         case Literal(html) =>
-          new VNode[F] {
-            override def toSnabbdom(
-                dispatcher: Dispatcher[F]
-            ): snabbdom.VNode = {
-              val elm = dom.document.createElement("div")
-              elm.innerHTML = html
-              val vnode = snabbdom.toVNode(elm).toVNode
-              vnode match {
-                case snabbdom.VNode.Element(_, _, child :: Nil) =>
-                  child // unwrap div if there is a single child
-                case _ =>
-                  vnode // otherwise keep the wrapper div (TODO: throw instead?)
-              }
+          VNode[F] {
+            val elm = dom.document.createElement("div")
+            elm.innerHTML = html
+            val vnode = snabbdom.toVNode(elm).toVNode
+            vnode match {
+              case snabbdom.VNode.Element(_, _, child :: Nil) =>
+                child // unwrap div if there is a single child
+              case _ =>
+                vnode // otherwise keep the wrapper div (TODO: throw instead?)
             }
           }
 
@@ -84,13 +67,11 @@ private[ff4s] object Compiler {
               attrs,
               style,
               thunkArgs
-            ) => {
-
+            ) =>
           thunkArgs match {
             case Some(args) => {
-
               val renderFn = () => {
-                VNode.create[F, Action](
+                VNode[F, Action](
                   tag,
                   children,
                   cls,
@@ -105,10 +86,8 @@ private[ff4s] object Compiler {
                 )
               }
 
-              new VNode[F] {
-                override def toSnabbdom(
-                    dispatcher: Dispatcher[F]
-                ): snabbdom.VNode = snabbdom.thunk(
+              VNode[F]((dispatcher: Dispatcher[F]) =>
+                snabbdom.thunk(
                   tag,
                   key.getOrElse(""): String,
                   (_: Any) =>
@@ -121,38 +100,29 @@ private[ff4s] object Compiler {
                       ], // TODO: this is broken
                   Seq(args(state))
                 )
-              }
+              )
             }
-            case _ =>
-              new VNode[F] {
-                override private[ff4s] def toSnabbdom(
-                    dispatcher: Dispatcher[F]
-                ): snabbdom.VNode = {
-                  VNode
-                    .create[F, Action](
-                      tag,
-                      children,
-                      cls,
-                      key,
-                      props,
-                      attrs,
-                      style,
-                      eventHandlers,
-                      onInsert,
-                      onDestroy,
-                      actionDispatch
-                    )
-                    .toSnabbdom(dispatcher)
-                }
-              }
-          }
 
-        }
+            case _ =>
+              VNode[F, Action](
+                tag,
+                children,
+                cls,
+                key,
+                props,
+                attrs,
+                style,
+                eventHandlers,
+                onInsert,
+                onDestroy,
+                actionDispatch
+              )
+
+          }
 
         case GetUUID() => java.util.UUID.randomUUID()
 
         case GetId() => { id0 += 1; id0 }
-
       }
 
     }
