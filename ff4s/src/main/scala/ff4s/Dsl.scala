@@ -114,7 +114,7 @@ class Dsl[F[_], State, Action] { self =>
     )(implicit
         async: Async[F],
         store: Resource[F, Store[F, State, Action]]
-    ): F[Nothing] = Render(self, store)(view, rootElementId)
+    ): F[Unit] = Render(self, store)(view, rootElementId)
 
   }
 

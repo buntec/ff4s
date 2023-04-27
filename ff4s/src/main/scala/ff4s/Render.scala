@@ -35,34 +35,28 @@ private[ff4s] object Render {
     )
   )
 
-  def apply[F[_]: Async, State, Action](
+  def apply[F[_], State, Action](
       dsl: Dsl[F, State, Action],
       store: Resource[F, Store[F, State, Action]]
   )(
       view: dsl.V, // must be curried b/c of dependent type
       rootElementId: String
-  ): F[Nothing] = {
-    val F = Async[F]
-    (for {
-      dispatcher <- Dispatcher.parallel[F]
-      root <- Resource.eval(F.delay(document.getElementById(rootElementId)))
-      s <- store
-      state0 <- Resource.eval(s.state.get)
-      vnode0 <- Resource.eval(
-        F.pure(view.foldMap(Compiler(dsl, state0, s.dispatch _)))
-      )
-      proxy0 <- Resource.eval(
-        F.delay(patch(root, vnode0.toSnabbdom(dispatcher)))
-      )
-      _ <- s.state.discrete
-        .map(state => view.foldMap(Compiler(dsl, state, s.dispatch _)))
-        .evalMapAccumulate(proxy0) { case (prevProxy, vnode) =>
-          F.delay(patch(prevProxy, vnode.toSnabbdom(dispatcher))).map((_, ()))
-        }
-        .compile
-        .resource
-        .drain
-    } yield ()).useForever
-  }
+  )(implicit F: Async[F]): F[Unit] =
+    (store, Dispatcher.parallel[F]).tupled.use { case (store, dispatcher) =>
+      for {
+        root <- F.delay(document.getElementById(rootElementId))
+        state0 <- store.state.get
+        vnode0 <- F.delay(view.foldMap(Compiler(dsl, state0, store.dispatch)))
+        proxy0 <- F.delay(patch(root, vnode0.toSnabbdom(dispatcher)))
+        _ <- store.state.discrete
+          .map(state => view.foldMap(Compiler(dsl, state, store.dispatch)))
+          .evalMapAccumulate(proxy0) { case (prevProxy, vnode) =>
+            F.delay(patch(prevProxy, vnode.toSnabbdom(dispatcher)))
+              .map((_, ()))
+          }
+          .compile
+          .drain
+      } yield ()
+    }
 
 }
