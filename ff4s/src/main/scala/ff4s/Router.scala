@@ -24,7 +24,7 @@ import fs2.concurrent.Signal
 import fs2.concurrent.SignallingRef
 import org.http4s.Uri
 
-trait Router[F[_]] {
+sealed trait Router[F[_]] {
 
   def navigateTo(uri: Uri): F[Unit]
 
