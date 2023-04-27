@@ -24,8 +24,6 @@ import cats.syntax.all._
 import ff4s.codecs._
 import org.scalajs.dom
 
-import annotation.nowarn
-
 class Dsl[F[_], State, Action] { self =>
 
   private[ff4s] sealed trait ViewA[A]
@@ -79,30 +77,6 @@ class Dsl[F[_], State, Action] { self =>
   )(view: dslB.View[A]): View[A] = view.foldMap(
     Compiler.transpile[F, StateB, State, ActionB, Action](dslB, self, f, g)
   )
-
-  @nowarn("msg=dead code")
-  def embed[A, StateB](
-      dslB: Dsl[F, StateB, Nothing],
-      f: State => StateB
-  )(view: dslB.View[A]): View[A] = view.foldMap(
-    Compiler.transpile[F, StateB, State, Nothing, Action](
-      dslB,
-      self,
-      f,
-      identity
-    )
-  )
-
-  @nowarn("msg=dead code")
-  def embed[A](dslB: Dsl[F, Unit, Nothing])(view: dslB.View[A]): View[A] =
-    view.foldMap(
-      Compiler.transpile[F, Unit, State, Nothing, Action](
-        dslB,
-        self,
-        _ => (),
-        identity
-      )
-    )
 
   implicit class VOps(view: V) {
 
