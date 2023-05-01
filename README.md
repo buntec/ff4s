@@ -124,7 +124,7 @@ appropriate `main` method for us:
 // A basic store requires `cats.effect.Concurrent[F]`.
 // In real-world applications we usually need the more powerful `cats.effect.Async[F]`.
 class App[F[_]](implicit F: Concurrent[F]) extends ff4s.App[F, State, Action] {
-    override val state = ??? // as above
+    override val store = ??? // as above
     override val view = ??? // as above
 }
 
