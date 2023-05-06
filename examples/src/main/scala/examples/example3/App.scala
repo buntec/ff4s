@@ -24,14 +24,14 @@ import monocle.syntax.all._
 class App[F[_]](implicit val F: Concurrent[F])
     extends ff4s.App[F, State, Action] {
 
-  override val store = ff4s.Store[F, State, Action](State()) { state =>
+  override val store = ff4s.Store[F, State, Action](State()) {
     _ match {
       case Action.SetWeekday(weekday) =>
-        state.update(_.focus(_.weekday).replace(weekday))
+        _.focus(_.weekday).replace(weekday) -> none.pure
       case Action.Inc() =>
-        state.update(_.focus(_.counter).modify(_ + 1))
+        _.focus(_.counter).modify(_ + 1) -> none.pure
       case Action.Dec() =>
-        state.update(_.focus(_.counter).modify(_ - 1))
+        _.focus(_.counter).modify(_ - 1) -> none.pure
     }
   }
 

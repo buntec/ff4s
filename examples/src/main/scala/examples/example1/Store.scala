@@ -17,13 +17,14 @@
 package examples.example1
 
 import cats.effect.Concurrent
+import cats.syntax.all._
 
 object Store {
 
-  def apply[F[_]: Concurrent] = ff4s.Store[F, State, Action](State()) { state =>
+  def apply[F[_]: Concurrent] = ff4s.Store[F, State, Action](State()) {
     _ match {
       case Action.AddTodo =>
-        state.update { state =>
+        state => {
           val nextId = state.nextId
           state.todoInput match {
             case Some(what) if what.nonEmpty =>
@@ -31,18 +32,17 @@ object Store {
                 nextId = nextId + 1,
                 todos = state.todos :+ Todo(what, nextId),
                 todoInput = None
-              )
-            case _ => state
+              ) -> none.pure
+            case _ => state -> none.pure
           }
         }
 
       case Action.RemoveTodo(id) =>
-        state.update { state =>
-          state.copy(todos = state.todos.filterNot(_.id == id))
-        }
+        state =>
+          state.copy(todos = state.todos.filterNot(_.id == id)) -> none.pure
 
       case Action.SetTodoInput(what) =>
-        state.update(_.copy(todoInput = Some(what)))
+        _.copy(todoInput = Some(what)) -> none.pure
     }
   }
 

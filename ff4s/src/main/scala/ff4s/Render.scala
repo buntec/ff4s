@@ -42,7 +42,7 @@ private[ff4s] object Render {
       view: dsl.V, // must be curried b/c of dependent type
       rootElementId: String
   )(implicit F: Async[F]): F[Unit] =
-    (store, Dispatcher.parallel[F]).tupled.use { case (store, dispatcher) =>
+    (store, Dispatcher.sequential[F]).tupled.use { case (store, dispatcher) =>
       for {
         root <- F.delay(document.getElementById(rootElementId))
         state0 <- store.state.get

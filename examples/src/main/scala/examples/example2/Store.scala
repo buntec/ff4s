@@ -34,42 +34,41 @@ object Store {
     // send queue for the websockets connection
     wsSendQ <- Queue.bounded[F, String](100).toResource
 
-    store <- ff4s.Store[F, State, Action](State()) { state =>
+    store <- ff4s.Store[F, State, Action](State()) {
       _ match {
         case Action.WebsocketMessageReceived(msg) =>
-          state.update(state => state.copy(websocketResponse = Some(msg)))
+          _.copy(websocketResponse = msg.some) -> none.pure[F]
 
-        case Action.SendWebsocketMessage(msg) => wsSendQ.offer(msg)
+        case Action.SendWebsocketMessage(msg) =>
+          _ -> wsSendQ.offer(msg).as(none)
 
         case Action.SetSvgCoords(x, y) =>
-          state.update(_.copy(svgCoords = SvgCoords(x, y)))
+          _.copy(svgCoords = SvgCoords(x, y)) -> none.pure[F]
 
-        case Action.Magic => state.update(_.copy(magic = true))
+        case Action.Magic => _.copy(magic = true) -> none.pure[F]
 
         case Action.SetName(name) =>
-          state.update(
-            _.copy(name = if (name.nonEmpty) Some(name) else None)
-          )
+          _.copy(name = if (name.nonEmpty) Some(name) else None) -> none.pure[F]
 
-        case Action.SetPets(pets) =>
-          state.update(_.copy(pets = pets))
+        case Action.SetPets(pets) => _.copy(pets = pets) -> none.pure[F]
 
         case Action.SetFavoriteDish(dish) =>
-          state.update(_.copy(favoriteDish = dish))
+          _.copy(favoriteDish = dish) -> none.pure[F]
 
         case Action.IncrementCounter =>
-          state.update(s => s.copy(counter = s.counter + 1))
+          state => state.copy(counter = state.counter + 1) -> none.pure[F]
 
         case Action.DecrementCounter =>
-          state.update(s => s.copy(counter = s.counter - 1))
+          state => state.copy(counter = state.counter - 1) -> none.pure[F]
+
+        case Action.SetActivity(activity) =>
+          _.copy(bored = activity.some) -> none.pure[F]
 
         case Action.GetActivity =>
-          ff4s
+          _ -> ff4s
             .HttpClient[F]
             .get[Bored]("http://www.boredapi.com/api/activity")
-            .flatMap { bored =>
-              state.update(s => s.copy(bored = Some(bored)))
-            }
+            .map(Action.SetActivity(_).some)
       }
     }
 

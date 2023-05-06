@@ -16,10 +16,14 @@
 
 package ff4s
 
+import cats.effect.Ref
 import cats.effect.implicits._
 import cats.effect.kernel.Async
 import cats.effect.kernel.Concurrent
 import cats.effect.kernel.Resource
+import cats.effect.std.Queue
+import cats.syntax.all._
+import fs2.Stream
 import fs2.concurrent.Signal
 import fs2.concurrent.SignallingRef
 import org.http4s.Uri
@@ -34,53 +38,37 @@ trait Store[F[_], State, Action] {
 
 object Store {
 
-  def apply[F[_]: Concurrent, State, Action](
-      initialState: State
-  )(
-      makeDispatcher: SignallingRef[F, State] => Action => F[Unit]
+  def apply[F[_]: Concurrent, State, Action](init: State)(
+      update: Action => State => (State, F[Option[Action]])
   ): Resource[F, Store[F, State, Action]] = for {
+    actionQ <- Queue.unbounded[F, Action].toResource
 
-    state0 <- SignallingRef.of[F, State](initialState).toResource
+    effectQ <- Queue.unbounded[F, F[Option[Action]]].toResource
 
-    dispatcher = makeDispatcher(state0)
+    stateSR <- SignallingRef.of[F, State](init).toResource
 
-  } yield (new Store[F, State, Action] {
-
-    override def dispatch(action: Action): F[Unit] = dispatcher(action)
-
-    override def state: Signal[F, State] = state0
-
-  })
-
-  def withRouter[F[_], State, Action](initialState: State)(
-      onUriChange: Uri => Action
-  )(
-      makeDispatcher: (
-          SignallingRef[F, State],
-          Router[F]
-      ) => Action => F[Unit]
-  )(implicit F: Async[F]) = for {
-
-    state0 <- SignallingRef.of[F, State](initialState).toResource
-
-    window = fs2.dom.Window[F]
-
-    router <- Router[F](window)
-
-    dispatcher = makeDispatcher(state0, router)
-
-    _ <- router.location.discrete
-      .evalMap(uri => dispatcher(onUriChange(uri)))
+    _ <- Stream
+      .fromQueueUnterminated(actionQ)
+      .evalMap(action => stateSR.modify(update(action)).flatMap(effectQ.offer))
       .compile
       .drain
       .background
 
-  } yield new Store[F, State, Action] {
+    _ <- Stream
+      .fromQueueUnterminated(effectQ)
+      .parEvalMapUnorderedUnbounded(identity)
+      .unNone
+      .evalMap(actionQ.offer)
+      .compile
+      .drain
+      .background
 
-    override def dispatch(action: Action): F[Unit] = dispatcher(action)
+  } yield (new Store[F, State, Action] {
 
-    override def state: Signal[F, State] = state0
+    override def dispatch(action: Action): F[Unit] = actionQ.offer(action)
 
-  }
+    override def state: Signal[F, State] = stateSR
+
+  })
 
 }
