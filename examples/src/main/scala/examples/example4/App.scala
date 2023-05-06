@@ -17,6 +17,7 @@
 package examples.example4
 
 import cats.effect.Async
+import cats.effect.implicits._
 import cats.syntax.all._
 import ff4s.Router
 import org.http4s.Uri
@@ -46,11 +47,16 @@ class App[F[_]](implicit val F: Async[F]) extends ff4s.App[F, State, Action] {
 
     store <- ff4s.Store[F, State, Action](State())(
       _ match {
-        case Action.NavigateTo(uri) =>
-          (_, router.navigateTo(uri).as(Action.SetUri(uri).some))
-        case Action.SetUri(uri) => _.copy(uri = Some(uri)) -> none.pure[F]
+        case Action.NavigateTo(uri) => (_, router.navigateTo(uri).as(none))
+        case Action.SetUri(uri)     => _.copy(uri = Some(uri)) -> none.pure[F]
       }
     )
+
+    _ <- router.location.discrete
+      .evalMap(uri => store.dispatch(Action.SetUri(uri)))
+      .compile
+      .drain
+      .background
 
   } yield store
 

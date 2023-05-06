@@ -16,9 +16,7 @@
 
 package ff4s
 
-import cats.effect.Ref
 import cats.effect.implicits._
-import cats.effect.kernel.Async
 import cats.effect.kernel.Concurrent
 import cats.effect.kernel.Resource
 import cats.effect.std.Queue
@@ -26,7 +24,6 @@ import cats.syntax.all._
 import fs2.Stream
 import fs2.concurrent.Signal
 import fs2.concurrent.SignallingRef
-import org.http4s.Uri
 
 trait Store[F[_], State, Action] {
 
