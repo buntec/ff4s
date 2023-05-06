@@ -20,6 +20,7 @@ import cats.effect.implicits._
 import cats.effect.kernel.Concurrent
 import cats.effect.kernel.Resource
 import cats.effect.std.Queue
+import cats.effect.std.Supervisor
 import cats.syntax.all._
 import fs2.Stream
 import fs2.concurrent.Signal
@@ -38,24 +39,21 @@ object Store {
   def apply[F[_]: Concurrent, State, Action](init: State)(
       update: Action => State => (State, F[Option[Action]])
   ): Resource[F, Store[F, State, Action]] = for {
-    actionQ <- Queue.unbounded[F, Action].toResource
+    supervisor <- Supervisor[F]
 
-    effectQ <- Queue.unbounded[F, F[Option[Action]]].toResource
+    actionQ <- Queue.unbounded[F, Action].toResource
 
     stateSR <- SignallingRef.of[F, State](init).toResource
 
     _ <- Stream
       .fromQueueUnterminated(actionQ)
-      .evalMap(action => stateSR.modify(update(action)).flatMap(effectQ.offer))
-      .compile
-      .drain
-      .background
-
-    _ <- Stream
-      .fromQueueUnterminated(effectQ)
-      .parEvalMapUnorderedUnbounded(identity)
-      .unNone
-      .evalMap(actionQ.offer)
+      .evalMap(action =>
+        stateSR
+          .modify(update(action))
+          .flatMap(foa =>
+            supervisor.supervise(foa.flatMap(_.foldMapM(actionQ.offer)))
+          )
+      )
       .compile
       .drain
       .background
