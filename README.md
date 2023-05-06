@@ -1,9 +1,9 @@
 # ff4s
 ![Maven Central](https://img.shields.io/maven-central/v/io.github.buntec/ff4s_sjs1_2.13)
 
-Thanks to amazing work by [@yurique](https://github.com/yurique), you can now [try out ff4s from your browser](https://scribble.ninja/).
+A minimal purely-functional web UI framework for [Scala.js](https://www.scala-js.org/).
 
-A minimal purely-functional web frontend framework for [Scala.js](https://www.scala-js.org/).
+Thanks to amazing work by [@yurique](https://github.com/yurique), you can now [try it from your browser](https://scribble.ninja/).
 
 Based on these wonderful libraries:
  - [Cats](https://typelevel.org/cats/)
@@ -18,6 +18,7 @@ Inspired by:
   - [Outwatch](https://github.com/outwatch/outwatch)
   - [Laminar](https://github.com/raquo/Laminar)
   - [Calico](https://github.com/armanbilge/calico)
+
 
 See the `examples` folder for commented code examples.
 
@@ -36,11 +37,11 @@ libraryDependencies += "io.github.buntec" %%% "ff4s" % "<x.y.z>"
 ## Getting Started
 
 The programming model of ff4s is inspired by Flux/Redux.
-A view (what is rendered to the DOM) is a pure function of the state.
+The view (what is rendered to the DOM) is a pure function of the state.
 State is immutable and can be updated through actions dispatched to the
 store (e.g., by clicking a button).
 There is a single store that encapsulates all logic for updating state.
-Actions can be effectful (e.g., making a REST call or sending a WebSocket message).
+Actions can trigger side-effects (e.g., making a REST call or sending a WebSocket message).
 
 To illustrate this with an example, let's implement the "Hello, World!" of UIs:
 A counter that can be incremented or decremented by clicking a button.
@@ -52,8 +53,8 @@ In Scala, the natural choice for an immutable state container is a case class:
 final case class State(counter: Int = 0)
 ```
 
-To define a set of actions that describe updates (possibly effectful) to the state,
-it is customary to use an ADT:
+State can only be updated through actions dispatched to the store.
+We typically encode the set of actions as an ADT:
 
 ```scala
 // Action.scala
@@ -62,25 +63,30 @@ case class Inc(amount: Int) extends Action
 case class Reset() extends Action
 ```
 
-With the `State` and `Action` types in hand, we can set up our store:
+With the `State` and `Action` types in hand, we can set up our store,
+which handles all state updates and side-effects (none in this example).
 
 ```scala
+import cats.syntax.all._
+
 val store = Resource[F, ff4s.Store[F, State, Action]] = 
-    ff4s.Store[F, State, Action](State()) { stateRef =>
+    ff4s.Store[F, State, Action](State()) {
       _ match {
         case Inc(amount) =>
-          stateRef.update(state => state.copy(counter = state.counter + amount))
-        case Reset() =>
-          stateRef.update(_.copy(counter = 0))
+          state => state.copy(counter = state.counter + amount) -> none.pure[F]
+        case Reset() => _.copy(counter = 0) -> none.pure[F]
       }
     }
 ```
+
+The purpose of `none.pure[F]` will become clear when looking at more complex examples.
+Think of them as placeholders for side-effects such as fetching data from the back-end.
 
 The fact that `store` is a `Resource` is extremely useful because it allows
 us to do interesting things in the background (think WebSockets,
 subscribing to state changes, etc.).
 Be sure to check out the examples provided in this repo to see more elaborate
-store logic, including WebSockets messaging and REST calls.
+store logic, including WebSocket messaging and REST calls.
 
 Finally, we describe how our page should be rendered using the built-in DSL
 for HTML markup:
