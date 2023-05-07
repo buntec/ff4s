@@ -37,7 +37,7 @@ trait Store[F[_], State, Action] {
 object Store {
 
   def apply[F[_]: Concurrent, State, Action](init: State)(
-      update: Action => State => (State, F[Option[Action]])
+      update: Action => State => (State, Option[F[Option[Action]]])
   ): Resource[F, Store[F, State, Action]] = for {
     supervisor <- Supervisor[F]
 
@@ -50,8 +50,10 @@ object Store {
       .evalMap(action =>
         stateSR
           .modify(update(action))
-          .flatMap(foa =>
-            supervisor.supervise(foa.flatMap(_.foldMapM(actionQ.offer)))
+          .flatMap(
+            _.foldMapM(foa =>
+              supervisor.supervise(foa.flatMap(_.foldMapM(actionQ.offer))).void
+            )
           )
       )
       .compile

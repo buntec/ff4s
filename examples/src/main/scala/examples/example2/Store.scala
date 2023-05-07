@@ -37,38 +37,39 @@ object Store {
     store <- ff4s.Store[F, State, Action](State()) {
       _ match {
         case Action.WebsocketMessageReceived(msg) =>
-          _.copy(websocketResponse = msg.some) -> none.pure[F]
+          _.copy(websocketResponse = msg.some) -> none
 
         case Action.SendWebsocketMessage(msg) =>
-          _ -> wsSendQ.offer(msg).as(none)
+          _ -> (wsSendQ.offer(msg).as(none[Action])).some
 
         case Action.SetSvgCoords(x, y) =>
-          _.copy(svgCoords = SvgCoords(x, y)) -> none.pure[F]
+          _.copy(svgCoords = SvgCoords(x, y)) -> none
 
-        case Action.Magic => _.copy(magic = true) -> none.pure[F]
+        case Action.Magic => _.copy(magic = true) -> none
 
         case Action.SetName(name) =>
-          _.copy(name = if (name.nonEmpty) Some(name) else None) -> none.pure[F]
+          _.copy(name = if (name.nonEmpty) Some(name) else None) -> none
 
-        case Action.SetPets(pets) => _.copy(pets = pets) -> none.pure[F]
+        case Action.SetPets(pets) => _.copy(pets = pets) -> none
 
         case Action.SetFavoriteDish(dish) =>
-          _.copy(favoriteDish = dish) -> none.pure[F]
+          _.copy(favoriteDish = dish) -> none
 
         case Action.IncrementCounter =>
-          state => state.copy(counter = state.counter + 1) -> none.pure[F]
+          state => state.copy(counter = state.counter + 1) -> none
 
         case Action.DecrementCounter =>
-          state => state.copy(counter = state.counter - 1) -> none.pure[F]
+          state => state.copy(counter = state.counter - 1) -> none
 
         case Action.SetActivity(activity) =>
-          _.copy(bored = activity.some) -> none.pure[F]
+          _.copy(bored = activity.some) -> none
 
         case Action.GetActivity =>
           _ -> ff4s
             .HttpClient[F]
             .get[Bored]("http://www.boredapi.com/api/activity")
-            .map(Action.SetActivity(_).some)
+            .map(activity => (Action.SetActivity(activity): Action).some)
+            .some
       }
     }
 

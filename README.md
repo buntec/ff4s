@@ -36,9 +36,9 @@ libraryDependencies += "io.github.buntec" %%% "ff4s" % "<x.y.z>"
 
 ## Getting Started
 
-The programming model of ff4s is inspired by Flux/Redux.
+The programming model of ff4s is inspired by Elm and Flux/Redux.
 The view (what is rendered to the DOM) is a pure function of the state.
-State is immutable and can be updated through actions dispatched to the
+State is global, immutable and can be updated only through actions dispatched to the
 store (e.g., by clicking a button).
 There is a single store that encapsulates all logic for updating state.
 Actions can trigger side-effects (e.g., making a REST call or sending a WebSocket message).
@@ -63,8 +63,7 @@ case class Inc(amount: Int) extends Action
 case class Reset() extends Action
 ```
 
-With the `State` and `Action` types in hand, we can set up our store,
-which handles all state updates and side-effects (none in this example).
+With the `State` and `Action` types in hand, we can set up our store:
 
 ```scala
 import cats.syntax.all._
@@ -73,14 +72,14 @@ val store = Resource[F, ff4s.Store[F, State, Action]] =
     ff4s.Store[F, State, Action](State()) {
       _ match {
         case Inc(amount) =>
-          state => state.copy(counter = state.counter + amount) -> none.pure[F]
-        case Reset() => _.copy(counter = 0) -> none.pure[F]
+          state => state.copy(counter = state.counter + amount) -> none
+        case Reset() => _.copy(counter = 0) -> none
       }
     }
 ```
 
-The purpose of `none.pure[F]` will become clear when looking at more complex examples.
-Think of them as placeholders for side-effects such as fetching data from the back-end.
+The purpose of `none` will become clear when looking at more complex examples
+involving side-effects such as fetching data from the back-end.
 
 The fact that `store` is a `Resource` is extremely useful because it allows
 us to do interesting things in the background (think WebSockets,
@@ -119,7 +118,7 @@ val view = useState { state =>
 }
 ```
 
-To turn this into an app, all we need to do is implement the `ff4s.App`
+To turn this into an app all we need to do is implement the `ff4s.App`
 trait using `store` and `view` from above and pass an
 instance of it to the `IOEntryPoint` class, which in turn defines an
 appropriate `main` method for us:

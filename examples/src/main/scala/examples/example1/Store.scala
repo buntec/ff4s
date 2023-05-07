@@ -32,17 +32,15 @@ object Store {
                 nextId = nextId + 1,
                 todos = state.todos :+ Todo(what, nextId),
                 todoInput = None
-              ) -> none.pure
-            case _ => state -> none.pure
+              ) -> none
+            case _ => state -> none
           }
         }
 
       case Action.RemoveTodo(id) =>
-        state =>
-          state.copy(todos = state.todos.filterNot(_.id == id)) -> none.pure
+        state => state.copy(todos = state.todos.filterNot(_.id == id)) -> none
 
-      case Action.SetTodoInput(what) =>
-        _.copy(todoInput = Some(what)) -> none.pure
+      case Action.SetTodoInput(what) => _.copy(todoInput = Some(what)) -> none
     }
   }
 

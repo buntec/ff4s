@@ -34,7 +34,7 @@ class App[F[_]](implicit F: Temporal[F]) extends ff4s.App[F, State, Action] {
     .Store[F, State, Action](State()) {
       _ match {
         case Inc(amount) =>
-          state => state.copy(counter = state.counter + amount) -> none.pure[F]
+          state => state.copy(counter = state.counter + amount) -> none
       }
     }
     .flatTap { store =>

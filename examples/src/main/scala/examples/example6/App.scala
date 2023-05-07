@@ -51,7 +51,7 @@ class App[F[_]](implicit F: Temporal[F]) extends ff4s.App[F, State, Action] {
   override val store = for {
     supervisor <- Supervisor[F]
 
-    // we keep running effects (i.e. Fibers) in a map indexed by the cancellation key.
+    // we keep the fibers of running actions in a map indexed by the cancellation key.
     fibers <- MapRef
       .ofSingleImmutableMap[F, String, Fiber[F, Throwable, Option[Action]]]()
       .toResource
@@ -59,7 +59,7 @@ class App[F[_]](implicit F: Temporal[F]) extends ff4s.App[F, State, Action] {
     store <- ff4s.Store[F, State, Action](State()) {
       _ match {
         case Inc(amount) =>
-          state => state.copy(counter = state.counter + amount) -> none.pure[F]
+          state => state.copy(counter = state.counter + amount) -> none
 
         // repeated dispatch will cancel previous invocations if they haven't completed yet.
         case DelayedInc(delay, amount, cancelKey) =>
@@ -73,14 +73,21 @@ class App[F[_]](implicit F: Temporal[F]) extends ff4s.App[F, State, Action] {
                   .flatMap(_.foldMapM(_.cancel)) >> fiber.join.flatMap {
                   _ match {
                     case Succeeded(fa) => fa
-                    case _             => none.pure[F]
+                    case _             => none[Action].pure[F]
                   }
                 }
               }
+              .some
           )
 
         case Cancel(cancelKey) =>
-          (_, fibers(cancelKey).get.flatMap(_.foldMapM(_.cancel)).as(none))
+          (
+            _,
+            fibers(cancelKey).get
+              .flatMap(_.foldMapM(_.cancel))
+              .as(none[Action])
+              .some
+          )
       }
     }
 

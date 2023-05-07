@@ -25,11 +25,10 @@ class App[F[_]](implicit val F: Concurrent[F])
 
   override val store = ff4s.Store[F, State, Action](State()) {
     _ match {
-      case Action.SetFilter(filter) => _.copy(filter = filter) -> none.pure
+      case Action.SetFilter(filter) => _.copy(filter = filter) -> none
 
       case Action.UpdateTodo(todo) =>
-        state =>
-          state.copy(todos = state.todos + (todo.id -> todo)) -> none.pure
+        state => state.copy(todos = state.todos + (todo.id -> todo)) -> none
 
       case Action.AddTodo =>
         state =>
@@ -49,13 +48,13 @@ class App[F[_]](implicit val F: Concurrent[F])
                 )
               case _ => state
             }
-          } -> none.pure
+          } -> none
 
       case Action.RemoveTodo(id) =>
-        state => state.copy(todos = state.todos - id) -> none.pure
+        state => state.copy(todos = state.todos - id) -> none
 
       case Action.SetTodoInput(what) =>
-        _.copy(todoInput = Some(what)) -> none.pure
+        _.copy(todoInput = Some(what)) -> none
     }
   }
 
