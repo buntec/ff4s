@@ -19,6 +19,7 @@ package examples.example6
 import cats.effect.Temporal
 import cats.effect.implicits._
 import cats.effect.kernel.Fiber
+import cats.effect.kernel.Outcome.Succeeded
 import cats.effect.std.MapRef
 import cats.effect.std.Supervisor
 import cats.syntax.all._
@@ -37,8 +38,10 @@ sealed trait Action
 sealed trait CancellableAction extends Action { def cancelKey: String }
 
 // Increments the counter by `amount` after waiting for `delay`, unless cancelled.
-case class Inc(delay: FiniteDuration, amount: Int, cancelKey: String)
+case class DelayedInc(delay: FiniteDuration, amount: Int, cancelKey: String)
     extends CancellableAction
+
+case class Inc(amount: Int) extends Action
 
 // Cancels a running action with the given `cancelKey`; otherwise it is a no-op.
 case class Cancel(cancelKey: String) extends Action
@@ -48,34 +51,46 @@ class App[F[_]](implicit F: Temporal[F]) extends ff4s.App[F, State, Action] {
   override val store = for {
     supervisor <- Supervisor[F]
 
-    // we keep running actions (i.e. Fibers) in a map indexed by the cancellation key.
+    // we keep the fibers of running actions in a map indexed by the cancellation key.
     fibers <- MapRef
-      .ofSingleImmutableMap[F, String, Fiber[F, Throwable, Unit]]()
+      .ofSingleImmutableMap[F, String, Fiber[F, Throwable, Option[Action]]]()
       .toResource
 
-    store <- ff4s.Store[F, State, Action](State()) { state =>
+    store <- ff4s.Store[F, State, Action](State()) {
       _ match {
-        // repeated dispatch of `Inc` will cancel previous invocations if they haven't completed yet.
-        case Inc(delay, amount, cancelKey) =>
-          supervisor
-            .supervise(
-              F.sleep(delay) >> state.update(s =>
-                s.copy(counter = s.counter + amount)
-              )
-            )
-            .flatMap { fib =>
-              fibers
-                .getAndSetKeyValue(
-                  cancelKey,
-                  fib
-                )
-                .flatMap(_.foldMapM(_.cancel))
-            }
+        case Inc(amount) =>
+          state => state.copy(counter = state.counter + amount) -> none
+
+        // repeated dispatch will cancel previous invocations if they haven't completed yet.
+        case DelayedInc(delay, amount, cancelKey) =>
+          (
+            _,
+            supervisor
+              .supervise(F.sleep(delay).as((Inc(amount): Action).some))
+              .flatMap { fiber =>
+                fibers
+                  .getAndSetKeyValue(cancelKey, fiber)
+                  .flatMap(_.foldMapM(_.cancel)) >> fiber.join.flatMap {
+                  _ match {
+                    case Succeeded(fa) => fa
+                    case _             => none[Action].pure[F]
+                  }
+                }
+              }
+              .some
+          )
 
         case Cancel(cancelKey) =>
-          fibers(cancelKey).get.flatMap(_.foldMapM(_.cancel))
+          (
+            _,
+            fibers(cancelKey).get
+              .flatMap(_.foldMapM(_.cancel))
+              .as(none[Action])
+              .some
+          )
       }
     }
+
   } yield store
 
   import dsl._
@@ -88,12 +103,12 @@ class App[F[_]](implicit F: Temporal[F]) extends ff4s.App[F, State, Action] {
       button(
         cls := btnCls,
         "+",
-        onClick := (_ => Inc(1.second, 1, "inc").some)
+        onClick := (_ => DelayedInc(1.second, 1, "inc").some)
       ),
       button(
         cls := btnCls,
         "-",
-        onClick := (_ => Inc(1.second, -1, "inc").some)
+        onClick := (_ => DelayedInc(1.second, -1, "inc").some)
       ),
       button(
         cls := btnCls,

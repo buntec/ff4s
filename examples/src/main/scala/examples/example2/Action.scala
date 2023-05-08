@@ -34,6 +34,8 @@ object Action {
 
   case object GetActivity extends Action
 
+  case class SetActivity(activity: Bored) extends Action
+
   case class SetSvgCoords(x: Double, y: Double) extends Action
 
   case class SendWebsocketMessage(msg: String) extends Action
