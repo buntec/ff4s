@@ -20,8 +20,8 @@ import cats.effect.kernel.Async
 import cats.effect.kernel.Resource
 import cats.effect.std.Dispatcher
 import cats.syntax.all._
-import org.scalajs.dom.document
 import org.scalajs.dom
+import org.scalajs.dom.document
 import snabbdom.PatchedVNode
 
 private[ff4s] object Render {
@@ -59,7 +59,7 @@ private[ff4s] object Render {
                 cb(Right(proxy))
               }
               ()
-            }.map((_, ()))
+            }.tupleRight(())
           }
           .compile
           .drain
