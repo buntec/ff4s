@@ -21,6 +21,8 @@ import cats.effect.kernel.Resource
 import cats.effect.std.Dispatcher
 import cats.syntax.all._
 import org.scalajs.dom.document
+import org.scalajs.dom
+import snabbdom.PatchedVNode
 
 private[ff4s] object Render {
 
@@ -51,8 +53,13 @@ private[ff4s] object Render {
         _ <- store.state.discrete
           .map(state => view.foldMap(Compiler(dsl, state, store.dispatch)))
           .evalMapAccumulate(proxy0) { case (prevProxy, vnode) =>
-            F.delay(patch(prevProxy, vnode.toSnabbdom(dispatcher)))
-              .map((_, ()))
+            F.async_[PatchedVNode] { cb =>
+              dom.window.requestAnimationFrame { _ =>
+                val proxy = patch(prevProxy, vnode.toSnabbdom(dispatcher))
+                cb(Right(proxy))
+              }
+              ()
+            }.map((_, ()))
           }
           .compile
           .drain
