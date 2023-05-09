@@ -31,7 +31,7 @@ case class Inc(amount: Int) extends Action
 class App[F[_]](implicit F: Temporal[F]) extends ff4s.App[F, State, Action] {
 
   override val store = ff4s
-    .Store[F, State, Action](State()) {
+    .Store[F, State, Action](State()) { _ =>
       _ match {
         case Inc(amount) =>
           state => state.copy(counter = state.counter + amount) -> none

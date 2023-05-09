@@ -23,7 +23,7 @@ import org.scalajs.dom
 class App[F[_]](implicit val F: Concurrent[F])
     extends ff4s.App[F, State, Action] {
 
-  override val store = ff4s.Store[F, State, Action](State()) {
+  override val store = ff4s.Store[F, State, Action](State()) { _ =>
     _ match {
       case Action.SetFilter(filter) => _.copy(filter = filter) -> none
 

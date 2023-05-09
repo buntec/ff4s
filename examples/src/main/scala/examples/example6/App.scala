@@ -19,7 +19,6 @@ package examples.example6
 import cats.effect.Temporal
 import cats.effect.implicits._
 import cats.effect.kernel.Fiber
-import cats.effect.kernel.Outcome.Succeeded
 import cats.effect.std.MapRef
 import cats.effect.std.Supervisor
 import cats.syntax.all._
@@ -53,10 +52,10 @@ class App[F[_]](implicit F: Temporal[F]) extends ff4s.App[F, State, Action] {
 
     // we keep the fibers of running actions in a map indexed by the cancellation key.
     fibers <- MapRef
-      .ofSingleImmutableMap[F, String, Fiber[F, Throwable, Option[Action]]]()
+      .ofSingleImmutableMap[F, String, Fiber[F, Throwable, Unit]]()
       .toResource
 
-    store <- ff4s.Store[F, State, Action](State()) {
+    store <- ff4s.Store[F, State, Action](State()) { store =>
       _ match {
         case Inc(amount) =>
           state => state.copy(counter = state.counter + amount) -> none
@@ -66,16 +65,11 @@ class App[F[_]](implicit F: Temporal[F]) extends ff4s.App[F, State, Action] {
           (
             _,
             supervisor
-              .supervise(F.sleep(delay).as((Inc(amount): Action).some))
+              .supervise(F.sleep(delay) *> store.dispatch(Inc(amount)))
               .flatMap { fiber =>
                 fibers
                   .getAndSetKeyValue(cancelKey, fiber)
-                  .flatMap(_.foldMapM(_.cancel)) >> fiber.join.flatMap {
-                  _ match {
-                    case Succeeded(fa) => fa
-                    case _             => none[Action].pure[F]
-                  }
-                }
+                  .flatMap(_.foldMapM(_.cancel))
               }
               .some
           )
@@ -85,7 +79,6 @@ class App[F[_]](implicit F: Temporal[F]) extends ff4s.App[F, State, Action] {
             _,
             fibers(cancelKey).get
               .flatMap(_.foldMapM(_.cancel))
-              .as(none[Action])
               .some
           )
       }
