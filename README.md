@@ -1,24 +1,27 @@
 # ff4s
+
 ![Maven Central](https://img.shields.io/maven-central/v/io.github.buntec/ff4s_sjs1_2.13)
 
 A minimal purely-functional web UI framework for [Scala.js](https://www.scala-js.org/).
 
-Thanks to amazing work by [@yurique](https://github.com/yurique), you can now [try it from your browser](https://scribble.ninja/).
+Thanks to amazing work by [@yurique](https://github.com/yurique),
+you can now [try it from your browser](https://scribble.ninja/).
 
 Based on these wonderful libraries:
- - [Cats](https://typelevel.org/cats/)
- - [Cats-Effect](https://typelevel.org/cats-effect/)
- - [FS2](https://fs2.io/)
- - [fs2-dom](https://github.com/armanbilge/fs2-dom)
- - [http4s](https://http4s.org/)
- - [Scala DOM Types](https://github.com/raquo/scala-dom-types)
- - [Snabbdom](https://github.com/snabbdom/snabbdom) (actually the Scala.js port [scala-js-snabbdom](https://github.com/buntec/scala-js-snabbdom))
+
+- [Cats](https://typelevel.org/cats/)
+- [Cats-Effect](https://typelevel.org/cats-effect/)
+- [FS2](https://fs2.io/)
+- [fs2-dom](https://github.com/armanbilge/fs2-dom)
+- [http4s](https://http4s.org/)
+- [Scala DOM Types](https://github.com/raquo/scala-dom-types)
+- [Snabbdom](https://github.com/snabbdom/snabbdom) (actually the Scala.js port [scala-js-snabbdom](https://github.com/buntec/scala-js-snabbdom))
 
 Inspired by:
-  - [Outwatch](https://github.com/outwatch/outwatch)
-  - [Laminar](https://github.com/raquo/Laminar)
-  - [Calico](https://github.com/armanbilge/calico)
 
+- [Outwatch](https://github.com/outwatch/outwatch)
+- [Laminar](https://github.com/raquo/Laminar)
+- [Calico](https://github.com/armanbilge/calico)
 
 See the `examples` folder for commented code examples.
 
@@ -38,10 +41,11 @@ libraryDependencies += "io.github.buntec" %%% "ff4s" % "<x.y.z>"
 
 The programming model of ff4s is inspired by Elm and Flux/Redux.
 The view (what is rendered to the DOM) is a pure function of the state.
-State is global, immutable and can be updated only through actions dispatched to the
-store (e.g., by clicking a button).
+State is global, immutable and can be updated only through actions
+dispatched to the store (e.g., by clicking a button).
 There is a single store that encapsulates all logic for updating state.
-Actions can trigger side-effects (e.g., making a REST call or sending a WebSocket message).
+Actions can trigger side-effects
+(e.g., making a REST call or sending a WebSocket message).
 
 To illustrate this with an example, let's implement the "Hello, World!" of UIs:
 A counter that can be incremented or decremented by clicking a button.
@@ -69,7 +73,7 @@ With the `State` and `Action` types in hand, we can set up our store:
 import cats.syntax.all._
 
 val store = Resource[F, ff4s.Store[F, State, Action]] = 
-    ff4s.Store[F, State, Action](State()) {
+    ff4s.Store[F, State, Action](State()) { _ =>
       _ match {
         case Inc(amount) =>
           state => state.copy(counter = state.counter + amount) -> none
@@ -91,7 +95,7 @@ Finally, we describe how our page should be rendered using the built-in DSL
 for HTML markup:
 
 ```scala
-import dsl._ // `dsl` is provided by `ff4s.App`, see below
+import dsl._ // provided by `ff4s.App`, see below
 import dsl.html._
 
 val view = useState { state =>
