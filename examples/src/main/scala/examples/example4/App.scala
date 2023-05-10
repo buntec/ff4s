@@ -45,10 +45,10 @@ class App[F[_]](implicit val F: Async[F]) extends ff4s.App[F, State, Action] {
 
     router <- Router[F](window)
 
-    store <- ff4s.Store[F, State, Action](State())(
+    store <- ff4s.Store[F, State, Action](State())(_ =>
       _ match {
         case Action.NavigateTo(uri) =>
-          (_, router.navigateTo(uri).as(none[Action]).some)
+          (_, router.navigateTo(uri).some)
         case Action.SetUri(uri) => _.copy(uri = Some(uri)) -> none
       }
     )

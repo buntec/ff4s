@@ -34,13 +34,13 @@ object Store {
     // send queue for the websockets connection
     wsSendQ <- Queue.bounded[F, String](100).toResource
 
-    store <- ff4s.Store[F, State, Action](State()) {
+    store <- ff4s.Store[F, State, Action](State()) { store =>
       _ match {
         case Action.WebsocketMessageReceived(msg) =>
           _.copy(websocketResponse = msg.some) -> none
 
         case Action.SendWebsocketMessage(msg) =>
-          _ -> (wsSendQ.offer(msg).as(none[Action])).some
+          _ -> (wsSendQ.offer(msg)).some
 
         case Action.SetSvgCoords(x, y) =>
           _.copy(svgCoords = SvgCoords(x, y)) -> none
@@ -68,7 +68,7 @@ object Store {
           _ -> ff4s
             .HttpClient[F]
             .get[Bored]("http://www.boredapi.com/api/activity")
-            .map(activity => (Action.SetActivity(activity): Action).some)
+            .flatMap(activity => store.dispatch(Action.SetActivity(activity)))
             .some
       }
     }

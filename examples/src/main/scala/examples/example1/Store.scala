@@ -21,7 +21,7 @@ import cats.syntax.all._
 
 object Store {
 
-  def apply[F[_]: Concurrent] = ff4s.Store[F, State, Action](State()) {
+  def apply[F[_]: Concurrent] = ff4s.Store[F, State, Action](State()) { _ =>
     _ match {
       case Action.AddTodo =>
         state => {

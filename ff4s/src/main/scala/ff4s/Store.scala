@@ -37,7 +37,10 @@ trait Store[F[_], State, Action] {
 object Store {
 
   def apply[F[_]: Concurrent, State, Action](init: State)(
-      update: Action => State => (State, Option[F[Option[Action]]])
+      mkUpdate: Store[F, State, Action] => Action => State => (
+          State,
+          Option[F[Unit]]
+      )
   ): Resource[F, Store[F, State, Action]] = for {
     supervisor <- Supervisor[F]
 
@@ -45,27 +48,27 @@ object Store {
 
     stateSR <- SignallingRef.of[F, State](init).toResource
 
+    store = new Store[F, State, Action] {
+
+      override def dispatch(action: Action): F[Unit] = actionQ.offer(action)
+
+      override def state: Signal[F, State] = stateSR
+
+    }
+
+    update = mkUpdate(store)
+
     _ <- Stream
       .fromQueueUnterminated(actionQ)
       .evalMap(action =>
         stateSR
           .modify(update(action))
-          .flatMap(
-            _.foldMapM(foa =>
-              supervisor.supervise(foa.flatMap(_.foldMapM(actionQ.offer))).void
-            )
-          )
+          .flatMap(_.foldMapM(supervisor.supervise(_).void))
       )
       .compile
       .drain
       .background
 
-  } yield (new Store[F, State, Action] {
-
-    override def dispatch(action: Action): F[Unit] = actionQ.offer(action)
-
-    override def state: Signal[F, State] = stateSR
-
-  })
+  } yield store
 
 }
