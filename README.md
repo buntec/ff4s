@@ -70,16 +70,18 @@ case class Reset() extends Action
 With the `State` and `Action` types in hand, we can set up our store:
 
 ```scala
+import cats.effect._
 import cats.syntax.all._
 
-val store = Resource[F, ff4s.Store[F, State, Action]] = 
-    ff4s.Store[F, State, Action](State()) { _ =>
-      _ match {
-        case Inc(amount) =>
-          state => state.copy(counter = state.counter + amount) -> none
-        case Reset() => _.copy(counter = 0) -> none
-      }
+val store: Resource[F, ff4s.Store[F, State, Action]] =
+  ff4s.Store[F, State, Action](State()) { _ =>
+    _ match {
+      case Inc(amount) =>
+        state => state.copy(counter = state.counter + amount) -> none
+      case Reset() => _.copy(counter = 0) -> none
     }
+  }
+
 ```
 
 The purpose of `none` will become clear when looking at more complex examples
@@ -99,26 +101,26 @@ import dsl._ // provided by `ff4s.App`, see below
 import dsl.html._
 
 val view = useState { state =>
-    div(
-        cls := "m-2 flex flex-col items-center", // tailwindcss classes
-        h1("A counter"),
-        div(s"value: ${state.counter}"),
-        button(
-        cls := "m-1 p-1 border",
-        "increment",
-        onClick := (_ => Some(Inc(1)))
-        ),
-        button(
-        cls := "m-1 p-1 border",
-        "decrement",
-        onClick := (_ => Some(Inc(-1)))
-        ),
-        button(
-        cls := "m-1 p-1 border",
-        "reset",
-        onClick := (_ => Some(Reset()))
-        )
+  div(
+    cls := "m-2 flex flex-col items-center", // tailwindcss classes
+    h1("A counter"),
+    div(s"value: ${state.counter}"),
+    button(
+      cls := "m-1 p-1 border",
+      "increment",
+      onClick := (_ => Some(Inc(1)))
+    ),
+    button(
+      cls := "m-1 p-1 border",
+      "decrement",
+      onClick := (_ => Some(Inc(-1)))
+    ),
+    button(
+      cls := "m-1 p-1 border",
+      "reset",
+      onClick := (_ => Some(Reset()))
     )
+  )
 }
 ```
 
