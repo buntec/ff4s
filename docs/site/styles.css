@@ -5,6 +5,13 @@
   color:green
  }
 
+ #top-bar {
+ }
+
+ #sidebar {
+   box-shadow: none;
+ }
+
  div[id^=mdoc-html-] {
   position:relative;
   margin-top:40px;
