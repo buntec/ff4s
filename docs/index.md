@@ -1,6 +1,6 @@
 # ff4s
 
-A minimal purely-functional web UI framework for [Scala.js](https://www.scala-js.org/).
+A minimal purely-functional web UI library for [Scala.js](https://www.scala-js.org/).
 
 Thanks to amazing work by [@yurique](https://github.com/yurique),
 you can now [try it from your browser](https://scribble.ninja/).
@@ -21,11 +21,10 @@ Inspired by:
 - [Laminar](https://github.com/raquo/Laminar)
 - [Calico](https://github.com/armanbilge/calico)
 
-### Dependencies
+## Dependencies
 
 Artifacts are published to Maven Central for Scala 2.13 and Scala 3.
 
 ```scala
 libraryDependencies += "io.github.buntec" %%% "ff4s" % "@VERSION@"
 ```
-

@@ -1,13 +1,17 @@
-#Counter
+# A Counter
 
 Let's implement the "Hello, World!" of UIs:
 A counter that can be incremented or decremented by clicking a button.
+
+## State
 
 In Scala, the natural choice for an immutable state container is a case class:
 
 ```scala mdoc:js:shared
 final case class State(counter: Int = 0)
 ```
+
+## Action
 
 State can only be updated through actions dispatched to the store.
 We typically encode the set of actions as an ADT:
@@ -17,6 +21,8 @@ sealed trait Action
 case class Inc(amount: Int) extends Action
 case class Reset() extends Action
 ```
+
+## Store
 
 With the `State` and `Action` types in hand, we can set up our store:
 
@@ -47,6 +53,8 @@ us to do interesting things in the background (think WebSockets,
 subscribing to state changes, etc.).
 Be sure to check out the examples provided in this repo to see more elaborate
 store logic, including WebSocket messaging and REST calls.
+
+## View
 
 Finally, we describe how our page should be rendered using the built-in DSL
 for HTML markup:
@@ -86,6 +94,8 @@ useState { state =>
 }
 ```
 
+## App
+
 To turn this into an app all we need to do is implement the `ff4s.App`
 trait using `store` and `view` from above and pass an
 instance of it to the `IOEntryPoint` class, which in turn defines an
@@ -108,6 +118,5 @@ class App[F[_]](implicit F: Concurrent[F]) extends ff4s.App[F, State, Action] {
     override val view = View[F]
     override val rootElementId = node.getAttribute("id")
 }
-object Main extends ff4s.IOEntryPoint(new App) // uses cats.effect.IO for F
-Main.main(Array())
+new ff4s.IOEntryPoint(new App, false).main(Array())
 ```
