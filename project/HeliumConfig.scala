@@ -5,6 +5,7 @@ import laika.helium.Helium
 import laika.helium.config.IconLink
 import laika.helium.config.HeliumIcon
 import laika.helium.config.ColorQuintet
+import laika.helium.config.AnchorPlacement
 import laika.helium.Helium
 
 import LengthUnit._
@@ -105,6 +106,15 @@ object HeliumConfig {
           `teal-800`, // literals: numbers, strings, etc.
           `sky-600` // class, type, object names
         )
+      )
+      .site
+      .layout(
+        contentWidth = px(860),
+        navigationWidth = px(250), // px(275),
+        topBarHeight = px(40), // px(35),
+        defaultBlockSpacing = px(10),
+        defaultLineHeight = 1.5,
+        anchorPlacement = AnchorPlacement.Left
       )
       .site
       .autoLinkJS() // Actually, this *disables* auto-linking, to avoid duplicates with mdoc

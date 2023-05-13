@@ -3,7 +3,7 @@
 A minimal purely-functional web UI library for [Scala.js](https://www.scala-js.org/).
 
 Thanks to amazing work by [@yurique](https://github.com/yurique),
-you can now [try it from your browser](https://scribble.ninja/).
+you can now try **ff4s** on [scribble.ninja](https://scribble.ninja/).
 
 Based on these wonderful libraries:
 
