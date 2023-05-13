@@ -42,11 +42,19 @@ private[ff4s] object Render {
       store: Resource[F, Store[F, State, Action]]
   )(
       view: dsl.V, // must be curried b/c of dependent type
-      rootElementId: String
+      rootElementId: String,
+      replaceRoot: Boolean
   )(implicit F: Async[F]): F[Unit] =
     (store, Dispatcher.sequential[F]).tupled.use { case (store, dispatcher) =>
       for {
-        root <- F.delay(document.getElementById(rootElementId))
+        root <- F.delay {
+          val root0 = document.getElementById(rootElementId)
+          if (replaceRoot) root0
+          else
+            root0
+              .appendChild(document.createElement("div"))
+              .asInstanceOf[dom.Element]
+        }
         state0 <- store.state.get
         vnode0 <- F.delay(view.foldMap(Compiler(dsl, state0, store.dispatch)))
         proxy0 <- F.delay(patch(root, vnode0.toSnabbdom(dispatcher)))

@@ -88,7 +88,17 @@ class Dsl[F[_], State, Action] { self =>
     )(implicit
         async: Async[F],
         store: Resource[F, Store[F, State, Action]]
-    ): F[Unit] = Render(self, store)(view, rootElementId)
+    ): F[Unit] = Render(self, store)(view, rootElementId, false)
+
+    /** Runs this ff4s program and renders it into the unique DOM node with the
+      * given id. Prefer to use [[ff4s.IOEntryPoint]].
+      */
+    def renderReplace(
+        rootElementId: String
+    )(implicit
+        async: Async[F],
+        store: Resource[F, Store[F, State, Action]]
+    ): F[Unit] = Render(self, store)(view, rootElementId, true)
 
   }
 

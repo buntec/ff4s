@@ -1,7 +1,7 @@
 Global / onChangedBuildSource := ReloadOnSourceChanges
 Global / resolvers += "Sonatype S01 OSS Snapshots" at "https://s01.oss.sonatype.org/content/repositories/snapshots"
 
-ThisBuild / tlBaseVersion := "0.15"
+ThisBuild / tlBaseVersion := "0.16"
 
 lazy val scala213 = "2.13.10"
 ThisBuild / scalaVersion := scala213
@@ -15,6 +15,9 @@ ThisBuild / tlSonatypeUseLegacyHost := false
 ThisBuild / developers := List(
   tlGitHubDev("buntec", "Christoph Bunte")
 )
+
+// publish website from this branch
+ThisBuild / tlSitePublishBranch := Some("main")
 
 ThisBuild / tlFatalWarningsInCi := false
 
@@ -34,7 +37,8 @@ lazy val fs2DomVersion = "0.2.0-RC3"
 
 lazy val generateDomDefs = taskKey[Seq[File]]("Generate SDT sources")
 
-lazy val root = tlCrossRootProject.aggregate(ff4s, examples, todoMvc)
+lazy val root =
+  tlCrossRootProject.aggregate(ff4s, examples, todoMvc, docs)
 
 lazy val ff4s = (project in file("ff4s"))
   .enablePlugins(ScalaJSPlugin)
@@ -90,3 +94,19 @@ lazy val todoMvc = (project in file("todo-mvc"))
     scalaJSUseMainModuleInitializer := true
   )
   .dependsOn(ff4s)
+
+lazy val docs = project
+  .in(file("site"))
+  .enablePlugins(TypelevelSitePlugin)
+  .settings(
+    tlSiteApiPackage := Some("ff4s"),
+    mdocJS := Some(ff4s),
+    tlSiteRelatedProjects ++= Seq(
+      TypelevelProject.CatsEffect,
+      TypelevelProject.Fs2,
+      "fs2-dom" -> url("https://github.com/armanbilge/fs2-dom/"),
+      "http4s-dom" -> url("https://http4s.github.io/http4s-dom/")
+    ),
+    laikaConfig ~= { _.withRawContent },
+    tlSiteHeliumConfig ~= { HeliumConfig.customize(_) }
+  )
