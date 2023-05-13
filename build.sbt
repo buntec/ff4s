@@ -37,7 +37,8 @@ lazy val fs2DomVersion = "0.2.0-RC3"
 
 lazy val generateDomDefs = taskKey[Seq[File]]("Generate SDT sources")
 
-lazy val root = tlCrossRootProject.aggregate(ff4s, examples, todoMvc)
+lazy val root =
+  tlCrossRootProject.aggregate(ff4s, examples, todoMvc, docs)
 
 lazy val ff4s = (project in file("ff4s"))
   .enablePlugins(ScalaJSPlugin)

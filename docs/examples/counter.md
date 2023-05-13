@@ -34,15 +34,14 @@ object Store {
 
   def apply[F[_]: Concurrent]: Resource[F, ff4s.Store[F, State, Action]] =
     ff4s.Store[F, State, Action](State()) { _ =>
-        _ match {
+      _ match {
         case Inc(amount) =>
-            state => state.copy(counter = state.counter + amount) -> none
+          state => state.copy(counter = state.counter + amount) -> none
         case Reset() => _.copy(counter = 0) -> none
-        }
-  }
+      }
+    }
 
 }
-
 ```
 
 The purpose of `none` will become clear when looking at more complex examples
@@ -62,35 +61,35 @@ for HTML markup:
 ```scala mdoc:js:shared
 object View {
 
-def apply[F[_]](implicit dsl: ff4s.Dsl[F, State, Action]) = {
+  def apply[F[_]](implicit dsl: ff4s.Dsl[F, State, Action]) = {
 
-  import dsl._
-  import dsl.html._
+    import dsl._
+    import dsl.html._
 
-useState { state =>
-  div(
-    cls := "m-2 flex flex-col items-center", // tailwindcss classes
-    h1("A counter"),
-    div(s"value: ${state.counter}"),
-    button(
-      cls := "m-1 p-1 border",
-      "increment",
-      onClick := (_ => Some(Inc(1)))
-    ),
-    button(
-      cls := "m-1 p-1 border",
-      "decrement",
-      onClick := (_ => Some(Inc(-1)))
-    ),
-    button(
-      cls := "m-1 p-1 border",
-      "reset",
-      onClick := (_ => Some(Reset()))
-    )
-  )
-}
+    useState { state =>
+      div(
+        cls := "m-2 flex flex-col items-center", // tailwindcss classes
+        h1("A counter"),
+        div(s"value: ${state.counter}"),
+        button(
+          cls := "m-1 p-1 border",
+          "increment",
+          onClick := (_ => Some(Inc(1)))
+        ),
+        button(
+          cls := "m-1 p-1 border",
+          "decrement",
+          onClick := (_ => Some(Inc(-1)))
+        ),
+        button(
+          cls := "m-1 p-1 border",
+          "reset",
+          onClick := (_ => Some(Reset()))
+        )
+      )
+    }
 
-}
+  }
 }
 ```
 
@@ -105,8 +104,8 @@ appropriate `main` method for us:
 // A basic store requires `cats.effect.Concurrent[F]`.
 // In real-world applications we usually need the more powerful `cats.effect.Async[F]`.
 class App[F[_]](implicit F: Concurrent[F]) extends ff4s.App[F, State, Action] {
-    override val store = Store[F]
-    override val view = View[F]
+  override val store = Store[F]
+  override val view = View[F]
 }
 
 object Main extends ff4s.IOEntryPoint(new App) // uses cats.effect.IO for F
@@ -114,9 +113,9 @@ object Main extends ff4s.IOEntryPoint(new App) // uses cats.effect.IO for F
 
 ```scala mdoc:js:invisible
 class App[F[_]](implicit F: Concurrent[F]) extends ff4s.App[F, State, Action] {
-    override val store = Store[F]
-    override val view = View[F]
-    override val rootElementId = node.getAttribute("id")
+  override val store = Store[F]
+  override val view = View[F]
+  override val rootElementId = node.getAttribute("id")
 }
 new ff4s.IOEntryPoint(new App, false).main(Array())
 ```
