@@ -11,7 +11,7 @@ In Scala, the natural choice for an immutable state container is a case class:
 final case class State(counter: Int = 0)
 ```
 
-## Action
+## Actions
 
 State can only be updated through actions dispatched to the store.
 We typically encode the set of actions as an ADT:
@@ -44,7 +44,7 @@ object Store {
 }
 ```
 
-The purpose of `none` will become clear when looking at more complex examples
+The purpose of `none` will become clear when looking at more interesting examples
 involving side-effects such as fetching data from the back-end.
 
 The fact that `store` is a `Resource` is extremely useful because it allows
@@ -68,21 +68,21 @@ object View {
 
     useState { state =>
       div(
-        cls := "m-2 flex flex-col items-center", // tailwindcss classes
+        cls := "counter-example", // cls b/c class is a reserved keyword in scala
         h1("A counter"),
         div(s"value: ${state.counter}"),
         button(
-          cls := "m-1 p-1 border",
+          cls := "counter-button",
           "increment",
           onClick := (_ => Some(Inc(1)))
         ),
         button(
-          cls := "m-1 p-1 border",
+          cls := "counter-button",
           "decrement",
           onClick := (_ => Some(Inc(-1)))
         ),
         button(
-          cls := "m-1 p-1 border",
+          cls := "counter-button",
           "reset",
           onClick := (_ => Some(Reset()))
         )

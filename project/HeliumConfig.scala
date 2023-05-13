@@ -1,3 +1,4 @@
+import sbt._
 import laika.ast.LengthUnit
 import laika.ast.Styles
 import laika.theme.config._
@@ -14,6 +15,7 @@ object HeliumConfig {
 
   def customize(helium: Helium): Helium = {
 
+    // tailwindcss colors - MIT License
     val `sky-800` = Color.hex("075985")
     val `sky-600` = Color.hex("0284c7")
     val `sky-400` = Color.hex("38bdf8")
@@ -23,6 +25,7 @@ object HeliumConfig {
     val `fuchsia-300` = Color.hex("f0abfc")
     val `fuchsia-100` = Color.hex("fae8ff")
     val `pink-500` = Color.hex("ec4899")
+    val `pink-800` = Color.hex("9d174d")
     val `teal-600` = Color.hex("0d9488")
     val `teal-700` = Color.hex("0f766e")
     val `teal-800` = Color.hex("115e59")
@@ -41,7 +44,7 @@ object HeliumConfig {
     helium.all
       .fontResources(
         FontDefinition(
-          Font.webCSS("https://fonts.googleapis.com/css?family=Lato:100,300"),
+          Font.webCSS("https://fonts.googleapis.com/css?family=Lato:300"),
           "Lato",
           FontWeight.Normal,
           FontStyle.Normal
@@ -74,7 +77,7 @@ object HeliumConfig {
       .all
       .themeColors(
         primary = `sky-800`,
-        secondary = `gray-700`,
+        secondary = `pink-800`,
         primaryMedium = `gray-200`,
         primaryLight = `gray-100`,
         text = `gray-700`,
@@ -110,8 +113,8 @@ object HeliumConfig {
       .site
       .layout(
         contentWidth = px(860),
-        navigationWidth = px(250), // px(275),
-        topBarHeight = px(40), // px(35),
+        navigationWidth = px(250), // default = px(275),
+        topBarHeight = px(35),
         defaultBlockSpacing = px(10),
         defaultLineHeight = 1.5,
         anchorPlacement = AnchorPlacement.Left
@@ -120,7 +123,7 @@ object HeliumConfig {
       .autoLinkJS() // Actually, this *disables* auto-linking, to avoid duplicates with mdoc
       .site
       .topNavigationBar(navLinks =
-        Seq(
+        List(
           IconLink.external(
             "https://github.com/buntec/ff4s",
             HeliumIcon.github,
@@ -128,7 +131,6 @@ object HeliumConfig {
           )
         )
       )
-
   }
 
 }

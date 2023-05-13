@@ -108,5 +108,5 @@ lazy val docs = project
       "http4s-dom" -> url("https://http4s.github.io/http4s-dom/")
     ),
     laikaConfig ~= { _.withRawContent },
-    tlSiteHeliumConfig ~= HeliumConfig.customize
+    tlSiteHeliumConfig ~= { HeliumConfig.customize(_) }
   )
