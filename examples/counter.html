@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="Laika 0.18.1 + Helium Theme" />
+    <title>A Counter</title>
+    
+      <meta name="author" content="Christoph Bunte"/>
+    
+    
+      <meta name="description" content="docs"/>
+    
+    
+      <link rel="icon" sizes="32x32" type="image/png" href="https://typelevel.org/img/favicon.png"/>
+    
+    
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Lato:300">
+    
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/firacode@6.2.0/distr/fira_code.css">
+    
+    <link rel="stylesheet" type="text/css" href="../helium/icofont.min.css" />
+    <link rel="stylesheet" type="text/css" href="../helium/laika-helium.css" />
+    <link rel="stylesheet" type="text/css" href="../site/styles.css" />
+    <script src="../helium/laika-helium.js"></script>
+    
+    
+    <script> /* for avoiding page load transitions */ </script>
+  </head>
+
+  <body>
+
+    <header id="top-bar">
+
+      <div class="row">
+        <a id="nav-icon">
+          <i class="icofont-laika" title="Navigation">&#xefa2;</i>
+        </a>
+        
+      </div>
+
+      <!--<a class="icon-link" href="index.html"><i class="icofont-laika" title="Home"></i></a>-->
+
+      <span class="row links"><a class="icon-link svg-link" href="https://github.com/buntec/ff4s"><span title="Source Code"><svg class="svg-icon" width="100%" height="100%" viewBox="0 0 100 100" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
+  <g class="svg-shape">
+    <path d="M49.995,1c-27.609,-0 -49.995,22.386 -49.995,50.002c-0,22.09 14.325,40.83 34.194,47.444c2.501,0.458 3.413,-1.086 3.413,-2.412c0,-1.185 -0.043,-4.331 -0.067,-8.503c-13.908,3.021 -16.843,-6.704 -16.843,-6.704c-2.274,-5.773 -5.552,-7.311 -5.552,-7.311c-4.54,-3.103 0.344,-3.042 0.344,-3.042c5.018,0.356 7.658,5.154 7.658,5.154c4.46,7.64 11.704,5.433 14.552,4.156c0.454,-3.232 1.744,-5.436 3.174,-6.685c-11.102,-1.262 -22.775,-5.553 -22.775,-24.713c-0,-5.457 1.949,-9.92 5.147,-13.416c-0.516,-1.265 -2.231,-6.348 0.488,-13.233c0,0 4.199,-1.344 13.751,5.126c3.988,-1.108 8.266,-1.663 12.518,-1.682c4.245,0.019 8.523,0.574 12.517,1.682c9.546,-6.47 13.736,-5.126 13.736,-5.126c2.728,6.885 1.013,11.968 0.497,13.233c3.204,3.496 5.141,7.959 5.141,13.416c0,19.209 -11.691,23.436 -22.83,24.673c1.795,1.544 3.394,4.595 3.394,9.26c0,6.682 -0.061,12.076 -0.061,13.715c0,1.338 0.899,2.894 3.438,2.406c19.853,-6.627 34.166,-25.354 34.166,-47.438c-0,-27.616 -22.389,-50.002 -50.005,-50.002"/>
+  </g>
+</svg></span></a></span>
+
+    </header>
+
+    <nav id="sidebar">
+
+      <div class="row">
+        <a class="icon-link svg-link" href="https://github.com/buntec/ff4s"><span title="Source Code"><svg class="svg-icon" width="100%" height="100%" viewBox="0 0 100 100" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
+  <g class="svg-shape">
+    <path d="M49.995,1c-27.609,-0 -49.995,22.386 -49.995,50.002c-0,22.09 14.325,40.83 34.194,47.444c2.501,0.458 3.413,-1.086 3.413,-2.412c0,-1.185 -0.043,-4.331 -0.067,-8.503c-13.908,3.021 -16.843,-6.704 -16.843,-6.704c-2.274,-5.773 -5.552,-7.311 -5.552,-7.311c-4.54,-3.103 0.344,-3.042 0.344,-3.042c5.018,0.356 7.658,5.154 7.658,5.154c4.46,7.64 11.704,5.433 14.552,4.156c0.454,-3.232 1.744,-5.436 3.174,-6.685c-11.102,-1.262 -22.775,-5.553 -22.775,-24.713c-0,-5.457 1.949,-9.92 5.147,-13.416c-0.516,-1.265 -2.231,-6.348 0.488,-13.233c0,0 4.199,-1.344 13.751,5.126c3.988,-1.108 8.266,-1.663 12.518,-1.682c4.245,0.019 8.523,0.574 12.517,1.682c9.546,-6.47 13.736,-5.126 13.736,-5.126c2.728,6.885 1.013,11.968 0.497,13.233c3.204,3.496 5.141,7.959 5.141,13.416c0,19.209 -11.691,23.436 -22.83,24.673c1.795,1.544 3.394,4.595 3.394,9.26c0,6.682 -0.061,12.076 -0.061,13.715c0,1.338 0.899,2.894 3.438,2.406c19.853,-6.627 34.166,-25.354 34.166,-47.438c-0,-27.616 -22.389,-50.002 -50.005,-50.002"/>
+  </g>
+</svg></span></a>
+      </div>
+
+      <ul class="nav-list">
+        <li class="level1"><a href="../index.html">ff4s</a></li>
+        <li class="level1"><a href="../concepts.html">Concepts</a></li>
+        <li class="level1 nav-header">examples</li>
+        <li class="level2 active"><a href="#">A Counter</a></li>
+      </ul>
+
+      <ul class="nav-list">
+        <li class="level1 nav-header">Related Projects</li>
+        
+          <li class="level2"><a href="https://typelevel.org/cats/">cats</a></li>
+        
+          <li class="level2"><a href="https://typelevel.org/cats-effect/">cats-effect</a></li>
+        
+          <li class="level2"><a href="https://fs2.io/">fs2</a></li>
+        
+          <li class="level2"><a href="https://github.com/armanbilge/fs2-dom/">fs2-dom</a></li>
+        
+          <li class="level2"><a href="https://http4s.github.io/http4s-dom/">http4s-dom</a></li>
+        
+      </ul>
+
+    </nav>
+
+    <div id="container">
+
+      <nav id="page-nav">
+        <p class="header"><a href="#">A Counter</a></p>
+
+        <ul class="nav-list">
+          <li class="level1"><a href="#state">State</a></li>
+          <li class="level1"><a href="#actions">Actions</a></li>
+          <li class="level1"><a href="#store">Store</a></li>
+          <li class="level1"><a href="#view">View</a></li>
+          <li class="level1"><a href="#app">App</a></li>
+        </ul>
+
+        <p class="footer"></p>
+      </nav>
+
+      <main class="content">
+
+        <h1 id="a-counter" class="title">A Counter</h1>
+        <p>Let&#39;s implement the &quot;Hello, World!&quot; of UIs:
+        A counter that can be incremented or decremented by clicking a button.</p>
+        
+        <h2 id="state" class="section"><a class="anchor-link left" href="#state"><i class="icofont-laika">&#xef71;</i></a>State</h2>
+        <p>In Scala, the natural choice for an immutable state container is a case class:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">final</span><span> </span><span class="keyword">case</span><span> </span><span class="keyword">class</span><span> </span><span class="type-name">State</span><span>(</span><span class="identifier">counter</span><span>: </span><span class="type-name">Int</span><span> = </span><span class="number-literal">0</span><span>)</span></code></pre>
+        
+        <h2 id="actions" class="section"><a class="anchor-link left" href="#actions"><i class="icofont-laika">&#xef71;</i></a>Actions</h2>
+        <p>State can only be updated through actions dispatched to the store.
+        We typically encode the set of actions as an ADT:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">sealed</span><span> </span><span class="keyword">trait</span><span> </span><span class="type-name">Action</span><span>
+</span><span class="keyword">case</span><span> </span><span class="keyword">class</span><span> </span><span class="type-name">Inc</span><span>(</span><span class="identifier">amount</span><span>: </span><span class="type-name">Int</span><span>) </span><span class="keyword">extends</span><span> </span><span class="type-name">Action</span><span>
+</span><span class="keyword">case</span><span> </span><span class="keyword">class</span><span> </span><span class="type-name">Reset</span><span>() </span><span class="keyword">extends</span><span> </span><span class="type-name">Action</span></code></pre>
+        
+        <h2 id="store" class="section"><a class="anchor-link left" href="#store"><i class="icofont-laika">&#xef71;</i></a>Store</h2>
+        <p>With the <code>State</code> and <code>Action</code> types in hand, we can set up our store:</p>
+        <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">cats</span><span>.</span><span class="identifier">effect</span><span>.</span><span class="identifier">_</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">cats</span><span>.</span><span class="identifier">syntax</span><span>.</span><span class="identifier">all</span><span>.</span><span class="identifier">_</span><span>
+
+</span><span class="keyword">object</span><span> </span><span class="type-name">Store</span><span> {
+
+  </span><span class="keyword">def</span><span> </span><span class="declaration-name">apply</span><span>[</span><span class="type-name">F</span><span>[</span><span class="identifier">_</span><span>]: </span><span class="type-name">Concurrent</span><span>]: </span><span class="type-name">Resource</span><span>[</span><span class="type-name">F</span><span>, </span><span class="identifier">ff4s</span><span>.</span><span class="type-name">Store</span><span>[</span><span class="type-name">F</span><span>, </span><span class="type-name">State</span><span>, </span><span class="type-name">Action</span><span>]] =
+    </span><span class="identifier">ff4s</span><span>.</span><span class="type-name">Store</span><span>[</span><span class="type-name">F</span><span>, </span><span class="type-name">State</span><span>, </span><span class="type-name">Action</span><span>](</span><span class="type-name">State</span><span>()) { </span><span class="identifier">_</span><span> =&gt;
+      </span><span class="identifier">_</span><span> </span><span class="keyword">match</span><span> {
+        </span><span class="keyword">case</span><span> </span><span class="type-name">Inc</span><span>(</span><span class="identifier">amount</span><span>) =&gt;
+          </span><span class="identifier">state</span><span> =&gt; </span><span class="identifier">state</span><span>.</span><span class="identifier">copy</span><span>(</span><span class="identifier">counter</span><span> = </span><span class="identifier">state</span><span>.</span><span class="identifier">counter</span><span> + </span><span class="identifier">amount</span><span>) -&gt; </span><span class="identifier">none</span><span>
+        </span><span class="keyword">case</span><span> </span><span class="type-name">Reset</span><span>() =&gt; </span><span class="identifier">_</span><span>.</span><span class="identifier">copy</span><span>(</span><span class="identifier">counter</span><span> = </span><span class="number-literal">0</span><span>) -&gt; </span><span class="identifier">none</span><span>
+      }
+    }
+
+}</span></code></pre>
+        <p>The purpose of <code>none</code> will become clear when looking at more interesting examples
+        involving side-effects such as fetching data from the back-end.</p>
+        <p>The fact that <code>store</code> is a <code>Resource</code> is extremely useful because it allows
+        us to do interesting things in the background (think WebSockets,
+        subscribing to state changes, etc.).
+        Be sure to check out the examples provided in this repo to see more elaborate
+        store logic, including WebSocket messaging and REST calls.</p>
+        
+        <h2 id="view" class="section"><a class="anchor-link left" href="#view"><i class="icofont-laika">&#xef71;</i></a>View</h2>
+        <p>Finally, we describe how our page should be rendered using the built-in DSL
+        for HTML markup:</p>
+        <pre><code class="nohighlight"><span class="keyword">object</span><span> </span><span class="type-name">View</span><span> {
+
+  </span><span class="keyword">def</span><span> </span><span class="declaration-name">apply</span><span>[</span><span class="type-name">F</span><span>[</span><span class="identifier">_</span><span>]](</span><span class="keyword">implicit</span><span> </span><span class="identifier">dsl</span><span>: </span><span class="identifier">ff4s</span><span>.</span><span class="type-name">Dsl</span><span>[</span><span class="type-name">F</span><span>, </span><span class="type-name">State</span><span>, </span><span class="type-name">Action</span><span>]) = {
+
+    </span><span class="keyword">import</span><span> </span><span class="identifier">dsl</span><span>.</span><span class="identifier">_</span><span>
+    </span><span class="keyword">import</span><span> </span><span class="identifier">dsl</span><span>.</span><span class="identifier">html</span><span>.</span><span class="identifier">_</span><span>
+
+    </span><span class="identifier">useState</span><span> { </span><span class="identifier">state</span><span> =&gt;
+      </span><span class="identifier">div</span><span>(
+        </span><span class="identifier">cls</span><span> := </span><span class="string-literal">&quot;counter-example&quot;</span><span>, </span><span class="comment">// cls b/c class is a reserved keyword in scala
+</span><span>        </span><span class="identifier">h1</span><span>(</span><span class="string-literal">&quot;A counter&quot;</span><span>),
+        </span><span class="identifier">div</span><span>(</span><span class="string-literal">s&quot;value: </span><span class="substitution">${state.counter}</span><span class="string-literal">&quot;</span><span>),
+        </span><span class="identifier">button</span><span>(
+          </span><span class="identifier">cls</span><span> := </span><span class="string-literal">&quot;counter-button&quot;</span><span>,
+          </span><span class="string-literal">&quot;increment&quot;</span><span>,
+          </span><span class="identifier">onClick</span><span> := (</span><span class="identifier">_</span><span> =&gt; </span><span class="type-name">Some</span><span>(</span><span class="type-name">Inc</span><span>(</span><span class="number-literal">1</span><span>)))
+        ),
+        </span><span class="identifier">button</span><span>(
+          </span><span class="identifier">cls</span><span> := </span><span class="string-literal">&quot;counter-button&quot;</span><span>,
+          </span><span class="string-literal">&quot;decrement&quot;</span><span>,
+          </span><span class="identifier">onClick</span><span> := (</span><span class="identifier">_</span><span> =&gt; </span><span class="type-name">Some</span><span>(</span><span class="type-name">Inc</span><span>(-</span><span class="number-literal">1</span><span>)))
+        ),
+        </span><span class="identifier">button</span><span>(
+          </span><span class="identifier">cls</span><span> := </span><span class="string-literal">&quot;counter-button&quot;</span><span>,
+          </span><span class="string-literal">&quot;reset&quot;</span><span>,
+          </span><span class="identifier">onClick</span><span> := (</span><span class="identifier">_</span><span> =&gt; </span><span class="type-name">Some</span><span>(</span><span class="type-name">Reset</span><span>()))
+        )
+      )
+    }
+
+  }
+}</span></code></pre>
+        
+        <h2 id="app" class="section"><a class="anchor-link left" href="#app"><i class="icofont-laika">&#xef71;</i></a>App</h2>
+        <p>To turn this into an app all we need to do is implement the <code>ff4s.App</code>
+        trait using <code>store</code> and <code>view</code> from above and pass an
+        instance of it to the <code>IOEntryPoint</code> class, which in turn defines an
+        appropriate <code>main</code> method for us:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="comment">// A basic store requires `cats.effect.Concurrent[F]`.
+// In real-world applications we usually need the more powerful `cats.effect.Async[F]`.
+</span><span class="keyword">class</span><span> </span><span class="type-name">App</span><span>[</span><span class="type-name">F</span><span>[</span><span class="identifier">_</span><span>]](</span><span class="keyword">implicit</span><span> </span><span class="type-name">F</span><span>: </span><span class="type-name">Concurrent</span><span>[</span><span class="type-name">F</span><span>]) </span><span class="keyword">extends</span><span> </span><span class="identifier">ff4s</span><span>.</span><span class="type-name">App</span><span>[</span><span class="type-name">F</span><span>, </span><span class="type-name">State</span><span>, </span><span class="type-name">Action</span><span>] {
+  </span><span class="keyword">override</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">store</span><span> = </span><span class="type-name">Store</span><span>[</span><span class="type-name">F</span><span>]
+  </span><span class="keyword">override</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">view</span><span> = </span><span class="type-name">View</span><span>[</span><span class="type-name">F</span><span>]
+}
+
+</span><span class="keyword">object</span><span> </span><span class="type-name">Main</span><span> </span><span class="keyword">extends</span><span> </span><span class="identifier">ff4s</span><span>.</span><span class="type-name">IOEntryPoint</span><span>(</span><span class="keyword">new</span><span> </span><span class="type-name">App</span><span>) </span><span class="comment">// uses cats.effect.IO for F</span></code></pre>
+        <div id="mdoc-html-run6" data-mdoc-js></div>
+        <p><script type="text/javascript" src="counter.md.js" defer></script>
+        <script type="text/javascript" src="mdoc.js" defer></script></p>
+
+        <hr style="margin-top: 30px"/>
+        <footer style="font-size: 90%; text-align: center">
+          ff4s is distributed under the <a href="https://www.apache.org/licenses/LICENSE-2.0.txt">Apache-2.0</a> license.
+        </footer>
+
+      </main>
+
+    </div>
+
+  </body>
+</html>
