@@ -16,6 +16,9 @@ ThisBuild / developers := List(
   tlGitHubDev("buntec", "Christoph Bunte")
 )
 
+// publish website from this branch
+ThisBuild / tlSitePublishBranch := Some("main")
+
 ThisBuild / tlFatalWarningsInCi := false
 
 ThisBuild / scalafixDependencies += "com.github.liancheng" %% "organize-imports" % "0.6.0"
@@ -90,3 +93,35 @@ lazy val todoMvc = (project in file("todo-mvc"))
     scalaJSUseMainModuleInitializer := true
   )
   .dependsOn(ff4s)
+
+import laika.ast.Styles
+import laika.helium.config.IconLink
+import laika.helium.config.HeliumIcon
+import laika.helium.Helium
+
+lazy val docs = project
+  .in(file("site"))
+  .enablePlugins(TypelevelSitePlugin)
+  .settings(
+    tlSiteApiPackage := Some("ff4s"),
+    mdocJS := Some(ff4s),
+    tlSiteRelatedProjects ++= Seq(
+      TypelevelProject.CatsEffect,
+      TypelevelProject.Fs2
+    ),
+    laikaConfig ~= { _.withRawContent },
+    tlSiteHeliumConfig ~= {
+      _.site
+        .autoLinkJS() // Actually, this *disables* auto-linking, to avoid duplicates with mdoc
+        .site
+        .topNavigationBar(navLinks =
+          Seq(
+            IconLink.external(
+              "https://github.com/buntec/ff4s",
+              HeliumIcon.github,
+              options = Styles("svg-link")
+            )
+          )
+        )
+    }
+  )
