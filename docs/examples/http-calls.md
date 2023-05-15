@@ -1,16 +1,21 @@
 # HTTP Calls
 
-This example illustrates how making HTTP calls work in ff4s.
+This example illustrates how making HTTP calls works in ff4s. A random fact is generated
+on each button click using the [random facts API](http://numbersapi.com/#42).
 
 ## State
 
 In Scala, the natural choice for an immutable state container is a case class:
 
 ```scala mdoc:js:shared
+final case class State(fact: String = "")
+```
+
+The random fact is also naturally modelled by a case class with a `circe` codec:
+
+```scala mdoc:js:shared
 import io.circe._
 import io.circe.generic.semiauto._
-
-final case class State(fact: String = "")
 
 case class Fact(text: String)
 object Fact {
@@ -26,7 +31,9 @@ We typically encode the set of actions as an ADT:
 
 ```scala mdoc:js:shared
 sealed trait Action
+// Generates a fact by making a GET request
 case class Generate() extends Action
+// Mutates the state with the given fact
 case class SetFact(fact: String) extends Action
 ```
 
@@ -63,14 +70,9 @@ object Store {
 }
 ```
 
-The purpose of `none` will become clear when looking at more interesting examples
-involving side-effects such as fetching data from the back-end.
-
-The fact that `store` is a `Resource` is extremely useful because it allows
-us to do interesting things in the background (think WebSockets,
-subscribing to state changes, etc.).
-Be sure to check out the examples provided in this repo to see more elaborate
-store logic, including WebSocket messaging and REST calls.
+The `SetFact` action is responsible for mutating the state hence the purpose of the `none`. However more interestingly,
+the `Generate` action is performing a `GET` request conceived as a 'long running' effect and hence is scheduled on a separate fiber.
+This is indeed is internally handled by ff4s in order to avoid a blocking HTTP call.
 
 ## View
 
@@ -91,10 +93,10 @@ object View {
           h1("Http calls"),
           button(
             cls := "m-1 p-1",
-            "generate",
+            "New fact",
             onClick := (_ => Generate().some)
           ),
-          div(s"fact: ${state.fact}")
+          div(s"${state.fact}")
         )
       }
 
