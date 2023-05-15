@@ -1,6 +1,6 @@
 # HTTP Calls
 
-This example illustrates how making HTTP calls works in ff4s. A random fact is generated
+This example illustrates how making HTTP calls works in `ff4s`. A random fact is generated
 on each button click using the [numbers API](http://numbersapi.com/#42).
 
 ## State
@@ -92,10 +92,8 @@ object View {
 
      useState { state =>
         div(
-          cls := "m-2",
           h1("Http calls"),
           button(
-            cls := "m-1 p-1",
             "New fact",
             onClick := (_ => Generate().some)
           ),
