@@ -1,7 +1,7 @@
 # HTTP Calls
 
 This example illustrates how making HTTP calls works in ff4s. A random fact is generated
-on each button click using the [random facts API](http://numbersapi.com/#42).
+on each button click using the [numbers API](http://numbersapi.com/#42).
 
 ## State
 
@@ -70,9 +70,12 @@ object Store {
 }
 ```
 
-The `SetFact` action is responsible for mutating the state hence the purpose of the `none`. However more interestingly,
-the `Generate` action is performing a `GET` request conceived as a 'long running' effect and hence is scheduled on a separate fiber.
-This is indeed is internally handled by ff4s in order to avoid a blocking HTTP call.
+The `SetFact` action is only responsible for mutating the state hence the purpose of the `none`. However more interestingly,
+the `Generate` action is performing a `GET` request that is conceived as a 'long running' effect and hence is scheduled on a separate fiber.
+This is indeed handled internally by `ff4s` in order to avoid a blocking HTTP call.
+
+After making the call, the state is updated
+with a random fact through the `dispatch` method of the store that returns an `F[Unit]`. Note that the effect is optional hence the presense of the `.some`.
 
 ## View
 
