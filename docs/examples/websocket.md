@@ -8,13 +8,13 @@ We are going to use the following state and action encoding:
 ```scala mdoc:js:shared
 final case class State(
     userInput: Option[String] = None,
-    wsResponse: Option[String] = None
+    serverResponse: Option[String] = None
 )
 
 sealed trait Action
 case class SetUserInput(input: Option[String]) extends Action
-case class SendWS() extends Action
-case class SetWSResponse(text: String) extends Action
+case object Send extends Action
+case class SetServerResponse(text: String) extends Action
 ```
 
 The interesting bit is the store:
@@ -31,13 +31,13 @@ object Store {
   def apply[F[_]](implicit F: Async[F]) = for {
 
     // queue for outbound WS messages
-    wsSendQ <- Queue.unbounded[F, String].toResource
+    sendQ <- Queue.unbounded[F, String].toResource
 
     store <- ff4s.Store[F, State, Action](State()) { _ =>
       _ match {
         case SetUserInput(input) => _.copy(userInput = input) -> none
-        case SendWS() => state => state -> state.userInput.map(wsSendQ.offer)
-        case SetWSResponse(text) => _.copy(wsResponse = text.some) -> none
+        case Send => state => state -> state.userInput.map(sendQ.offer)
+        case SetServerResponse(text) => _.copy(serverResponse = text.some) -> none
       }
     }
 
@@ -46,8 +46,8 @@ object Store {
       .WebSocketClient[F]
       .bidirectionalText(
         "wss://ws.postman-echo.com/raw/",
-        _.evalMap(msg => store.dispatch(SetWSResponse(msg))),
-        Stream.fromQueueUnterminated(wsSendQ)
+        _.evalMap(r => store.dispatch(SetServerResponse(r))),
+        Stream.fromQueueUnterminated(sendQ)
       )
       .background
 
@@ -86,12 +86,12 @@ object View {
         ),
         button(
           tpe := "button",
-          onClick := (_ => SendWS().some),
+          onClick := (_ => Send.some),
           "Send"
         ),
         span(
           cls := "text-center",
-          s"Websocket Response:  ${state.wsResponse.getOrElse("")}"
+          s"Server response:  ${state.serverResponse.getOrElse("")}"
         )
       )
     }
