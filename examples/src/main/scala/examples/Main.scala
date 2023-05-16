@@ -18,5 +18,5 @@ package examples
 
 object Main
     extends ff4s.IOEntryPoint(
-      new example8.App // replace with `example<N>.App` to try other examples
+      new example2.App // replace with `example<N>.App` to try other examples
     )
