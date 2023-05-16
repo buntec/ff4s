@@ -118,7 +118,7 @@ object View {
 
     useState { state =>
       div(
-        h1("Http calls"),
+        h1("Cancellation"),
         input(
           tpe := "number",
           value := state.number.toString,

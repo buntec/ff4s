@@ -1,4 +1,4 @@
-# Data Fetch
+# Subscription
 
 This example illustrates how making HTTP calls works in `ff4s`. A random fact is generated
 on each button click using the [numbers API](http://numbersapi.com/#42).
@@ -45,29 +45,48 @@ With the `State` and `Action` types in hand, we can set up our store:
 ```scala mdoc:js:shared
 import cats.effect._
 import cats.syntax.all._
+import cats.effect._
+import cats.effect.implicits._
+import cats.syntax.all._
+import io.circe.generic.semiauto._
+import io.circe._
+import scala.concurrent.duration._
+import org.scalajs.dom
 
 object Store {
 
   def apply[F[_]: Async]: Resource[F, ff4s.Store[F, State, Action]] =
-    ff4s.Store[F, State, Action](State()) { store =>
-      _ match {
-        case SetFact(fact)     => _.copy(fact = fact) -> none
-        case SetNumber(number) => _.copy(number = number) -> none
-        case Generate() =>
-          state =>
-            (
-              state,
-              ff4s
-                .HttpClient[F]
-                .get[Fact](s"http://numbersapi.com/${state.number}?json")
-                .flatMap { fact =>
-                  store.dispatch(SetFact(fact.some))
-                }
-                .some
-            )
+    ff4s
+      .Store[F, State, Action](State()) { store =>
+        _ match {
+          case SetFact(fact)     => _.copy(fact = fact) -> none
+          case SetNumber(number) => _.copy(number = number) -> none
+          case Generate() =>
+            state =>
+              (
+                state,
+                ff4s
+                  .HttpClient[F]
+                  .get[Fact](s"http://numbersapi.com/${state.number}?json")
+                  .flatMap { fact =>
+                    store.dispatch(SetFact(fact.some))
+                  }
+                  .some
+              )
 
+        }
       }
-    }
+      .flatTap { store =>
+        store.state
+          .map(_.number)
+          .discrete
+          .changes
+          .debounce(3.seconds)
+          .evalMap { _ => store.dispatch(Generate()) }
+          .compile
+          .drain
+          .background
+      }
 
 }
 ```
@@ -95,7 +114,7 @@ object View {
 
     useState { state =>
       div(
-        h1("Data Fetch"),
+        h1("Subscription"),
         input(
           tpe := "number",
           value := state.number.toString,
@@ -106,10 +125,6 @@ object View {
               case _ => None
             }
           )
-        ),
-        button(
-          "New fact",
-          onClick := (_ => Generate().some)
         ),
         div(s"${state.fact.map(_.text).getOrElse("")}")
       )
