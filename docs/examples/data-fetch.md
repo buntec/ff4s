@@ -1,11 +1,9 @@
 # Data Fetch
 
-This example illustrates how making HTTP calls works in `ff4s`. A random fact is generated
+This example illustrates how fetching data via HTTP calls work in `ff4s`. A random fact about a number is generated
 on each button click using the [numbers API](http://numbersapi.com/#42).
 
 ## State
-
-In Scala, the natural choice for an im state container is a case class:
 
 ```scala mdoc:js:shared
 final case class State(number: Int = 0, fact: Option[Fact] = None)
@@ -25,9 +23,6 @@ object Fact {
 
 ## Actions
 
-State can only be updated through actions dispatched to the store.
-We typically encode the set of actions as an ADT:
-
 ```scala mdoc:js:shared
 sealed trait Action
 // Generates a fact by making a GET request
@@ -39,8 +34,6 @@ case class SetNumber(number: Int) extends Action
 ```
 
 ## Store
-
-With the `State` and `Action` types in hand, we can set up our store:
 
 ```scala mdoc:js:shared
 import cats.effect._
@@ -72,7 +65,7 @@ object Store {
 }
 ```
 
-The `SetFact` action is only responsible for updating the state hence the purpose of the `none`. However more interestingly,
+The `SetFact` and `SetNumber` actions are only responsible for updating the state hence the purpose of the `none`. However more interestingly,
 the `Generate` action is performing a `GET` request that is conceived as a 'long running' effect and hence is scheduled on a separate fiber.
 This is indeed handled internally by `ff4s` in order to avoid a blocking HTTP call.
 
@@ -80,9 +73,6 @@ After making the call, the state is updated
 with a random fact through the `dispatch` method of the store that returns an `F[Unit]`. Note that the effect is optional hence the presence of the `.some`.
 
 ## View
-
-Finally, we describe how our page should be rendered using the built-in DSL
-for HTML markup:
 
 ```scala mdoc:js:shared
 object View {
@@ -120,11 +110,6 @@ object View {
 ```
 
 ## App
-
-To turn this into an app all we need to do is implement the `ff4s.App`
-trait using `store` and `view` from above and pass an
-instance of it to the `IOEntryPoint` class, which in turn defines an
-appropriate `main` method for us:
 
 ```scala mdoc:js:compile-only
 class App[F[_]](implicit F: Async[F]) extends ff4s.App[F, State, Action] {

@@ -1,17 +1,17 @@
 # Cancellation
 
-This example illustrates how making HTTP calls works in `ff4s`. A random fact is generated
-on each button click using the [numbers API](http://numbersapi.com/#42).
+This example illustrates how cancellation of fibers running effects works in `ff4s`. A random fact is generated
+on each button click using the [numbers API](http://numbersapi.com/#42). Two main points of this example are made:
+
+1. An HTTP call to fetch a fact can be canceled by clicking on a `Cancel` button.
+2. Each click on the `Generate` button will cancel the previous effect if running and hence will only return
+   the latest effect result.
 
 ## State
-
-In Scala, the natural choice for an im state container is a case class:
 
 ```scala mdoc:js:shared
 final case class State(number: Int = 0, fact: Option[Fact] = None)
 ```
-
-The random fact is also naturally modelled by a case class with a `circe` codec:
 
 ```scala mdoc:js:shared
 import io.circe._
@@ -24,9 +24,6 @@ object Fact {
 ```
 
 ## Actions
-
-State can only be updated through actions dispatched to the store.
-We typically encode the set of actions as an ADT:
 
 ```scala mdoc:js:shared
 sealed trait Action
@@ -42,8 +39,6 @@ case class Cancel(cancelKey: String) extends Action
 
 ## Store
 
-With the `State` and `Action` types in hand, we can set up our store:
-
 ```scala mdoc:js:shared
 import cats.effect._
 import cats.effect.implicits._
@@ -57,6 +52,7 @@ object Store {
   def apply[F[_]: Async]: Resource[F, ff4s.Store[F, State, Action]] = for {
 
     supervisor <- Supervisor[F]
+
     fibers <- MapRef
       .ofSingleImmutableMap[F, String, Fiber[F, Throwable, Unit]]()
       .toResource
@@ -95,17 +91,14 @@ object Store {
 }
 ```
 
-The `SetFact` action is only responsible for updating the state hence the purpose of the `none`. However more interestingly,
-the `Generate` action is performing a `GET` request that is conceived as a 'long running' effect and hence is scheduled on a separate fiber.
-This is indeed handled internally by `ff4s` in order to avoid a blocking HTTP call.
+A `Supervisor[F]` is used to run an effect `F` on a fiber. We get for free a handler on each supervised fiber that will allow us to control
+its cancellation. This particularly beneficial as we store all fibers in a `MapRef` with a corresponding cancellation key.
 
-After making the call, the state is updated
-with a random fact through the `dispatch` method of the store that returns an `F[Unit]`. Note that the effect is optional hence the presence of the `.some`.
+Note the `Cancel` action takes a cancellation key `cancelKey` that when dispatched, gets the fiber from the fibers `MapRef` and attemps to cancel it.
+In addition to that, the `Generate` action attempts to cancel the effect if running before executing the effect itself. This particularly useful when users
+click multiple times on a button that fetches data for example. This would then avoid erroneous behavior.
 
 ## View
-
-Finally, we describe how our page should be rendered using the built-in DSL
-for HTML markup:
 
 ```scala mdoc:js:shared
 object View {
@@ -144,11 +137,6 @@ object View {
 ```
 
 ## App
-
-To turn this into an app all we need to do is implement the `ff4s.App`
-trait using `store` and `view` from above and pass an
-instance of it to the `IOEntryPoint` class, which in turn defines an
-appropriate `main` method for us:
 
 ```scala mdoc:js:compile-only
 class App[F[_]](implicit F: Async[F]) extends ff4s.App[F, State, Action] {
