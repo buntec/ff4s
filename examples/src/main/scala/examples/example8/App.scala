@@ -17,9 +17,13 @@
 package examples.example8
 
 import cats.effect._
+import cats.effect.implicits._
 import cats.syntax.all._
 import io.circe.generic.semiauto._
 import io.circe._
+import cats.effect.std.Supervisor
+import cats.effect.std.MapRef
+import scala.concurrent.duration._
 
 final case class State(fact: String = "")
 
@@ -31,27 +35,45 @@ object Fact {
 sealed trait Action
 case class Generate() extends Action
 case class SetFact(fact: String) extends Action
+case class Cancel(cancelKey: String) extends Action
 
 class App[F[_]](implicit F: Async[F]) extends ff4s.App[F, State, Action] {
 
-  override val store: Resource[F, ff4s.Store[F, State, Action]] =
-    ff4s.Store[F, State, Action](State()) { store =>
+  override val store: Resource[F, ff4s.Store[F, State, Action]] = for {
+    supervisor <- Supervisor[F]
+
+    fibers <- MapRef
+      .ofSingleImmutableMap[F, String, Fiber[F, Throwable, Unit]]()
+      .toResource
+
+    store <- ff4s.Store[F, State, Action](State()) { store =>
       _ match {
         case SetFact(str) => _.copy(fact = str) -> none
         case Generate() =>
           (
             _,
-            ff4s
-              .HttpClient[F]
-              .get[Fact](s"http://numbersapi.com/random?json")
-              .flatMap { fact =>
-                store.dispatch(SetFact(fact.text))
+            supervisor
+              .supervise(
+                F.sleep(3.seconds) *>
+                  ff4s
+                    .HttpClient[F]
+                    .get[Fact](s"http://numbersapi.com/random?json")
+                    .flatMap { fact =>
+                      store.dispatch(SetFact(fact.text))
+                    }
+              )
+              .flatMap { fiber =>
+                fibers
+                  .getAndSetKeyValue("number", fiber)
+                  .flatMap(_.foldMapM(_.cancel))
               }
               .some
           )
-
+        case Cancel(cancelKey) =>
+          (_, fibers(cancelKey).get.flatMap(_.foldMapM(_.cancel)).some)
       }
     }
+  } yield store
 
   import dsl._ // provided by `ff4s.App`, see below
   import dsl.html._
