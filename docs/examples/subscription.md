@@ -78,7 +78,7 @@ object Store {
 ```
 
 The fact that the `ff4s.Store[F, State, Action]` is a resource allows us interestingly to subscribe to state changes in the background
-while the store is in use. In fact, the state can be accessed from the store as a `Signal[F, State]` and mapped to a corresponding element
+while the store is in use. In fact, the state can be accessed from the store as a `fs2.Signal[F, State]` and mapped to a corresponding element
 of interest of the state. The methods `.discrete.changes` are then responsible to watch changes in the corresponding state (or element of the state).
 
 Note the interesting `.debounce` method that limits the amount of effects evaluation to one evaluation at most per 3 seconds. This particularly
