@@ -1,14 +1,14 @@
-# HTTP Calls
+# Data Fetch
 
 This example illustrates how making HTTP calls works in `ff4s`. A random fact is generated
 on each button click using the [numbers API](http://numbersapi.com/#42).
 
 ## State
 
-In Scala, the natural choice for an immutable state container is a case class:
+In Scala, the natural choice for an im state container is a case class:
 
 ```scala mdoc:js:shared
-final case class State(fact: String = "")
+final case class State(number: Int = 0, fact: Option[Fact] = None)
 ```
 
 The random fact is also naturally modelled by a case class with a `circe` codec:
@@ -21,7 +21,6 @@ case class Fact(text: String)
 object Fact {
   implicit val codec: Codec[Fact] = deriveCodec
 }
-
 ```
 
 ## Actions
@@ -33,8 +32,10 @@ We typically encode the set of actions as an ADT:
 sealed trait Action
 // Generates a fact by making a GET request
 case class Generate() extends Action
-// Mutates the state with the given fact
-case class SetFact(fact: String) extends Action
+// Updates the state with the given fact
+case class SetFact(fact: Option[Fact]) extends Action
+// Updates the state with the given number
+case class SetNumber(number: Int) extends Action
 ```
 
 ## Store
@@ -42,7 +43,6 @@ case class SetFact(fact: String) extends Action
 With the `State` and `Action` types in hand, we can set up our store:
 
 ```scala mdoc:js:shared
-
 import cats.effect._
 import cats.syntax.all._
 
@@ -51,18 +51,20 @@ object Store {
   def apply[F[_]: Async]: Resource[F, ff4s.Store[F, State, Action]] =
     ff4s.Store[F, State, Action](State()) { store =>
       _ match {
-        case SetFact(str) => _.copy(fact = str) -> none
+        case SetFact(fact)     => _.copy(fact = fact) -> none
+        case SetNumber(number) => _.copy(number = number) -> none
         case Generate() =>
-          (
-            _,
-            ff4s
-              .HttpClient[F]
-              .get[Fact](s"http://numbersapi.com/random?json")
-              .flatMap { fact =>
-                store.dispatch(SetFact(fact.text))
-              }
-              .some
-          )
+          state =>
+            (
+              state,
+              ff4s
+                .HttpClient[F]
+                .get[Fact](s"http://numbersapi.com/${state.number}?json")
+                .flatMap { fact =>
+                  store.dispatch(SetFact(fact.some))
+                }
+                .some
+            )
 
       }
     }
@@ -70,7 +72,7 @@ object Store {
 }
 ```
 
-The `SetFact` action is only responsible for mutating the state hence the purpose of the `none`. However more interestingly,
+The `SetFact` action is only responsible for updating the state hence the purpose of the `none`. However more interestingly,
 the `Generate` action is performing a `GET` request that is conceived as a 'long running' effect and hence is scheduled on a separate fiber.
 This is indeed handled internally by `ff4s` in order to avoid a blocking HTTP call.
 
@@ -89,17 +91,29 @@ object View {
 
     import dsl._
     import dsl.html._
+    import org.scalajs.dom
 
-     useState { state =>
-        div(
-          h1("Http calls"),
-          button(
-            "New fact",
-            onClick := (_ => Generate().some)
-          ),
-          div(s"${state.fact}")
-        )
-      }
+    useState { state =>
+      div(
+        h1("Http calls"),
+        input(
+          tpe := "number",
+          value := state.number.toString,
+          onInput := ((ev: dom.Event) =>
+            ev.target match {
+              case el: dom.HTMLInputElement =>
+                SetNumber(el.value.toIntOption.getOrElse(0)).some
+              case _ => None
+            }
+          )
+        ),
+        button(
+          "New fact",
+          onClick := (_ => Generate().some)
+        ),
+        div(s"${state.fact.map(_.text).getOrElse("")}")
+      )
+    }
 
   }
 }
