@@ -1,11 +1,6 @@
 # Cancellation
 
-This example illustrates how cancellation of fibers running effects works in `ff4s`. A random fact is generated
-on each button click using the [numbers API](http://numbersapi.com/#42). Two main points of this example are made:
-
-1. An HTTP call to fetch a fact can be canceled by clicking on a `Cancel` button.
-2. Each click on the `Generate` button will cancel the previous effect if running and hence will only return
-   the latest effect result.
+This example shows how long-running effects can be made cancellable, either by triggering the same effect again before it has completed, or explicitly by clicking a cancel button. We illustrate this with a simple HTTP GET request to the [numbers API](http://numbersapi.com/) (pretending that it is long-running by adding a `F.sleep(...)`).
 
 ## State
 
