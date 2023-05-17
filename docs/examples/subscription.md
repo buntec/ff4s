@@ -1,7 +1,8 @@
 # Subscription
 
-This example illustrates how subscribing to state changes work in `ff4s`. A random fact is generated
-on user input using the [numbers API](http://numbersapi.com/#42).
+Watching for state changes is one of the most common but rather tricky to handle in frontend development.
+In this example we illustrate how this can be achieved in `ff4s` using simple HTTP GET requests to the
+[numbers API](http://numbersapi.com/), where each request is sent based on user input.
 
 ## State
 
@@ -15,7 +16,7 @@ import io.circe.generic.semiauto._
 
 case class Fact(text: String)
 object Fact {
-  implicit val codec: Codec[Fact] = deriveCodec
+  implicit val codec: Decoder[Fact] = deriveDecoder
 }
 ```
 
@@ -23,15 +24,18 @@ object Fact {
 
 ```scala mdoc:js:shared
 sealed trait Action
-// Generates a fact by making a GET request
-case class Generate() extends Action
-// Updates the state with the given fact
+case object GetRandomFact extends Action
 case class SetFact(fact: Option[Fact]) extends Action
-// Updates the state with the given number
 case class SetNumber(number: Int) extends Action
 ```
 
 ## Store
+
+What is interesting here is the fact that the store `ff4s.Store` is a resource. This will allow us to run effects
+in the background while the store is in use. For example, we can subscribe to changes of the `number` state (based on user input) and react by dispatching the action `GetRandomFact` that will access the latest state and send a simple HTTP GET request.
+
+Note that we use the `debounce` to limit the reaction to state change to a maximum of one per 3 seconds. This in particular is ueful
+if the effect running as a result of state change is expensive while the state changes with high frequency.
 
 ```scala mdoc:js:shared
 import cats.syntax.all._
@@ -47,7 +51,7 @@ object Store {
         _ match {
           case SetFact(fact)     => _.copy(fact = fact) -> none
           case SetNumber(number) => _.copy(number = number) -> none
-          case Generate() =>
+          case GetRandomFact =>
             state =>
               (
                 state,
@@ -68,7 +72,7 @@ object Store {
           .discrete
           .changes
           .debounce(3.seconds)
-          .evalMap { _ => store.dispatch(Generate()) }
+          .evalMap { _ => store.dispatch(GetRandomFact) }
           .compile
           .drain
           .background
@@ -76,13 +80,6 @@ object Store {
 
 }
 ```
-
-The fact that the `ff4s.Store[F, State, Action]` is a resource allows us interestingly to subscribe to state changes in the background
-while the store is in use. In fact, the state can be accessed from the store as a `fs2.Signal[F, State]` and mapped to a corresponding element
-of interest of the state. The methods `.discrete.changes` are then responsible to watch changes in the corresponding state (or element of the state).
-
-Note the interesting `.debounce` method that limits the amount of effects evaluation to one evaluation at most per 3 seconds. This particularly
-useful to avoid proliferation of evaluations if the state changes with high frequency.
 
 ## View
 
@@ -119,14 +116,7 @@ object View {
 
 ## App
 
-```scala mdoc:js:compile-only
-class App[F[_]](implicit F: Async[F]) extends ff4s.App[F, State, Action] {
-  override val store = Store[F]
-  override val view = View[F]
-}
-
-object Main extends ff4s.IOEntryPoint(new App) // uses cats.effect.IO for F
-```
+Implementation of `ff4s.App` and `ff4s.IOEntryPoint` is straightforward and omitted for brevity.
 
 ```scala mdoc:js:invisible
 class App[F[_]](implicit F: Async[F]) extends ff4s.App[F, State, Action] {
