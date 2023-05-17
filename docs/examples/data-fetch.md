@@ -25,15 +25,13 @@ object Fact {
 
 ## Actions
 
+The action encoding is straightforward.
+
 ```scala mdoc:js:shared
 sealed trait Action
-// Generates a fact by making a GET request
-case class Generate() extends Action
-// Updates the state with the given fact
+case object GetRandomFact extends Action
 case class SetFact(fact: Option[Fact]) extends Action
-// Updates the state with the given number
 case class SetNumber(number: Int) extends Action
-```
 
 ## Store
 
