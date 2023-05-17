@@ -32,7 +32,7 @@ sealed trait Action
 case object GetRandomFact extends Action
 case class SetFact(fact: Option[Fact]) extends Action
 case class SetNumber(number: Int) extends Action
-
+The only interesting bit in the store is the handling of `GetRandomFact`. Note how we retrieve the number from the state and how we are updating the state with the retrieved fact using `store.dispatch`. A more realistic example would include error handling of failed requests.
 ## Store
 
 ```scala mdoc:js:shared
