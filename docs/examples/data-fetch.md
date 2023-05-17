@@ -1,7 +1,9 @@
-# Data Fetch
+# Data Fetching
 
-This example illustrates how fetching data via HTTP calls work in `ff4s`. A random fact about a number is generated
-on each button click using the [numbers API](http://numbersapi.com/#42).
+Fetching data from the back-end is probably the most common type of IO in single-page applications.
+In this example we illustrate this pattern in `ff4s` using a simple HTTP GET 
+request to the [numbers API](http://numbersapi.com/), which returns a random fact
+about any number that we supply.
 
 ## State
 
