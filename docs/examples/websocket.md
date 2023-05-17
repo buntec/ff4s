@@ -1,9 +1,15 @@
-# WebSocket
+# WebSockets
 
-In this example we are going to the demonstrate the use of WebSocket
-connections in ff4s apps.
+Managing the life cycle of a WebSocket connection can be tricky.
+In ff4s we benefit from abstractions in Cats Effect and fs2
+to achieve this with ease and safety.
 
-We are going to use the following state and action encoding:
+In this example we are connecting to a simple WS server that
+echos back any message we send to it.
+We only show the common case where the lifetime of
+the connection coincides with the lifetime of the app.
+
+The state and action encodings are straightforward:
 
 ```scala mdoc:js:shared
 final case class State(
@@ -14,10 +20,14 @@ final case class State(
 sealed trait Action
 case class SetUserInput(input: Option[String]) extends Action
 case object Send extends Action
-case class SetServerResponse(text: String) extends Action
+case class SetServerResponse(response: String) extends Action
 ```
 
-The interesting bit is the store:
+The interesting bit is the store. We use a Cats Effect `Queue` to hold
+outgoing messages. The connection itself runs on a separate fiber safely
+tied to the lifetime of the store using `.background`.
+The `ff4s.WebsocketClient` is a wrapper around the more
+powerful `http4s` client and intended for simple use-cases such as this one.
 
 ```scala mdoc:js:shared
 import cats.effect._
@@ -29,19 +39,16 @@ import fs2.Stream
 object Store {
 
   def apply[F[_]](implicit F: Async[F]) = for {
-
-    // queue for outbound WS messages
     sendQ <- Queue.unbounded[F, String].toResource
 
     store <- ff4s.Store[F, State, Action](State()) { _ =>
       _ match {
         case SetUserInput(input) => _.copy(userInput = input) -> none
         case Send => state => state -> state.userInput.map(sendQ.offer)
-        case SetServerResponse(text) => _.copy(serverResponse = text.some) -> none
+        case SetServerResponse(res) => _.copy(serverResponse = res.some) -> none
       }
     }
 
-    // establish websocket connection
     _ <- ff4s
       .WebSocketClient[F]
       .bidirectionalText(
@@ -56,7 +63,7 @@ object Store {
 }
 ```
 
-The view is simple:
+There isn't much to say about the view.
 
 ```scala mdoc:js:shared
 import org.scalajs.dom
@@ -64,33 +71,29 @@ import org.scalajs.dom
 object View {
 
   def apply[F[_]](implicit dsl: ff4s.Dsl[F, State, Action]) = {
-
     import dsl._
     import dsl.html._
 
     useState { state =>
       div(
-        cls := "flex flex-col",
         input(
           tpe := "text",
-          cls := "text-center m-1 rounded font-light shadow",
-          placeholder := "type something here...",
+          placeholder := "your message here...",
           onInput := ((ev: dom.Event) =>
             ev.target match {
               case el: dom.HTMLInputElement =>
                 if (el.value.nonEmpty) Some(SetUserInput(el.value.some))
-                else Some(SetUserInput(none))
+                else Some(SetUserInput(None))
               case _ => None
             }
           )
         ),
         button(
-          tpe := "button",
-          onClick := (_ => Send.some),
-          "Send"
+          "Send",
+          disabled := state.userInput.isEmpty,
+          onClick := (_ => Send.some)
         ),
-        span(
-          cls := "text-center",
+        div(
           s"Server response:  ${state.serverResponse.getOrElse("")}"
         )
       )
@@ -99,6 +102,9 @@ object View {
 
 }
 ```
+
+We omit the straightforward construction of `ff4s.App`
+and `ff4s.IOEntryPoint` for brevity.
 
 ```scala mdoc:js:invisible
 class App[F[_]](implicit F: Async[F]) extends ff4s.App[F, State, Action] {
