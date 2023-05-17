@@ -77,12 +77,6 @@ object Store {
 }
 ```
 
-A `Supervisor[F]` is used to run an effect `F` on a fiber. We get for free a handler on each supervised fiber that will allow us to control
-its cancellation. This particularly beneficial as we store all fibers in a `MapRef` with a corresponding cancellation key.
-
-Note the `Cancel` action takes a cancellation key `cancelKey` that when dispatched, gets the fiber from the fibers `MapRef` and attemps to cancel it.
-In addition to that, the `Generate` action attempts to cancel the effect if running before executing the effect itself. This particularly useful when users
-click multiple times on a button that fetches data for example. This would then avoid erroneous behavior.
 
 ## View
 
