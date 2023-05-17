@@ -113,14 +113,7 @@ object View {
 
 ## App
 
-```scala mdoc:js:compile-only
-class App[F[_]](implicit F: Async[F]) extends ff4s.App[F, State, Action] {
-  override val store = Store[F]
-  override val view = View[F]
-}
-
-object Main extends ff4s.IOEntryPoint(new App) // uses cats.effect.IO for F
-```
+The construction of `ff4s.App` and `ff4s.IOEntryPoint` is straightforward and omitted for brevity.
 
 ```scala mdoc:js:invisible
 class App[F[_]](implicit F: Async[F]) extends ff4s.App[F, State, Action] {
