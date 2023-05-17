@@ -41,7 +41,9 @@ import scala.concurrent.duration._
 
 object Store {
 
-  def apply[F[_]](implicit F: Async[F]): Resource[F, ff4s.Store[F, State, Action]] = for {
+  def apply[F[_]](implicit
+      F: Async[F]
+  ): Resource[F, ff4s.Store[F, State, Action]] = for {
 
     supervisor <- Supervisor[F]
 
@@ -61,14 +63,18 @@ object Store {
               state,
               supervisor
                 .supervise(
-                    F.sleep(3.seconds) *> // pretend that this is long running
+                  F.sleep(3.seconds) *> // pretend that this is long running
                     ff4s
                       .HttpClient[F]
                       .get[Fact](s"http://numbersapi.com/${state.number}?json")
                       .flatMap(fact => store.dispatch(SetFact(fact.some)))
                 )
                 .flatMap { fib =>
-                  fiber.getAndSet(fib.some).flatMap(_.foldMapM(_.cancel)) // cancel running request, if any, and store fiber of new request
+                  fiber
+                    .getAndSet(fib.some)
+                    .flatMap(
+                      _.foldMapM(_.cancel)
+                    ) // cancel running request, if any, and store fiber of new request
                 }
                 .some
             )

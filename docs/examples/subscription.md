@@ -34,7 +34,7 @@ case class SetNumber(number: Int) extends Action
 What is interesting here is the fact that the store `ff4s.Store` is a resource. This will allow us to run effects
 in the background while the store is in use. For example, we can subscribe to changes of the `number` state (based on user input) and react by dispatching the action `GetRandomFact` that will access the latest state and send a simple HTTP GET request.
 
-Note that we use the `debounce` to limit the reaction to state change to a maximum of one per 3 seconds. This in particular is ueful
+Note that we use `debounce` to limit the reaction to state change to a maximum of one per 3 seconds. This in particular is ueful
 if the effect running as a result of state change is expensive while the state changes with high frequency.
 
 ```scala mdoc:js:shared
@@ -70,7 +70,7 @@ object Store {
         store.state
           .map(_.number)
           .discrete
-          .changes
+          .changes // subscribe to changes in `number` state
           .debounce(3.seconds)
           .evalMap { _ => store.dispatch(GetRandomFact) }
           .compile
