@@ -46,16 +46,14 @@ object Store {
       _ match {
         case SetFact(fact)     => _.copy(fact = fact) -> none
         case SetNumber(number) => _.copy(number = number) -> none
-        case Generate() =>
+        case GetRandomFact =>
           state =>
             (
               state,
               ff4s
                 .HttpClient[F]
                 .get[Fact](s"http://numbersapi.com/${state.number}?json")
-                .flatMap { fact =>
-                  store.dispatch(SetFact(fact.some))
-                }
+                .flatMap(fact => store.dispatch(SetFact(fact.some)))
                 .some
             )
 
