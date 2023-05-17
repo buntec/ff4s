@@ -1,6 +1,6 @@
 # Subscription
 
-Watching for state changes is one of the most common but rather tricky to handle in frontend development.
+Subscribing to state changes is one of the most common but rather tricky to handle in frontend development.
 In this example we illustrate how this can be achieved in `ff4s` using simple HTTP GET requests to the
 [numbers API](http://numbersapi.com/), where each request is sent based on user input.
 
@@ -32,10 +32,10 @@ case class SetNumber(number: Int) extends Action
 ## Store
 
 What is interesting here is the fact that the store `ff4s.Store` is a resource. This will allow us to run effects
-in the background while the store is in use. For example, we can subscribe to changes of the `number` state (based on user input) and react by dispatching the action `GetRandomFact` that will access the latest state and send a simple HTTP GET request.
+in the background while the store is in use. For example, we can subscribe to changes of the `number` state (based on user input) and dispatch the action `GetRandomFact` in response.
 
-Note that we use `debounce` to limit the reaction to state change to a maximum of one per 3 seconds. This in particular is ueful
-if the effect running as a result of state change is expensive while the state changes with high frequency.
+Note that we use `debounce` to limit the number of responses to state changes. This is useful when the state changes
+with high frequency while we do not want to react to each single change.
 
 ```scala mdoc:js:shared
 import cats.syntax.all._
