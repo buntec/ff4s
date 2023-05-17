@@ -52,26 +52,21 @@ object Store {
       _ match {
         case SetFact(fact)     => _.copy(fact = fact) -> none
         case SetNumber(number) => _.copy(number = number) -> none
-        case Cancel(cancelKey) =>
-          (_, fibers(cancelKey).get.flatMap(_.foldMapM(_.cancel)).some)
-        case Generate(cancelKey) =>
+        case Cancel => (_, fiber.get.flatMap(_.foldMapM(_.cancel)).some)
+        case GetRandomFact =>
           state =>
             (
               state,
               supervisor
                 .supervise(
-                  Async[F].sleep(3.seconds) *>
+                  Async[F].sleep(3.seconds) *> // pretend that this is long running
                     ff4s
                       .HttpClient[F]
                       .get[Fact](s"http://numbersapi.com/${state.number}?json")
-                      .flatMap { fact =>
-                        store.dispatch(SetFact(fact.some))
-                      }
+                      .flatMap(fact => store.dispatch(SetFact(fact.some)))
                 )
-                .flatMap { fiber =>
-                  fibers
-                    .getAndSetKeyValue(cancelKey, fiber)
-                    .flatMap(_.foldMapM(_.cancel))
+                .flatMap { fib =>
+                  fiber.getAndSet(fib.some).flatMap(_.foldMapM(_.cancel)) // cancel running request, if any, and store fiber of new request
                 }
                 .some
             )
