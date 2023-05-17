@@ -67,12 +67,6 @@ object Store {
 }
 ```
 
-The `SetFact` and `SetNumber` actions are only responsible for updating the state hence the purpose of the `none`. However more interestingly,
-the `Generate` action is performing a `GET` request that is conceived as a 'long running' effect and hence is scheduled on a separate fiber.
-This is indeed handled internally by `ff4s` in order to avoid a blocking HTTP call.
-
-After making the call, the state is updated
-with a random fact through the `dispatch` method of the store that returns an `F[Unit]`. Note that the effect is optional hence the presence of the `.some`.
 
 ## View
 
