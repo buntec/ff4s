@@ -1,7 +1,7 @@
 # Data Fetching
 
 Fetching data from the back-end is probably the most common type of IO in single-page applications.
-In this example we illustrate this pattern in `ff4s` using a simple HTTP GET 
+In this example we illustrate this pattern in `ff4s` using a simple HTTP GET
 request to the [numbers API](http://numbersapi.com/), which returns a random fact
 about any number that we supply.
 
@@ -32,8 +32,11 @@ sealed trait Action
 case object GetRandomFact extends Action
 case class SetFact(fact: Option[Fact]) extends Action
 case class SetNumber(number: Int) extends Action
-The only interesting bit in the store is the handling of `GetRandomFact`. Note how we retrieve the number from the state and how we are updating the state with the retrieved fact using `store.dispatch`. A more realistic example would include error handling of failed requests.
+```
+
 ## Store
+
+The only interesting bit in the store is the handling of `GetRandomFact`. Note how we retrieve the number from the state and how we are updating the state with the retrieved fact using `store.dispatch`. A more realistic example would include error handling of failed requests.
 
 ```scala mdoc:js:shared
 import cats.effect._
@@ -63,7 +66,6 @@ object Store {
 }
 ```
 
-
 ## View
 
 ```scala mdoc:js:shared
@@ -91,7 +93,7 @@ object View {
         ),
         button(
           "New fact",
-          onClick := (_ => Generate().some)
+          onClick := (_ => GetRandomFact.some)
         ),
         div(s"${state.fact.map(_.text).getOrElse("")}")
       )

@@ -26,25 +26,27 @@ case object GetRandomFact extends Action
 case class SetFact(fact: Option[Fact]) extends Action
 case class SetNumber(number: Int) extends Action
 case object Cancel extends Action
+```
 
 ## Store
+
 The interesting bit is in the store. We use a `Supervisor` to fork safely the long-running effect on a new fiber. The fiber of the running effect is held in a `Ref`, where we can retrieve it for cancellation at any time.
+
 ```scala mdoc:js:shared
 import cats.effect._
 import cats.effect.implicits._
 import cats.syntax.all._
 import cats.effect.std.Supervisor
-import cats.effect.std.MapRef
 import scala.concurrent.duration._
 
 object Store {
 
-  def apply[F[_]: Async]: Resource[F, ff4s.Store[F, State, Action]] = for {
+  def apply[F[_]](implicit F: Async[F]): Resource[F, ff4s.Store[F, State, Action]] = for {
 
     supervisor <- Supervisor[F]
 
     // Since there is at most one running effect, a single `Ref` suffices.
-    // If there could be more than one cancellable action at a time, we would use something 
+    // If there could be more than one cancellable action at a time, we would use something
     // like `MapRef` and index the fibers by the action type or a cancellation token.
     fiber <- F.ref[Option[Fiber[F, Throwable, Unit]]](None).toResource
 
@@ -59,7 +61,7 @@ object Store {
               state,
               supervisor
                 .supervise(
-                  Async[F].sleep(3.seconds) *> // pretend that this is long running
+                    F.sleep(3.seconds) *> // pretend that this is long running
                     ff4s
                       .HttpClient[F]
                       .get[Fact](s"http://numbersapi.com/${state.number}?json")
@@ -76,7 +78,6 @@ object Store {
   } yield store
 }
 ```
-
 
 ## View
 
@@ -105,9 +106,9 @@ object View {
         ),
         button(
           "New fact",
-          onClick := (_ => Generate("number").some)
+          onClick := (_ => GetRandomFact.some)
         ),
-        button("Cancel", onClick := (_ => Cancel("number").some)),
+        button("Cancel", onClick := (_ => Cancel.some)),
         div(s"${state.fact.map(_.text).getOrElse("")}")
       )
     }
