@@ -28,7 +28,7 @@ case class SetNumber(number: Int) extends Action
 case object Cancel extends Action
 
 ## Store
-
+The interesting bit is in the store. We use a `Supervisor` to fork safely the long-running effect on a new fiber. The fiber of the running effect is held in a `Ref`, where we can retrieve it for cancellation at any time.
 ```scala mdoc:js:shared
 import cats.effect._
 import cats.effect.implicits._
