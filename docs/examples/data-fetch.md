@@ -19,7 +19,7 @@ import io.circe.generic.semiauto._
 
 case class Fact(text: String)
 object Fact {
-  implicit val codec: Codec[Fact] = deriveCodec
+  implicit val decoder: Decoder[Fact] = deriveDecoder
 }
 ```
 
