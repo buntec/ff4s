@@ -43,9 +43,10 @@ object Store {
 
     supervisor <- Supervisor[F]
 
-    fibers <- MapRef
-      .ofSingleImmutableMap[F, String, Fiber[F, Throwable, Unit]]()
-      .toResource
+    // Since there is at most one running effect, a single `Ref` suffices.
+    // If there could be more than one cancellable action at a time, we would use something 
+    // like `MapRef` and index the fibers by the action type or a cancellation token.
+    fiber <- F.ref[Option[Fiber[F, Throwable, Unit]]](None).toResource
 
     store <- ff4s.Store[F, State, Action](State()) { store =>
       _ match {
