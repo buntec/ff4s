@@ -11,7 +11,7 @@ about any number that we supply.
 final case class State(number: Int = 0, fact: Option[Fact] = None)
 ```
 
-The random fact is also naturally modelled by a case class with a `circe` codec:
+We model the JSON API response using a case class with a derived [circe](https://circe.github.io/circe/) decoder:
 
 ```scala mdoc:js:shared
 import io.circe._
