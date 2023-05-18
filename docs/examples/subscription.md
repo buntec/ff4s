@@ -61,13 +61,14 @@ object Store {
 
         }
       }
-      .flatTap { store =>
-        store.state
+      .flatTap {
+        // subscribe to changes in user input and trigger debounced API calls
+        _.state
           .map(_.number)
           .discrete
-          .changes // subscribe to changes in `number` state
-          .debounce(3.seconds)
-          .evalMap { _ => store.dispatch(GetRandomFact) }
+          .changes
+          .debounce(1.second)
+          .evalMap(_ => store.dispatch(GetRandomFact))
           .compile
           .drain
           .background
