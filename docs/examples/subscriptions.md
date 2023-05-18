@@ -5,16 +5,20 @@ The fact that the store in ff4s is a `Resource` and that `store.state` is a `Sig
 ## State
 
 ```scala mdoc:js:shared
-final case class State(number: Int = 0, fact: Option[Fact] = None)
+final case class State(
+    userInput: Option[String] = None,
+    exchangeRate: Option[ExchangeRate] = None,
+    error: Option[String] = None
+)
 ```
 
 ```scala mdoc:js:shared
 import io.circe._
 import io.circe.generic.semiauto._
 
-case class Fact(text: String)
-object Fact {
-  implicit val codec: Decoder[Fact] = deriveDecoder
+case class ExchangeRate(rates: Map[String, Double])
+object ExchangeRate {
+  implicit val decoder: Decoder[ExchangeRate] = deriveDecoder
 }
 ```
 
@@ -22,9 +26,10 @@ object Fact {
 
 ```scala mdoc:js:shared
 sealed trait Action
-case object GetRandomFact extends Action
-case class SetFact(fact: Option[Fact]) extends Action
-case class SetNumber(number: Int) extends Action
+case class GetExchangeRate(base: String, quote: String) extends Action
+case class SetExchangeRate(exchangeRate: Option[ExchangeRate]) extends Action
+case class SetUserInput(userInput: Option[String]) extends Action
+case class SetError(error: Option[String]) extends Action
 ```
 
 ## Store
@@ -41,17 +46,24 @@ object Store {
     ff4s
       .Store[F, State, Action](State()) { store =>
         _ match {
-          case SetFact(fact)     => _.copy(fact = fact) -> none
-          case SetNumber(number) => _.copy(number = number) -> none
-          case GetRandomFact =>
+          case SetExchangeRate(rate) =>
+            _.copy(exchangeRate = rate, error = None) -> none
+          case SetUserInput(userInput) => _.copy(userInput = userInput) -> none
+          case SetError(error)         => _.copy(error = error) -> none
+          case GetExchangeRate(base: String, quote: String) =>
             state =>
               (
                 state,
                 ff4s
                   .HttpClient[F]
-                  .get[Fact](s"http://numbersapi.com/${state.number}?json")
-                  .flatMap { fact =>
-                    store.dispatch(SetFact(fact.some))
+                  .get[ExchangeRate](
+                    s"https://api.frankfurter.app/latest?from=$base&to=$quote"
+                  )
+                  .flatMap { rate =>
+                    store.dispatch(SetExchangeRate(rate.some))
+                  }
+                  .handleErrorWith { _ =>
+                    store.dispatch(SetError("Failed to get rate!".some))
                   }
                   .some
               )
@@ -62,11 +74,22 @@ object Store {
         // subscribe to changes in user input and trigger debounced API calls
         store =>
           store.state
-            .map(_.number)
+            .map(_.userInput)
             .discrete
             .changes
+            .map {
+              _.flatMap { userInput =>
+                (
+                  userInput.split("/").headOption,
+                  userInput.split("/").tail.headOption
+                ).tupled
+              }
+            }
+            .unNone
             .debounce(1.second)
-            .evalMap(_ => store.dispatch(GetRandomFact))
+            .evalMap { case (base, quote) =>
+              store.dispatch(GetExchangeRate(base, quote))
+            }
             .compile
             .drain
             .background
@@ -88,23 +111,28 @@ object View {
 
     useState { state =>
       div(
-        h1("Subscription"),
         input(
-          tpe := "number",
-          value := state.number.toString,
+          tpe := "text",
+          placeholder := "CHF/USD",
           onInput := ((ev: dom.Event) =>
             ev.target match {
               case el: dom.HTMLInputElement =>
-                SetNumber(el.value.toIntOption.getOrElse(0)).some
+                SetUserInput(el.value.some).some
               case _ => None
             }
           )
         ),
-        div(s"${state.fact.map(_.text).getOrElse("")}")
+        state.error match {
+          case Some(error) => div(error)
+          case None =>
+            div(
+              s"${state.exchangeRate.flatMap(_.rates.values.toList.headOption).getOrElse("")}"
+            )
+        }
       )
     }
-
   }
+
 }
 ```
 

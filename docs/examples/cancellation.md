@@ -1,20 +1,20 @@
 # Cancellation
 
-This example shows how long-running effects can be made cancellable, either by triggering the same effect again before it has completed, or explicitly by clicking a cancel button. We illustrate this with a simple HTTP GET request to the [numbers API](http://numbersapi.com/) (pretending that it is long-running by adding a `F.sleep(...)`).
+This example shows how long-running effects can be made cancellable, either by triggering the same effect again before it has completed, or explicitly by clicking a cancel button. We illustrate this with a simple HTTP GET request to the [bored API](http://boredap.com/) (pretending that it is long-running by adding a `F.sleep(...)`).
 
 ## State
 
 ```scala mdoc:js:shared
-final case class State(number: Int = 0, fact: Option[Fact] = None)
+final case class State(activity: Option[Activity] = None)
 ```
 
 ```scala mdoc:js:shared
 import io.circe._
 import io.circe.generic.semiauto._
 
-case class Fact(text: String)
-object Fact {
-  implicit val codec: Decoder[Fact] = deriveDecoder
+case class Activity(activity: String)
+object Activity {
+  implicit val codec: Decoder[Activity] = deriveDecoder
 }
 ```
 
@@ -22,9 +22,8 @@ object Fact {
 
 ```scala mdoc:js:shared
 sealed trait Action
-case object GetRandomFact extends Action
-case class SetFact(fact: Option[Fact]) extends Action
-case class SetNumber(number: Int) extends Action
+case object GetRandomActivity extends Action
+case class SetActivity(activity: Option[Activity]) extends Action
 case object Cancel extends Action
 ```
 
@@ -54,10 +53,9 @@ object Store {
 
     store <- ff4s.Store[F, State, Action](State()) { store =>
       _ match {
-        case SetFact(fact)     => _.copy(fact = fact) -> none
-        case SetNumber(number) => _.copy(number = number) -> none
+        case SetActivity(activity) => _.copy(activity = activity) -> none
         case Cancel => (_, fiber.get.flatMap(_.foldMapM(_.cancel)).some)
-        case GetRandomFact =>
+        case GetRandomActivity =>
           state =>
             (
               state,
@@ -66,8 +64,10 @@ object Store {
                   F.sleep(3.seconds) *> // pretend that this is long running
                     ff4s
                       .HttpClient[F]
-                      .get[Fact](s"http://numbersapi.com/${state.number}?json")
-                      .flatMap(fact => store.dispatch(SetFact(fact.some)))
+                      .get[Activity]("https://www.boredapi.com/api/activity")
+                      .flatMap(activity =>
+                        store.dispatch(SetActivity(activity.some))
+                      )
                 )
                 .flatMap { fib =>
                   fiber
@@ -94,29 +94,15 @@ object View {
 
     import dsl._
     import dsl.html._
-    import org.scalajs.dom
 
     useState { state =>
       div(
-        h1("Cancellation"),
-        input(
-          tpe := "number",
-          value := state.number.toString,
-          onInput := ((ev: dom.Event) =>
-            ev.target match {
-              case el: dom.HTMLInputElement =>
-                // A more realistic example would include input validation. Here we simply fall back to `0`.
-                SetNumber(el.value.toIntOption.getOrElse(0)).some
-              case _ => None
-            }
-          )
-        ),
         button(
-          "New fact",
-          onClick := (_ => GetRandomFact.some)
+          "New activity",
+          onClick := (_ => GetRandomActivity.some)
         ),
         button("Cancel", onClick := (_ => Cancel.some)),
-        div(s"${state.fact.map(_.text).getOrElse("")}")
+        div(s"${state.activity.map(_.activity).getOrElse("")}")
       )
     }
 
