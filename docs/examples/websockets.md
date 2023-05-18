@@ -9,25 +9,36 @@ echos back any message we send to it.
 We only show the common case where the lifetime of
 the connection coincides with the lifetime of the app.
 
-The state and action encodings are straightforward:
+## State
+
+The state holds the user's input and the most recent server response.
 
 ```scala mdoc:js:shared
 final case class State(
     userInput: Option[String] = None,
     serverResponse: Option[String] = None
 )
+```
 
+## Action
+
+The action encoding is straightforward:
+
+```scala mdoc:js:shared
 sealed trait Action
 case class SetUserInput(input: Option[String]) extends Action
 case object Send extends Action
 case class SetServerResponse(response: String) extends Action
 ```
 
-The interesting bit is the store. We use a Cats Effect `Queue` to hold
-outgoing messages. The connection itself runs on a separate fiber safely
+## Store
+
+We use a Cats Effect `Queue` to hold outgoing messages.
+The connection itself runs on a separate fiber safely
 tied to the lifetime of the store using `.background`.
 The `ff4s.WebsocketClient` is a wrapper around the more
-powerful `http4s` client and intended for simple use-cases such as this one.
+powerful `http4s` client and intended for simple use-cases
+such as this one.
 
 ```scala mdoc:js:shared
 import cats.effect._
@@ -53,7 +64,7 @@ object Store {
       .WebSocketClient[F]
       .bidirectionalText(
         "wss://ws.postman-echo.com/raw/",
-        _.evalMap(r => store.dispatch(SetServerResponse(r))),
+        _.evalMap(res => store.dispatch(SetServerResponse(res))),
         Stream.fromQueueUnterminated(sendQ)
       )
       .background
@@ -62,6 +73,8 @@ object Store {
 
 }
 ```
+
+## View
 
 There isn't much to say about the view.
 
@@ -93,9 +106,7 @@ object View {
           disabled := state.userInput.isEmpty,
           onClick := (_ => Send.some)
         ),
-        div(
-          s"Server response:  ${state.serverResponse.getOrElse("")}"
-        )
+        state.serverResponse.fold(empty)(res => div(s"Server response: $res"))
       )
     }
   }
@@ -103,8 +114,9 @@ object View {
 }
 ```
 
-We omit the straightforward construction of `ff4s.App`
-and `ff4s.IOEntryPoint` for brevity.
+## App
+
+The boilerplate construction of `ff4s.App` and `ff4s.IOEntryPoint` is omitted.
 
 ```scala mdoc:js:invisible
 class App[F[_]](implicit F: Async[F]) extends ff4s.App[F, State, Action] {
