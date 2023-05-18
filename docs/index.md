@@ -1,9 +1,8 @@
 # ff4s
 
-A minimal purely-functional web UI library for [Scala.js](https://www.scala-js.org/).
+## Overview
 
-Thanks to amazing work by [@yurique](https://github.com/yurique),
-you can now try ff4s on [scribble.ninja](https://scribble.ninja/).
+ff4s is a purely functional web UI library for [Scala.js](https://www.scala-js.org/).
 
 Based on these wonderful libraries:
 
@@ -20,11 +19,25 @@ Inspired by:
 - [Outwatch](https://github.com/outwatch/outwatch)
 - [Laminar](https://github.com/raquo/Laminar)
 - [Calico](https://github.com/armanbilge/calico)
+- [Tyrian](https://tyrian.indigoengine.io/)
 
-## Dependencies
+## Disclaimer
+
+ff4s is under active development - expect things to change!
+
+## Try it in Your Browser
+
+Thanks to amazing work by [@yurique](https://github.com/yurique),
+you can try ff4s - and several other cool UI libraries - at [scribble.ninja](https://scribble.ninja/).
+
+## Getting Started
 
 Artifacts are published to Maven Central for Scala 2.13 and Scala 3.
 
 ```scala
 libraryDependencies += "io.github.buntec" %%% "ff4s" % "@VERSION@"
 ```
+
+## Contributing
+
+Contributions are very welcome! Feel free to open issues and PRs.
