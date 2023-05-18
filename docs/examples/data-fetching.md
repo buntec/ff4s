@@ -9,13 +9,30 @@ which provides foreign exchange rates published by the European Central Bank.
 
 The state needs to hold the user's input, the exchange rate returned by the API,
 and possibly an error message in case something goes wrong.
+We also add a convenience method for parsing currency pairs from user input.
 
 ```scala mdoc:js:shared
 final case class State(
     userInput: Option[String] = None,
     apiResponse: Option[ApiResponse] = None,
     errorMessage: Option[String] = None
-)
+) {
+
+  def ccyPairOption: Option[(String, String)] =
+    userInput.flatMap {
+      _ match {
+        case Utils.ccyPairPattern(ccy1, ccy2) => Some((ccy1, ccy2))
+        case _                                => None
+      }
+    }
+
+}
+
+object Utils {
+
+  val ccyPairPattern = """([a-zA-Z]{3})/?([a-zA-Z]{3})""".r
+
+}
 ```
 
 As per usual, we model the JSON API response using a case class with a
@@ -60,30 +77,27 @@ object Store {
       _ match {
         case SetApiResponse(response) =>
           _.copy(apiResponse = response, errorMessage = None) -> none
-        case SetUserInput(input) => _.copy(userInput = input) -> none
-        case SetErrorMessage(msg)         => _.copy(errorMessage = msg) -> none
+        case SetUserInput(input)  => _.copy(userInput = input) -> none
+        case SetErrorMessage(msg) => _.copy(errorMessage = msg) -> none
         case MakeApiRequest =>
           state =>
             (
               state,
-              state.userInput
-                .flatMap { input =>
-                  (
-                    input.split("/").headOption,
-                    input.split("/").tail.headOption
-                  ).tupled
-                }
-                .map { case (base, quote) =>
-                  ff4s
-                    .HttpClient[F]
-                    .get[ApiResponse](
-                      s"https://api.frankfurter.app/latest?from=$base&to=$quote"
+              state.ccyPairOption.map { case (ccy1, ccy2) =>
+                ff4s
+                  .HttpClient[F]
+                  .get[ApiResponse](
+                    s"https://api.frankfurter.app/latest?from=$ccy1&to=$ccy2"
+                  )
+                  .flatMap(response =>
+                    store.dispatch(SetApiResponse(response.some))
+                  )
+                  .handleErrorWith(t =>
+                    store.dispatch(
+                      SetErrorMessage(s"Failed to get FX rate: $t".some)
                     )
-                    .flatMap(response => store.dispatch(SetApiResponse(response.some)))
-                    .handleErrorWith(t => 
-                      store.dispatch(SetErrorMessage(s"Failed to get FX rate: $t".some))
-                    )
-                }
+                  )
+              }
             )
       }
     }
@@ -106,7 +120,7 @@ object View {
       div(
         input(
           tpe := "text",
-          placeholder := "CHF/USD",
+          placeholder := "e.g. EUR/USD or EURUSD",
           onInput := ((ev: dom.Event) =>
             ev.target match {
               case el: dom.HTMLInputElement =>
@@ -117,7 +131,8 @@ object View {
         ),
         button(
           "Get FX Rate",
-          onClick := (_ => MakeApiRequest.some)
+          onClick := (_ => MakeApiRequest.some),
+          disabled := state.ccyPairOption.isEmpty
         ),
         state.errorMessage match {
           case Some(errorMsg) => div(styleAttr := "color: red", errorMsg)
