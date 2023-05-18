@@ -40,7 +40,7 @@ case class SetError(error: Option[String]) extends Action
 
 ## Store
 
-The only interesting bit in the store is the handling of `GetExchangeRate`. Note how we retrieve the currency pair from the state and how we are updating the state with the retrieved rate using `store.dispatch`. A more realistic example would include error handling of failed requests.
+The only interesting bit in the store is the handling of `GetExchangeRate`. Note how we retrieve the currency pair from the state and how we are updating the state with the retrieved rate using `store.dispatch`.
 
 ```scala mdoc:js:shared
 import cats.effect._
