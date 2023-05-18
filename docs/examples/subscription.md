@@ -1,4 +1,4 @@
-# Subscription
+# Subscriptions
 
 Subscribing to state changes is one of the most common but rather tricky to handle in frontend development.
 In this example we illustrate how this can be achieved in `ff4s` using simple HTTP GET requests to the
