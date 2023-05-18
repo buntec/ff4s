@@ -77,7 +77,6 @@ object Store {
             .map(_.userInput)
             .discrete
             .changes
-            .debounce(1.second)
             .map {
               _.flatMap { userInput =>
                 (
@@ -87,6 +86,7 @@ object Store {
               }
             }
             .unNone
+            .debounce(1.second)
             .evalMap { case (base, quote) =>
               store.dispatch(GetExchangeRate(base, quote))
             }
@@ -111,7 +111,6 @@ object View {
 
     useState { state =>
       div(
-        h1("Subscriptions"),
         input(
           tpe := "text",
           placeholder := "CHF/USD",

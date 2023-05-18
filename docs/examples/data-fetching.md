@@ -96,7 +96,6 @@ object View {
 
     useState { state =>
       div(
-        h1("Data Fetch"),
         input(
           tpe := "text",
           placeholder := "CHF/USD",

@@ -97,7 +97,6 @@ object View {
 
     useState { state =>
       div(
-        h1("Cancellation"),
         button(
           "New activity",
           onClick := (_ => GetRandomActivity.some)
