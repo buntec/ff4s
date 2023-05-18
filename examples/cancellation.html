@@ -107,23 +107,22 @@
       <main class="content">
 
         <h1 id="cancellation" class="title">Cancellation</h1>
-        <p>This example shows how long-running effects can be made cancellable, either by triggering the same effect again before it has completed, or explicitly by clicking a cancel button. We illustrate this with a simple HTTP GET request to the <a href="http://numbersapi.com/">numbers API</a> (pretending that it is long-running by adding a <code>F.sleep(...)</code>).</p>
+        <p>This example shows how long-running effects can be made cancellable, either by triggering the same effect again before it has completed, or explicitly by clicking a cancel button. We illustrate this with a simple HTTP GET request to the <a href="http://boredap.com/">bored API</a> (pretending that it is long-running by adding a <code>F.sleep(...)</code>).</p>
         
         <h2 id="state" class="section"><a class="anchor-link left" href="#state"><i class="icofont-laika">&#xef71;</i></a>State</h2>
-        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">final</span><span> </span><span class="keyword">case</span><span> </span><span class="keyword">class</span><span> </span><span class="type-name">State</span><span>(</span><span class="identifier">number</span><span>: </span><span class="type-name">Int</span><span> = </span><span class="number-literal">0</span><span>, </span><span class="identifier">fact</span><span>: </span><span class="type-name">Option</span><span>[</span><span class="type-name">Fact</span><span>] = </span><span class="type-name">None</span><span>)</span></code></pre>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">final</span><span> </span><span class="keyword">case</span><span> </span><span class="keyword">class</span><span> </span><span class="type-name">State</span><span>(</span><span class="identifier">activity</span><span>: </span><span class="type-name">Option</span><span>[</span><span class="type-name">Activity</span><span>] = </span><span class="type-name">None</span><span>)</span></code></pre>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">io</span><span>.</span><span class="identifier">circe</span><span>.</span><span class="identifier">_</span><span>
 </span><span class="keyword">import</span><span> </span><span class="identifier">io</span><span>.</span><span class="identifier">circe</span><span>.</span><span class="identifier">generic</span><span>.</span><span class="identifier">semiauto</span><span>.</span><span class="identifier">_</span><span>
 
-</span><span class="keyword">case</span><span> </span><span class="keyword">class</span><span> </span><span class="type-name">Fact</span><span>(</span><span class="identifier">text</span><span>: </span><span class="type-name">String</span><span>)
-</span><span class="keyword">object</span><span> </span><span class="type-name">Fact</span><span> {
-  </span><span class="keyword">implicit</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">codec</span><span>: </span><span class="type-name">Decoder</span><span>[</span><span class="type-name">Fact</span><span>] = </span><span class="identifier">deriveDecoder</span><span>
+</span><span class="keyword">case</span><span> </span><span class="keyword">class</span><span> </span><span class="type-name">Activity</span><span>(</span><span class="identifier">activity</span><span>: </span><span class="type-name">String</span><span>)
+</span><span class="keyword">object</span><span> </span><span class="type-name">Activity</span><span> {
+  </span><span class="keyword">implicit</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">codec</span><span>: </span><span class="type-name">Decoder</span><span>[</span><span class="type-name">Activity</span><span>] = </span><span class="identifier">deriveDecoder</span><span>
 }</span></code></pre>
         
         <h2 id="actions" class="section"><a class="anchor-link left" href="#actions"><i class="icofont-laika">&#xef71;</i></a>Actions</h2>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">sealed</span><span> </span><span class="keyword">trait</span><span> </span><span class="type-name">Action</span><span>
-</span><span class="keyword">case</span><span> </span><span class="keyword">object</span><span> </span><span class="type-name">GetRandomFact</span><span> </span><span class="keyword">extends</span><span> </span><span class="type-name">Action</span><span>
-</span><span class="keyword">case</span><span> </span><span class="keyword">class</span><span> </span><span class="type-name">SetFact</span><span>(</span><span class="identifier">fact</span><span>: </span><span class="type-name">Option</span><span>[</span><span class="type-name">Fact</span><span>]) </span><span class="keyword">extends</span><span> </span><span class="type-name">Action</span><span>
-</span><span class="keyword">case</span><span> </span><span class="keyword">class</span><span> </span><span class="type-name">SetNumber</span><span>(</span><span class="identifier">number</span><span>: </span><span class="type-name">Int</span><span>) </span><span class="keyword">extends</span><span> </span><span class="type-name">Action</span><span>
+</span><span class="keyword">case</span><span> </span><span class="keyword">object</span><span> </span><span class="type-name">GetRandomActivity</span><span> </span><span class="keyword">extends</span><span> </span><span class="type-name">Action</span><span>
+</span><span class="keyword">case</span><span> </span><span class="keyword">class</span><span> </span><span class="type-name">SetActivity</span><span>(</span><span class="identifier">activity</span><span>: </span><span class="type-name">Option</span><span>[</span><span class="type-name">Activity</span><span>]) </span><span class="keyword">extends</span><span> </span><span class="type-name">Action</span><span>
 </span><span class="keyword">case</span><span> </span><span class="keyword">object</span><span> </span><span class="type-name">Cancel</span><span> </span><span class="keyword">extends</span><span> </span><span class="type-name">Action</span></code></pre>
         
         <h2 id="store" class="section"><a class="anchor-link left" href="#store"><i class="icofont-laika">&#xef71;</i></a>Store</h2>
@@ -149,10 +148,9 @@
 
     </span><span class="identifier">store</span><span> &lt;- </span><span class="identifier">ff4s</span><span>.</span><span class="type-name">Store</span><span>[</span><span class="type-name">F</span><span>, </span><span class="type-name">State</span><span>, </span><span class="type-name">Action</span><span>](</span><span class="type-name">State</span><span>()) { </span><span class="identifier">store</span><span> =&gt;
       </span><span class="identifier">_</span><span> </span><span class="keyword">match</span><span> {
-        </span><span class="keyword">case</span><span> </span><span class="type-name">SetFact</span><span>(</span><span class="identifier">fact</span><span>)     =&gt; </span><span class="identifier">_</span><span>.</span><span class="identifier">copy</span><span>(</span><span class="identifier">fact</span><span> = </span><span class="identifier">fact</span><span>) -&gt; </span><span class="identifier">none</span><span>
-        </span><span class="keyword">case</span><span> </span><span class="type-name">SetNumber</span><span>(</span><span class="identifier">number</span><span>) =&gt; </span><span class="identifier">_</span><span>.</span><span class="identifier">copy</span><span>(</span><span class="identifier">number</span><span> = </span><span class="identifier">number</span><span>) -&gt; </span><span class="identifier">none</span><span>
+        </span><span class="keyword">case</span><span> </span><span class="type-name">SetActivity</span><span>(</span><span class="identifier">activity</span><span>) =&gt; </span><span class="identifier">_</span><span>.</span><span class="identifier">copy</span><span>(</span><span class="identifier">activity</span><span> = </span><span class="identifier">activity</span><span>) -&gt; </span><span class="identifier">none</span><span>
         </span><span class="keyword">case</span><span> </span><span class="type-name">Cancel</span><span> =&gt; (</span><span class="identifier">_</span><span>, </span><span class="identifier">fiber</span><span>.</span><span class="identifier">get</span><span>.</span><span class="identifier">flatMap</span><span>(</span><span class="identifier">_</span><span>.</span><span class="identifier">foldMapM</span><span>(</span><span class="identifier">_</span><span>.</span><span class="identifier">cancel</span><span>)).</span><span class="identifier">some</span><span>)
-        </span><span class="keyword">case</span><span> </span><span class="type-name">GetRandomFact</span><span> =&gt;
+        </span><span class="keyword">case</span><span> </span><span class="type-name">GetRandomActivity</span><span> =&gt;
           </span><span class="identifier">state</span><span> =&gt;
             (
               </span><span class="identifier">state</span><span>,
@@ -161,8 +159,10 @@
                   </span><span class="type-name">F</span><span>.</span><span class="identifier">sleep</span><span>(</span><span class="number-literal">3</span><span>.</span><span class="identifier">seconds</span><span>) *&gt; </span><span class="comment">// pretend that this is long running
 </span><span>                    </span><span class="identifier">ff4s</span><span>
                       .</span><span class="type-name">HttpClient</span><span>[</span><span class="type-name">F</span><span>]
-                      .</span><span class="identifier">get</span><span>[</span><span class="type-name">Fact</span><span>](</span><span class="string-literal">s&quot;http://numbersapi.com/</span><span class="substitution">${state.number}</span><span class="string-literal">?json&quot;</span><span>)
-                      .</span><span class="identifier">flatMap</span><span>(</span><span class="identifier">fact</span><span> =&gt; </span><span class="identifier">store</span><span>.</span><span class="identifier">dispatch</span><span>(</span><span class="type-name">SetFact</span><span>(</span><span class="identifier">fact</span><span>.</span><span class="identifier">some</span><span>)))
+                      .</span><span class="identifier">get</span><span>[</span><span class="type-name">Activity</span><span>](</span><span class="string-literal">&quot;https://www.boredapi.com/api/activity&quot;</span><span>)
+                      .</span><span class="identifier">flatMap</span><span>(</span><span class="identifier">activity</span><span> =&gt;
+                        </span><span class="identifier">store</span><span>.</span><span class="identifier">dispatch</span><span>(</span><span class="type-name">SetActivity</span><span>(</span><span class="identifier">activity</span><span>.</span><span class="identifier">some</span><span>))
+                      )
                 )
                 .</span><span class="identifier">flatMap</span><span> { </span><span class="identifier">fib</span><span> =&gt;
                   </span><span class="identifier">fiber</span><span>
@@ -186,29 +186,15 @@
 
     </span><span class="keyword">import</span><span> </span><span class="identifier">dsl</span><span>.</span><span class="identifier">_</span><span>
     </span><span class="keyword">import</span><span> </span><span class="identifier">dsl</span><span>.</span><span class="identifier">html</span><span>.</span><span class="identifier">_</span><span>
-    </span><span class="keyword">import</span><span> </span><span class="identifier">org</span><span>.</span><span class="identifier">scalajs</span><span>.</span><span class="identifier">dom</span><span>
 
     </span><span class="identifier">useState</span><span> { </span><span class="identifier">state</span><span> =&gt;
       </span><span class="identifier">div</span><span>(
-        </span><span class="identifier">h1</span><span>(</span><span class="string-literal">&quot;Cancellation&quot;</span><span>),
-        </span><span class="identifier">input</span><span>(
-          </span><span class="identifier">tpe</span><span> := </span><span class="string-literal">&quot;number&quot;</span><span>,
-          </span><span class="identifier">value</span><span> := </span><span class="identifier">state</span><span>.</span><span class="identifier">number</span><span>.</span><span class="identifier">toString</span><span>,
-          </span><span class="identifier">onInput</span><span> := ((</span><span class="identifier">ev</span><span>: </span><span class="identifier">dom</span><span>.</span><span class="type-name">Event</span><span>) =&gt;
-            </span><span class="identifier">ev</span><span>.</span><span class="identifier">target</span><span> </span><span class="keyword">match</span><span> {
-              </span><span class="keyword">case</span><span> </span><span class="identifier">el</span><span>: </span><span class="identifier">dom</span><span>.</span><span class="type-name">HTMLInputElement</span><span> =&gt;
-                </span><span class="comment">// A more realistic example would include input validation. Here we simply fall back to `0`.
-</span><span>                </span><span class="type-name">SetNumber</span><span>(</span><span class="identifier">el</span><span>.</span><span class="identifier">value</span><span>.</span><span class="identifier">toIntOption</span><span>.</span><span class="identifier">getOrElse</span><span>(</span><span class="number-literal">0</span><span>)).</span><span class="identifier">some</span><span>
-              </span><span class="keyword">case</span><span> </span><span class="identifier">_</span><span> =&gt; </span><span class="type-name">None</span><span>
-            }
-          )
-        ),
         </span><span class="identifier">button</span><span>(
-          </span><span class="string-literal">&quot;New fact&quot;</span><span>,
-          </span><span class="identifier">onClick</span><span> := (</span><span class="identifier">_</span><span> =&gt; </span><span class="type-name">GetRandomFact</span><span>.</span><span class="identifier">some</span><span>)
+          </span><span class="string-literal">&quot;New activity&quot;</span><span>,
+          </span><span class="identifier">onClick</span><span> := (</span><span class="identifier">_</span><span> =&gt; </span><span class="type-name">GetRandomActivity</span><span>.</span><span class="identifier">some</span><span>)
         ),
         </span><span class="identifier">button</span><span>(</span><span class="string-literal">&quot;Cancel&quot;</span><span>, </span><span class="identifier">onClick</span><span> := (</span><span class="identifier">_</span><span> =&gt; </span><span class="type-name">Cancel</span><span>.</span><span class="identifier">some</span><span>)),
-        </span><span class="identifier">div</span><span>(</span><span class="string-literal">s&quot;</span><span class="substitution">${state.fact.map(_.text).getOrElse(&quot;&quot;)}</span><span class="string-literal">&quot;</span><span>)
+        </span><span class="identifier">div</span><span>(</span><span class="string-literal">s&quot;</span><span class="substitution">${state.activity.map(_.activity).getOrElse(&quot;&quot;)}</span><span class="string-literal">&quot;</span><span>)
       )
     }
 
