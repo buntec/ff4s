@@ -19,7 +19,7 @@ We typically encode the set of actions as an ADT:
 ```scala mdoc:js:shared
 sealed trait Action
 case class Inc(amount: Int) extends Action
-case class Reset() extends Action
+case object Reset extends Action
 ```
 
 ## Store
@@ -32,12 +32,14 @@ import cats.syntax.all._
 
 object Store {
 
+  // A basic store requires `cats.effect.Concurrent[F]`.
+  // In real-world app we usually need the more powerful `cats.effect.Async[F]`.
   def apply[F[_]: Concurrent]: Resource[F, ff4s.Store[F, State, Action]] =
     ff4s.Store[F, State, Action](State()) { _ =>
       _ match {
         case Inc(amount) =>
           state => state.copy(counter = state.counter + amount) -> none
-        case Reset() => _.copy(counter = 0) -> none
+        case Reset => _.copy(counter = 0) -> none
       }
     }
 
@@ -50,8 +52,7 @@ involving side-effects such as fetching data from the back-end.
 The fact that `store` is a `Resource` is extremely useful because it allows
 us to do interesting things in the background (think WebSockets,
 subscribing to state changes, etc.).
-Be sure to check out the examples provided in this repo to see more elaborate
-store logic, including WebSocket messaging and REST calls.
+Be sure to check out the other examples to see more elaborate store logic.
 
 ## View
 
@@ -69,7 +70,6 @@ object View {
     useState { state =>
       div(
         cls := "counter-example", // cls b/c class is a reserved keyword in scala
-        h1("A counter"),
         div(s"value: ${state.counter}"),
         button(
           cls := "counter-button",
@@ -84,7 +84,7 @@ object View {
         button(
           cls := "counter-button",
           "reset",
-          onClick := (_ => Some(Reset()))
+          onClick := (_ => Some(Reset))
         )
       )
     }
@@ -95,19 +95,17 @@ object View {
 
 ## App
 
-To turn this into an app all we need to do is implement the `ff4s.App`
-trait using `store` and `view` from above and pass an
-instance of it to the `IOEntryPoint` class, which in turn defines an
-appropriate `main` method for us:
+To turn this into an app, we need a small amount of boilerplate:
 
 ```scala mdoc:js:compile-only
-// A basic store requires `cats.effect.Concurrent[F]`.
-// In real-world applications we usually need the more powerful `cats.effect.Async[F]`.
+// App.scala
 class App[F[_]](implicit F: Concurrent[F]) extends ff4s.App[F, State, Action] {
   override val store = Store[F]
   override val view = View[F]
 }
 
+// Main.scala
+// this defines an appropriate `main` method for us
 object Main extends ff4s.IOEntryPoint(new App) // uses cats.effect.IO for F
 ```
 
