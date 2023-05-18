@@ -2,13 +2,18 @@
 
 Fetching data from the back-end is probably the most common type of IO in single-page applications.
 In this example we illustrate this pattern in `ff4s` using a simple HTTP GET
-request to the [numbers API](http://numbersapi.com/), which returns a random fact
-about any number that we supply.
+request to the [frankfurter API](https://frankfurter.app), which returns foreign exchange rates for a currency pair we supply.
 
 ## State
 
 ```scala mdoc:js:shared
-final case class State(number: Int = 0, fact: Option[Fact] = None)
+final case class State(
+    pair: String = "EUR/USD",
+    exchangeRate: Option[ExchangeRate] = None
+) {
+  def baseCurrency: String = pair.split("/").headOption.getOrElse("EUR")
+  def quoteCurrency: String = pair.split("/").tail.headOption.getOrElse("USD")
+}
 ```
 
 We model the JSON API response using a case class with a derived [circe](https://circe.github.io/circe/) decoder:
@@ -17,9 +22,9 @@ We model the JSON API response using a case class with a derived [circe](https:/
 import io.circe._
 import io.circe.generic.semiauto._
 
-case class Fact(text: String)
-object Fact {
-  implicit val decoder: Decoder[Fact] = deriveDecoder
+case class ExchangeRate(rates: Map[String, Double])
+object ExchangeRate {
+  implicit val decoder: Decoder[ExchangeRate] = deriveDecoder
 }
 ```
 
@@ -29,14 +34,14 @@ The action encoding is straightforward.
 
 ```scala mdoc:js:shared
 sealed trait Action
-case object GetRandomFact extends Action
-case class SetFact(fact: Option[Fact]) extends Action
-case class SetNumber(number: Int) extends Action
+case object GetExchangeRate extends Action
+case class SetExchangeRate(exchangeRate: Option[ExchangeRate]) extends Action
+case class SetCurrencyPair(pair: String) extends Action
 ```
 
 ## Store
 
-The only interesting bit in the store is the handling of `GetRandomFact`. Note how we retrieve the number from the state and how we are updating the state with the retrieved fact using `store.dispatch`. A more realistic example would include error handling of failed requests.
+The only interesting bit in the store is the handling of `GetExchangeRate`. Note how we retrieve the currency pair from the state and how we are updating the state with the retrieved rate using `store.dispatch`. A more realistic example would include error handling of failed requests.
 
 ```scala mdoc:js:shared
 import cats.effect._
@@ -47,16 +52,18 @@ object Store {
   def apply[F[_]: Async]: Resource[F, ff4s.Store[F, State, Action]] =
     ff4s.Store[F, State, Action](State()) { store =>
       _ match {
-        case SetFact(fact)     => _.copy(fact = fact) -> none
-        case SetNumber(number) => _.copy(number = number) -> none
-        case GetRandomFact =>
+        case SetExchangeRate(rate) => _.copy(exchangeRate = rate) -> none
+        case SetCurrencyPair(pair) => _.copy(pair = pair) -> none
+        case GetExchangeRate =>
           state =>
             (
               state,
               ff4s
                 .HttpClient[F]
-                .get[Fact](s"http://numbersapi.com/${state.number}?json")
-                .flatMap(fact => store.dispatch(SetFact(fact.some)))
+                .get[ExchangeRate](
+                  s"https://api.frankfurter.app/latest?from=${state.baseCurrency}&to=${state.quoteCurrency}"
+                )
+                .flatMap(rate => store.dispatch(SetExchangeRate(rate.some)))
                 .some
             )
 
@@ -81,21 +88,23 @@ object View {
       div(
         h1("Data Fetch"),
         input(
-          tpe := "number",
-          value := state.number.toString,
+          tpe := "text",
+          value := state.pair,
           onInput := ((ev: dom.Event) =>
             ev.target match {
               case el: dom.HTMLInputElement =>
-                SetNumber(el.value.toIntOption.getOrElse(0)).some
+                SetCurrencyPair(el.value).some
               case _ => None
             }
           )
         ),
         button(
           "New fact",
-          onClick := (_ => GetRandomFact.some)
+          onClick := (_ => GetExchangeRate.some)
         ),
-        div(s"${state.fact.map(_.text).getOrElse("")}")
+        div(
+          s"${state.baseCurrency}/${state.quoteCurrency}: ${state.exchangeRate.flatMap(_.rates.get(state.quoteCurrency)).getOrElse("")}"
+        )
       )
     }
 
