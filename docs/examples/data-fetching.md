@@ -51,7 +51,8 @@ object Store {
   def apply[F[_]: Async]: Resource[F, ff4s.Store[F, State, Action]] =
     ff4s.Store[F, State, Action](State()) { store =>
       _ match {
-        case SetExchangeRate(rate)   => _.copy(exchangeRate = rate, error= None) -> none
+        case SetExchangeRate(rate) =>
+          _.copy(exchangeRate = rate, error = None) -> none
         case SetUserInput(userInput) => _.copy(userInput = userInput) -> none
         case SetError(error)         => _.copy(error = error) -> none
         case GetExchangeRate =>
@@ -65,11 +66,11 @@ object Store {
                     input.split("/").tail.headOption
                   ).tupled
                 }
-                .map { case (baseCurrency, quoteCurrency) =>
+                .map { case (base, quote) =>
                   ff4s
                     .HttpClient[F]
                     .get[ExchangeRate](
-                      s"https://api.frankfurter.app/latest?from=$baseCurrency&to=$quoteCurrency"
+                      s"https://api.frankfurter.app/latest?from=$base&to=$quote"
                     )
                     .flatMap(rate => store.dispatch(SetExchangeRate(rate.some)))
                     .handleErrorWith { _ =>
