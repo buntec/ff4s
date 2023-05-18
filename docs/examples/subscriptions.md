@@ -61,8 +61,10 @@ object Store {
                   )
                   .flatMap { rate =>
                     store.dispatch(SetExchangeRate(rate.some))
-                  }.
-                  handleErrorWith{ _ =>store.dispatch(SetError("Failed to get rate!".some)) }
+                  }
+                  .handleErrorWith { _ =>
+                    store.dispatch(SetError("Failed to get rate!".some))
+                  }
                   .some
               )
 
