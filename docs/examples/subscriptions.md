@@ -1,6 +1,6 @@
 # Subscriptions
 
-The fact that the store in ff4s is a `Resource` and that `store.state` is a `Signal` allows us to subscribe to updates of (part of) the state and react to them. A common use case is debouncing API calls based on user input. 
+The fact that the store in ff4s is a `Resource` and that `store.state` is a `Signal` allows us to subscribe to updates of (part of) the state and react to them. A common use case is debouncing API calls based on user input.
 
 ## State
 
@@ -28,7 +28,6 @@ case class SetNumber(number: Int) extends Action
 ```
 
 ## Store
-
 
 ```scala mdoc:js:shared
 import cats.syntax.all._
@@ -61,15 +60,16 @@ object Store {
       }
       .flatTap {
         // subscribe to changes in user input and trigger debounced API calls
-        _.state
-          .map(_.number)
-          .discrete
-          .changes
-          .debounce(1.second)
-          .evalMap(_ => store.dispatch(GetRandomFact))
-          .compile
-          .drain
-          .background
+        store =>
+          store.state
+            .map(_.number)
+            .discrete
+            .changes
+            .debounce(1.second)
+            .evalMap(_ => store.dispatch(GetRandomFact))
+            .compile
+            .drain
+            .background
       }
 
 }
