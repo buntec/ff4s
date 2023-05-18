@@ -105,6 +105,7 @@ object View {
           onInput := ((ev: dom.Event) =>
             ev.target match {
               case el: dom.HTMLInputElement =>
+                // A more realistic example would include input validation. Here we simply fall back to `0`.
                 SetNumber(el.value.toIntOption.getOrElse(0)).some
               case _ => None
             }
