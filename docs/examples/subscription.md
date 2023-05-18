@@ -1,8 +1,6 @@
 # Subscriptions
 
-Subscribing to state changes is one of the most common but rather tricky to handle in frontend development.
-In this example we illustrate how this can be achieved in `ff4s` using simple HTTP GET requests to the
-[numbers API](http://numbersapi.com/), where each request is sent based on user input.
+The fact that the store in ff4s is a `Resource` and that `store.state` is a `Signal` allows us to subscribe to updates of (part of) the state and react to them. A common use case is debouncing API calls based on user input. 
 
 ## State
 
