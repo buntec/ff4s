@@ -8,12 +8,10 @@ request to the [frankfurter API](https://frankfurter.app), which returns foreign
 
 ```scala mdoc:js:shared
 final case class State(
-    pair: String = "EUR/USD",
-    exchangeRate: Option[ExchangeRate] = None
-) {
-  def baseCurrency: String = pair.split("/").headOption.getOrElse("EUR")
-  def quoteCurrency: String = pair.split("/").tail.headOption.getOrElse("USD")
-}
+    userInput: Option[String] = None,
+    exchangeRate: Option[ExchangeRate] = None,
+    error: Option[String] = None
+)
 ```
 
 We model the JSON API response using a case class with a derived [circe](https://circe.github.io/circe/) decoder:
@@ -36,7 +34,8 @@ The action encoding is straightforward.
 sealed trait Action
 case object GetExchangeRate extends Action
 case class SetExchangeRate(exchangeRate: Option[ExchangeRate]) extends Action
-case class SetCurrencyPair(pair: String) extends Action
+case class SetUserInput(userInput: Option[String]) extends Action
+case class SetError(error: Option[String]) extends Action
 ```
 
 ## Store
@@ -52,24 +51,34 @@ object Store {
   def apply[F[_]: Async]: Resource[F, ff4s.Store[F, State, Action]] =
     ff4s.Store[F, State, Action](State()) { store =>
       _ match {
-        case SetExchangeRate(rate) => _.copy(exchangeRate = rate) -> none
-        case SetCurrencyPair(pair) => _.copy(pair = pair) -> none
+        case SetExchangeRate(rate)   => _.copy(exchangeRate = rate, error= None) -> none
+        case SetUserInput(userInput) => _.copy(userInput = userInput) -> none
+        case SetError(error)         => _.copy(error = error) -> none
         case GetExchangeRate =>
           state =>
             (
               state,
-              ff4s
-                .HttpClient[F]
-                .get[ExchangeRate](
-                  s"https://api.frankfurter.app/latest?from=${state.baseCurrency}&to=${state.quoteCurrency}"
-                )
-                .flatMap(rate => store.dispatch(SetExchangeRate(rate.some)))
-                .some
+              state.userInput
+                .flatMap { input =>
+                  (
+                    input.split("/").headOption,
+                    input.split("/").tail.headOption
+                  ).tupled
+                }
+                .map { case (baseCurrency, quoteCurrency) =>
+                  ff4s
+                    .HttpClient[F]
+                    .get[ExchangeRate](
+                      s"https://api.frankfurter.app/latest?from=$baseCurrency&to=$quoteCurrency"
+                    )
+                    .flatMap(rate => store.dispatch(SetExchangeRate(rate.some)))
+                    .handleErrorWith { _ =>
+                      store.dispatch(SetError("Failed to get rate!".some))
+                    }
+                }
             )
-
       }
     }
-
 }
 ```
 
@@ -89,26 +98,30 @@ object View {
         h1("Data Fetch"),
         input(
           tpe := "text",
-          value := state.pair,
+          placeholder := "CHF/USD",
           onInput := ((ev: dom.Event) =>
             ev.target match {
               case el: dom.HTMLInputElement =>
-                SetCurrencyPair(el.value).some
+                SetUserInput(el.value.some).some
               case _ => None
             }
           )
         ),
         button(
-          "New fact",
+          "Exchange rate",
           onClick := (_ => GetExchangeRate.some)
         ),
-        div(
-          s"${state.baseCurrency}/${state.quoteCurrency}: ${state.exchangeRate.flatMap(_.rates.get(state.quoteCurrency)).getOrElse("")}"
-        )
+        state.error match {
+          case Some(error) => div(error)
+          case None =>
+            div(
+              s"${state.exchangeRate.flatMap(_.rates.values.toList.headOption).getOrElse("")}"
+            )
+        }
       )
     }
-
   }
+
 }
 ```
 

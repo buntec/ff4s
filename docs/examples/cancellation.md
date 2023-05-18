@@ -53,7 +53,7 @@ object Store {
 
     store <- ff4s.Store[F, State, Action](State()) { store =>
       _ match {
-        case SetActivity(activity)     => _.copy(activity = activity) -> none
+        case SetActivity(activity) => _.copy(activity = activity) -> none
         case Cancel => (_, fiber.get.flatMap(_.foldMapM(_.cancel)).some)
         case GetRandomActivity =>
           state =>
@@ -65,7 +65,9 @@ object Store {
                     ff4s
                       .HttpClient[F]
                       .get[Activity]("https://www.boredapi.com/api/activity")
-                      .flatMap(activity => store.dispatch(SetActivity(activity.some)))
+                      .flatMap(activity =>
+                        store.dispatch(SetActivity(activity.some))
+                      )
                 )
                 .flatMap { fib =>
                   fiber
