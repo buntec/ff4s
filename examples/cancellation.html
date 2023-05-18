@@ -107,10 +107,19 @@
       <main class="content">
 
         <h1 id="cancellation" class="title">Cancellation</h1>
-        <p>This example shows how long-running effects can be made cancellable, either by triggering the same effect again before it has completed, or explicitly by clicking a cancel button. We illustrate this with a simple HTTP GET request to the <a href="http://boredap.com/">bored API</a> (pretending that it is long-running by adding a <code>F.sleep(...)</code>).</p>
+        <p>This example shows how long running effects can be made cancellable,
+        either by triggering the same effect again before it has completed,
+        or explicitly by, say, clicking a button. We illustrate this with a simple
+        HTTP GET request to <a href="https://www.boredapi.com/">The Bored API</a>.</p>
         
         <h2 id="state" class="section"><a class="anchor-link left" href="#state"><i class="icofont-laika">&#xef71;</i></a>State</h2>
-        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">final</span><span> </span><span class="keyword">case</span><span> </span><span class="keyword">class</span><span> </span><span class="type-name">State</span><span>(</span><span class="identifier">activity</span><span>: </span><span class="type-name">Option</span><span>[</span><span class="type-name">Activity</span><span>] = </span><span class="type-name">None</span><span>)</span></code></pre>
+        <p>The state holds the most recently fetched activity and the loading state,
+        which indicates whether a request is currently running.</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">final</span><span> </span><span class="keyword">case</span><span> </span><span class="keyword">class</span><span> </span><span class="type-name">State</span><span>(
+    </span><span class="identifier">activity</span><span>: </span><span class="type-name">Option</span><span>[</span><span class="type-name">Activity</span><span>] = </span><span class="type-name">None</span><span>,
+    </span><span class="identifier">loading</span><span>: </span><span class="type-name">Boolean</span><span> = </span><span class="boolean-literal">false</span><span>
+)</span></code></pre>
+        <p>The JSON API response is modeled using a case class with a circe decoder instance.</p>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">io</span><span>.</span><span class="identifier">circe</span><span>.</span><span class="identifier">_</span><span>
 </span><span class="keyword">import</span><span> </span><span class="identifier">io</span><span>.</span><span class="identifier">circe</span><span>.</span><span class="identifier">generic</span><span>.</span><span class="identifier">semiauto</span><span>.</span><span class="identifier">_</span><span>
 
@@ -123,86 +132,118 @@
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">sealed</span><span> </span><span class="keyword">trait</span><span> </span><span class="type-name">Action</span><span>
 </span><span class="keyword">case</span><span> </span><span class="keyword">object</span><span> </span><span class="type-name">GetRandomActivity</span><span> </span><span class="keyword">extends</span><span> </span><span class="type-name">Action</span><span>
 </span><span class="keyword">case</span><span> </span><span class="keyword">class</span><span> </span><span class="type-name">SetActivity</span><span>(</span><span class="identifier">activity</span><span>: </span><span class="type-name">Option</span><span>[</span><span class="type-name">Activity</span><span>]) </span><span class="keyword">extends</span><span> </span><span class="type-name">Action</span><span>
+</span><span class="keyword">case</span><span> </span><span class="keyword">class</span><span> </span><span class="type-name">SetLoading</span><span>(</span><span class="identifier">loading</span><span>: </span><span class="type-name">Boolean</span><span>) </span><span class="keyword">extends</span><span> </span><span class="type-name">Action</span><span>
 </span><span class="keyword">case</span><span> </span><span class="keyword">object</span><span> </span><span class="type-name">Cancel</span><span> </span><span class="keyword">extends</span><span> </span><span class="type-name">Action</span></code></pre>
         
         <h2 id="store" class="section"><a class="anchor-link left" href="#store"><i class="icofont-laika">&#xef71;</i></a>Store</h2>
-        <p>The interesting bit is in the store. We use a <code>Supervisor</code> to fork safely the long-running effect on a new fiber. The fiber of the running effect is held in a <code>Ref</code>, where we can retrieve it for cancellation at any time.</p>
+        <p>The interesting bit is the contruction of the store.
+        We use a <code>Supervisor</code> to fork safely the long running effect onto a new fiber.
+        That fiber is held in a <code>Ref</code> where we can retrieve it for cancellation at any time.
+        Another interesting detail is how we maintain the loading state.
+        To this end, we have an additional <code>SignallingRef</code> counting the number of running
+        effects. We increment the counter before every data fetch and
+        decrement it regardless of outcome by wrapping the effect in a <code>Resource#surround</code>.
+        We then subscribe to changes to this signal and set the loading state
+        to <code>true</code> whenever the counter is greater than zero, and to <code>false</code>
+        otherwise.</p>
         <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">cats</span><span>.</span><span class="identifier">effect</span><span>.</span><span class="identifier">_</span><span>
 </span><span class="keyword">import</span><span> </span><span class="identifier">cats</span><span>.</span><span class="identifier">effect</span><span>.</span><span class="identifier">implicits</span><span>.</span><span class="identifier">_</span><span>
 </span><span class="keyword">import</span><span> </span><span class="identifier">cats</span><span>.</span><span class="identifier">syntax</span><span>.</span><span class="identifier">all</span><span>.</span><span class="identifier">_</span><span>
 </span><span class="keyword">import</span><span> </span><span class="identifier">cats</span><span>.</span><span class="identifier">effect</span><span>.</span><span class="identifier">std</span><span>.</span><span class="type-name">Supervisor</span><span>
 </span><span class="keyword">import</span><span> </span><span class="identifier">scala</span><span>.</span><span class="identifier">concurrent</span><span>.</span><span class="identifier">duration</span><span>.</span><span class="identifier">_</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">fs2</span><span>.</span><span class="identifier">concurrent</span><span>.</span><span class="type-name">SignallingRef</span><span>
 
 </span><span class="keyword">object</span><span> </span><span class="type-name">Store</span><span> {
 
   </span><span class="keyword">def</span><span> </span><span class="declaration-name">apply</span><span>[</span><span class="type-name">F</span><span>[</span><span class="identifier">_</span><span>]](</span><span class="keyword">implicit</span><span>
       </span><span class="type-name">F</span><span>: </span><span class="type-name">Async</span><span>[</span><span class="type-name">F</span><span>]
   ): </span><span class="type-name">Resource</span><span>[</span><span class="type-name">F</span><span>, </span><span class="identifier">ff4s</span><span>.</span><span class="type-name">Store</span><span>[</span><span class="type-name">F</span><span>, </span><span class="type-name">State</span><span>, </span><span class="type-name">Action</span><span>]] = </span><span class="keyword">for</span><span> {
-
     </span><span class="identifier">supervisor</span><span> &lt;- </span><span class="type-name">Supervisor</span><span>[</span><span class="type-name">F</span><span>]
 
-    </span><span class="comment">// Since there is at most one running effect, a single `Ref` suffices.
-</span><span>    </span><span class="comment">// If there could be more than one cancellable action at a time, we would use something
-</span><span>    </span><span class="comment">// like `MapRef` and index the fibers by the action type or a cancellation token.
-</span><span>    </span><span class="identifier">fiber</span><span> &lt;- </span><span class="type-name">F</span><span>.</span><span class="identifier">ref</span><span>[</span><span class="type-name">Option</span><span>[</span><span class="type-name">Fiber</span><span>[</span><span class="type-name">F</span><span>, </span><span class="type-name">Throwable</span><span>, </span><span class="type-name">Unit</span><span>]]](</span><span class="type-name">None</span><span>).</span><span class="identifier">toResource</span><span>
+    </span><span class="comment">// Since there is at most one running effect a single `Ref` suffices.
+</span><span>    </span><span class="comment">// In case of multiple cancellable effects running at the same time,
+</span><span>    </span><span class="comment">// we could use a `MapRef` and index the fibers by a cancellation token.
+</span><span>    </span><span class="identifier">fiberRef</span><span> &lt;- </span><span class="type-name">F</span><span>.</span><span class="identifier">ref</span><span>[</span><span class="type-name">Option</span><span>[</span><span class="type-name">Fiber</span><span>[</span><span class="type-name">F</span><span>, </span><span class="type-name">Throwable</span><span>, </span><span class="type-name">Unit</span><span>]]](</span><span class="type-name">None</span><span>).</span><span class="identifier">toResource</span><span>
+
+    </span><span class="comment">// the number of currently running effects
+</span><span>    </span><span class="identifier">runningCount</span><span> &lt;- </span><span class="type-name">SignallingRef</span><span>(</span><span class="number-literal">0</span><span>).</span><span class="identifier">toResource</span><span>
+
+    </span><span class="comment">// an auxiliary resource for incrementing the counter while an effect is running
+</span><span>    </span><span class="identifier">incRunning</span><span> = </span><span class="type-name">Resource</span><span>.</span><span class="identifier">make</span><span>(</span><span class="identifier">runningCount</span><span>.</span><span class="identifier">update</span><span>(</span><span class="identifier">_</span><span> + </span><span class="number-literal">1</span><span>))(</span><span class="identifier">_</span><span> =&gt;
+      </span><span class="identifier">runningCount</span><span>.</span><span class="identifier">update</span><span>(</span><span class="identifier">_</span><span> - </span><span class="number-literal">1</span><span>)
+    )
 
     </span><span class="identifier">store</span><span> &lt;- </span><span class="identifier">ff4s</span><span>.</span><span class="type-name">Store</span><span>[</span><span class="type-name">F</span><span>, </span><span class="type-name">State</span><span>, </span><span class="type-name">Action</span><span>](</span><span class="type-name">State</span><span>()) { </span><span class="identifier">store</span><span> =&gt;
       </span><span class="identifier">_</span><span> </span><span class="keyword">match</span><span> {
         </span><span class="keyword">case</span><span> </span><span class="type-name">SetActivity</span><span>(</span><span class="identifier">activity</span><span>) =&gt; </span><span class="identifier">_</span><span>.</span><span class="identifier">copy</span><span>(</span><span class="identifier">activity</span><span> = </span><span class="identifier">activity</span><span>) -&gt; </span><span class="identifier">none</span><span>
-        </span><span class="keyword">case</span><span> </span><span class="type-name">Cancel</span><span> =&gt; (</span><span class="identifier">_</span><span>, </span><span class="identifier">fiber</span><span>.</span><span class="identifier">get</span><span>.</span><span class="identifier">flatMap</span><span>(</span><span class="identifier">_</span><span>.</span><span class="identifier">foldMapM</span><span>(</span><span class="identifier">_</span><span>.</span><span class="identifier">cancel</span><span>)).</span><span class="identifier">some</span><span>)
+        </span><span class="keyword">case</span><span> </span><span class="type-name">SetLoading</span><span>(</span><span class="identifier">loading</span><span>)   =&gt; </span><span class="identifier">_</span><span>.</span><span class="identifier">copy</span><span>(</span><span class="identifier">loading</span><span> = </span><span class="identifier">loading</span><span>) -&gt; </span><span class="identifier">none</span><span>
+        </span><span class="keyword">case</span><span> </span><span class="type-name">Cancel</span><span> =&gt; (</span><span class="identifier">_</span><span>, </span><span class="identifier">fiberRef</span><span>.</span><span class="identifier">get</span><span>.</span><span class="identifier">flatMap</span><span>(</span><span class="identifier">_</span><span>.</span><span class="identifier">foldMapM</span><span>(</span><span class="identifier">_</span><span>.</span><span class="identifier">cancel</span><span>)).</span><span class="identifier">some</span><span>)
         </span><span class="keyword">case</span><span> </span><span class="type-name">GetRandomActivity</span><span> =&gt;
           </span><span class="identifier">state</span><span> =&gt;
             (
-              </span><span class="identifier">state</span><span>,
+              </span><span class="identifier">state</span><span>.</span><span class="identifier">copy</span><span>(</span><span class="identifier">activity</span><span> = </span><span class="identifier">none</span><span>),
               </span><span class="identifier">supervisor</span><span>
                 .</span><span class="identifier">supervise</span><span>(
-                  </span><span class="type-name">F</span><span>.</span><span class="identifier">sleep</span><span>(</span><span class="number-literal">3</span><span>.</span><span class="identifier">seconds</span><span>) *&gt; </span><span class="comment">// pretend that this is long running
-</span><span>                    </span><span class="identifier">ff4s</span><span>
-                      .</span><span class="type-name">HttpClient</span><span>[</span><span class="type-name">F</span><span>]
-                      .</span><span class="identifier">get</span><span>[</span><span class="type-name">Activity</span><span>](</span><span class="string-literal">&quot;https://www.boredapi.com/api/activity&quot;</span><span>)
-                      .</span><span class="identifier">flatMap</span><span>(</span><span class="identifier">activity</span><span> =&gt;
-                        </span><span class="identifier">store</span><span>.</span><span class="identifier">dispatch</span><span>(</span><span class="type-name">SetActivity</span><span>(</span><span class="identifier">activity</span><span>.</span><span class="identifier">some</span><span>))
-                      )
+                  </span><span class="identifier">incRunning</span><span>.</span><span class="identifier">surround</span><span>(
+                    </span><span class="type-name">F</span><span>.</span><span class="identifier">sleep</span><span>(
+                      </span><span class="number-literal">1</span><span>.</span><span class="identifier">second</span><span> </span><span class="comment">// pretend that this is really long running
+</span><span>                    ) *&gt;
+                      </span><span class="identifier">ff4s</span><span>
+                        .</span><span class="type-name">HttpClient</span><span>[</span><span class="type-name">F</span><span>]
+                        .</span><span class="identifier">get</span><span>[</span><span class="type-name">Activity</span><span>](</span><span class="string-literal">&quot;https://www.boredapi.com/api/activity&quot;</span><span>)
+                        .</span><span class="identifier">flatMap</span><span>(</span><span class="identifier">activity</span><span> =&gt;
+                          </span><span class="identifier">store</span><span>.</span><span class="identifier">dispatch</span><span>(</span><span class="type-name">SetActivity</span><span>(</span><span class="identifier">activity</span><span>.</span><span class="identifier">some</span><span>))
+                        )
+                  )
                 )
-                .</span><span class="identifier">flatMap</span><span> { </span><span class="identifier">fib</span><span> =&gt;
-                  </span><span class="identifier">fiber</span><span>
-                    .</span><span class="identifier">getAndSet</span><span>(</span><span class="identifier">fib</span><span>.</span><span class="identifier">some</span><span>)
+                .</span><span class="identifier">flatMap</span><span>(</span><span class="identifier">fiber</span><span> =&gt;
+                  </span><span class="identifier">fiberRef</span><span>
+                    .</span><span class="identifier">getAndSet</span><span>(</span><span class="identifier">fiber</span><span>.</span><span class="identifier">some</span><span>)
                     .</span><span class="identifier">flatMap</span><span>(
                       </span><span class="identifier">_</span><span>.</span><span class="identifier">foldMapM</span><span>(</span><span class="identifier">_</span><span>.</span><span class="identifier">cancel</span><span>)
                     ) </span><span class="comment">// cancel running request, if any, and store fiber of new request
-</span><span>                }
+</span><span>                )
                 .</span><span class="identifier">some</span><span>
             )
-
       }
     }
+
+    </span><span class="identifier">_</span><span> &lt;- </span><span class="identifier">runningCount</span><span>.</span><span class="identifier">discrete</span><span>
+      .</span><span class="identifier">map</span><span>(</span><span class="identifier">_</span><span> &gt; </span><span class="number-literal">0</span><span>)
+      .</span><span class="identifier">changes</span><span>
+      .</span><span class="identifier">evalMap</span><span>(</span><span class="identifier">loading</span><span> =&gt; </span><span class="identifier">store</span><span>.</span><span class="identifier">dispatch</span><span>(</span><span class="type-name">SetLoading</span><span>(</span><span class="identifier">loading</span><span>)))
+      .</span><span class="identifier">compile</span><span>
+      .</span><span class="identifier">drain</span><span>
+      .</span><span class="identifier">background</span><span>
+
   } </span><span class="keyword">yield</span><span> </span><span class="identifier">store</span><span>
+
 }</span></code></pre>
         
         <h2 id="view" class="section"><a class="anchor-link left" href="#view"><i class="icofont-laika">&#xef71;</i></a>View</h2>
         <pre><code class="nohighlight"><span class="keyword">object</span><span> </span><span class="type-name">View</span><span> {
 
   </span><span class="keyword">def</span><span> </span><span class="declaration-name">apply</span><span>[</span><span class="type-name">F</span><span>[</span><span class="identifier">_</span><span>]](</span><span class="keyword">implicit</span><span> </span><span class="identifier">dsl</span><span>: </span><span class="identifier">ff4s</span><span>.</span><span class="type-name">Dsl</span><span>[</span><span class="type-name">F</span><span>, </span><span class="type-name">State</span><span>, </span><span class="type-name">Action</span><span>]) = {
-
     </span><span class="keyword">import</span><span> </span><span class="identifier">dsl</span><span>.</span><span class="identifier">_</span><span>
     </span><span class="keyword">import</span><span> </span><span class="identifier">dsl</span><span>.</span><span class="identifier">html</span><span>.</span><span class="identifier">_</span><span>
 
     </span><span class="identifier">useState</span><span> { </span><span class="identifier">state</span><span> =&gt;
       </span><span class="identifier">div</span><span>(
         </span><span class="identifier">button</span><span>(
-          </span><span class="string-literal">&quot;New activity&quot;</span><span>,
+          </span><span class="string-literal">&quot;Get activity&quot;</span><span>,
           </span><span class="identifier">onClick</span><span> := (</span><span class="identifier">_</span><span> =&gt; </span><span class="type-name">GetRandomActivity</span><span>.</span><span class="identifier">some</span><span>)
         ),
         </span><span class="identifier">button</span><span>(</span><span class="string-literal">&quot;Cancel&quot;</span><span>, </span><span class="identifier">onClick</span><span> := (</span><span class="identifier">_</span><span> =&gt; </span><span class="type-name">Cancel</span><span>.</span><span class="identifier">some</span><span>)),
-        </span><span class="identifier">div</span><span>(</span><span class="string-literal">s&quot;</span><span class="substitution">${state.activity.map(_.activity).getOrElse(&quot;&quot;)}</span><span class="string-literal">&quot;</span><span>)
+        </span><span class="keyword">if</span><span> (</span><span class="identifier">state</span><span>.</span><span class="identifier">loading</span><span>) </span><span class="identifier">div</span><span>(</span><span class="string-literal">&quot;loading...&quot;</span><span>)
+        </span><span class="keyword">else</span><span> </span><span class="identifier">div</span><span>(</span><span class="string-literal">s&quot;</span><span class="substitution">${state.activity.map(_.activity).getOrElse(&quot;&quot;)}</span><span class="string-literal">&quot;</span><span>)
       )
     }
-
   }
+
 }</span></code></pre>
         
         <h2 id="app" class="section"><a class="anchor-link left" href="#app"><i class="icofont-laika">&#xef71;</i></a>App</h2>
-        <p>Implementation of <code>ff4s.App</code> and <code>ff4s.IOEntryPoint</code> is straightforward and omitted for brevity.</p>
+        <p>The boilerplate for <code>ff4s.App</code> and <code>ff4s.IOEntryPoint</code> is omitted.</p>
         <div id="mdoc-html-run5" data-mdoc-js></div>
         <p><script type="text/javascript" src="cancellation.md.js" defer></script>
         <script type="text/javascript" src="mdoc.js" defer></script></p>

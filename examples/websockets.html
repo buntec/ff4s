@@ -94,6 +94,11 @@
         <p class="header"><a href="#">WebSockets</a></p>
 
         <ul class="nav-list">
+          <li class="level1"><a href="#state">State</a></li>
+          <li class="level1"><a href="#action">Action</a></li>
+          <li class="level1"><a href="#store">Store</a></li>
+          <li class="level1"><a href="#view">View</a></li>
+          <li class="level1"><a href="#app">App</a></li>
         </ul>
 
         <p class="footer"></p>
@@ -109,21 +114,28 @@
         echos back any message we send to it.
         We only show the common case where the lifetime of
         the connection coincides with the lifetime of the app.</p>
-        <p>The state and action encodings are straightforward:</p>
+        
+        <h2 id="state" class="section"><a class="anchor-link left" href="#state"><i class="icofont-laika">&#xef71;</i></a>State</h2>
+        <p>The state holds the user&#39;s input and the most recent server response.</p>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">final</span><span> </span><span class="keyword">case</span><span> </span><span class="keyword">class</span><span> </span><span class="type-name">State</span><span>(
     </span><span class="identifier">userInput</span><span>: </span><span class="type-name">Option</span><span>[</span><span class="type-name">String</span><span>] = </span><span class="type-name">None</span><span>,
     </span><span class="identifier">serverResponse</span><span>: </span><span class="type-name">Option</span><span>[</span><span class="type-name">String</span><span>] = </span><span class="type-name">None</span><span>
-)
-
-</span><span class="keyword">sealed</span><span> </span><span class="keyword">trait</span><span> </span><span class="type-name">Action</span><span>
+)</span></code></pre>
+        
+        <h2 id="action" class="section"><a class="anchor-link left" href="#action"><i class="icofont-laika">&#xef71;</i></a>Action</h2>
+        <p>The action encoding is straightforward:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">sealed</span><span> </span><span class="keyword">trait</span><span> </span><span class="type-name">Action</span><span>
 </span><span class="keyword">case</span><span> </span><span class="keyword">class</span><span> </span><span class="type-name">SetUserInput</span><span>(</span><span class="identifier">input</span><span>: </span><span class="type-name">Option</span><span>[</span><span class="type-name">String</span><span>]) </span><span class="keyword">extends</span><span> </span><span class="type-name">Action</span><span>
 </span><span class="keyword">case</span><span> </span><span class="keyword">object</span><span> </span><span class="type-name">Send</span><span> </span><span class="keyword">extends</span><span> </span><span class="type-name">Action</span><span>
 </span><span class="keyword">case</span><span> </span><span class="keyword">class</span><span> </span><span class="type-name">SetServerResponse</span><span>(</span><span class="identifier">response</span><span>: </span><span class="type-name">String</span><span>) </span><span class="keyword">extends</span><span> </span><span class="type-name">Action</span></code></pre>
-        <p>The interesting bit is the store. We use a Cats Effect <code>Queue</code> to hold
-        outgoing messages. The connection itself runs on a separate fiber safely
+        
+        <h2 id="store" class="section"><a class="anchor-link left" href="#store"><i class="icofont-laika">&#xef71;</i></a>Store</h2>
+        <p>We use a Cats Effect <code>Queue</code> to hold outgoing messages.
+        The connection itself runs on a separate fiber safely
         tied to the lifetime of the store using <code>.background</code>.
         The <code>ff4s.WebsocketClient</code> is a wrapper around the more
-        powerful <code>http4s</code> client and intended for simple use-cases such as this one.</p>
+        powerful <code>http4s</code> client and intended for simple use-cases
+        such as this one.</p>
         <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">cats</span><span>.</span><span class="identifier">effect</span><span>.</span><span class="identifier">_</span><span>
 </span><span class="keyword">import</span><span> </span><span class="identifier">cats</span><span>.</span><span class="identifier">effect</span><span>.</span><span class="identifier">implicits</span><span>.</span><span class="identifier">_</span><span>
 </span><span class="keyword">import</span><span> </span><span class="identifier">cats</span><span>.</span><span class="identifier">effect</span><span>.</span><span class="identifier">std</span><span>.</span><span class="identifier">_</span><span>
@@ -147,7 +159,7 @@
       .</span><span class="type-name">WebSocketClient</span><span>[</span><span class="type-name">F</span><span>]
       .</span><span class="identifier">bidirectionalText</span><span>(
         </span><span class="string-literal">&quot;wss://ws.postman-echo.com/raw/&quot;</span><span>,
-        </span><span class="identifier">_</span><span>.</span><span class="identifier">evalMap</span><span>(</span><span class="identifier">r</span><span> =&gt; </span><span class="identifier">store</span><span>.</span><span class="identifier">dispatch</span><span>(</span><span class="type-name">SetServerResponse</span><span>(</span><span class="identifier">r</span><span>))),
+        </span><span class="identifier">_</span><span>.</span><span class="identifier">evalMap</span><span>(</span><span class="identifier">res</span><span> =&gt; </span><span class="identifier">store</span><span>.</span><span class="identifier">dispatch</span><span>(</span><span class="type-name">SetServerResponse</span><span>(</span><span class="identifier">res</span><span>))),
         </span><span class="type-name">Stream</span><span>.</span><span class="identifier">fromQueueUnterminated</span><span>(</span><span class="identifier">sendQ</span><span>)
       )
       .</span><span class="identifier">background</span><span>
@@ -155,6 +167,8 @@
   } </span><span class="keyword">yield</span><span> </span><span class="identifier">store</span><span>
 
 }</span></code></pre>
+        
+        <h2 id="view" class="section"><a class="anchor-link left" href="#view"><i class="icofont-laika">&#xef71;</i></a>View</h2>
         <p>There isn&#39;t much to say about the view.</p>
         <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">org</span><span>.</span><span class="identifier">scalajs</span><span>.</span><span class="identifier">dom</span><span>
 
@@ -183,17 +197,16 @@
           </span><span class="identifier">disabled</span><span> := </span><span class="identifier">state</span><span>.</span><span class="identifier">userInput</span><span>.</span><span class="identifier">isEmpty</span><span>,
           </span><span class="identifier">onClick</span><span> := (</span><span class="identifier">_</span><span> =&gt; </span><span class="type-name">Send</span><span>.</span><span class="identifier">some</span><span>)
         ),
-        </span><span class="identifier">div</span><span>(
-          </span><span class="string-literal">s&quot;Server response:  </span><span class="substitution">${state.serverResponse.getOrElse(&quot;&quot;)}</span><span class="string-literal">&quot;</span><span>
-        )
+        </span><span class="identifier">state</span><span>.</span><span class="identifier">serverResponse</span><span>.</span><span class="identifier">fold</span><span>(</span><span class="identifier">empty</span><span>)(</span><span class="identifier">res</span><span> =&gt; </span><span class="identifier">div</span><span>(</span><span class="string-literal">s&quot;Server response: </span><span class="substitution">$res</span><span class="string-literal">&quot;</span><span>))
       )
     }
   }
 
 }</span></code></pre>
-        <p>We omit the straightforward construction of <code>ff4s.App</code>
-        and <code>ff4s.IOEntryPoint</code> for brevity.</p>
-        <div id="mdoc-html-run3" data-mdoc-js></div>
+        
+        <h2 id="app" class="section"><a class="anchor-link left" href="#app"><i class="icofont-laika">&#xef71;</i></a>App</h2>
+        <p>The boilerplate construction of <code>ff4s.App</code> and <code>ff4s.IOEntryPoint</code> is omitted.</p>
+        <div id="mdoc-html-run4" data-mdoc-js></div>
         <p><script type="text/javascript" src="websockets.md.js" defer></script>
         <script type="text/javascript" src="mdoc.js" defer></script></p>
 

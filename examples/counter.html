@@ -119,7 +119,7 @@
         We typically encode the set of actions as an ADT:</p>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">sealed</span><span> </span><span class="keyword">trait</span><span> </span><span class="type-name">Action</span><span>
 </span><span class="keyword">case</span><span> </span><span class="keyword">class</span><span> </span><span class="type-name">Inc</span><span>(</span><span class="identifier">amount</span><span>: </span><span class="type-name">Int</span><span>) </span><span class="keyword">extends</span><span> </span><span class="type-name">Action</span><span>
-</span><span class="keyword">case</span><span> </span><span class="keyword">class</span><span> </span><span class="type-name">Reset</span><span>() </span><span class="keyword">extends</span><span> </span><span class="type-name">Action</span></code></pre>
+</span><span class="keyword">case</span><span> </span><span class="keyword">object</span><span> </span><span class="type-name">Reset</span><span> </span><span class="keyword">extends</span><span> </span><span class="type-name">Action</span></code></pre>
         
         <h2 id="store" class="section"><a class="anchor-link left" href="#store"><i class="icofont-laika">&#xef71;</i></a>Store</h2>
         <p>With the <code>State</code> and <code>Action</code> types in hand, we can set up our store:</p>
@@ -128,12 +128,14 @@
 
 </span><span class="keyword">object</span><span> </span><span class="type-name">Store</span><span> {
 
-  </span><span class="keyword">def</span><span> </span><span class="declaration-name">apply</span><span>[</span><span class="type-name">F</span><span>[</span><span class="identifier">_</span><span>]: </span><span class="type-name">Concurrent</span><span>]: </span><span class="type-name">Resource</span><span>[</span><span class="type-name">F</span><span>, </span><span class="identifier">ff4s</span><span>.</span><span class="type-name">Store</span><span>[</span><span class="type-name">F</span><span>, </span><span class="type-name">State</span><span>, </span><span class="type-name">Action</span><span>]] =
+  </span><span class="comment">// A basic store requires `cats.effect.Concurrent[F]`.
+</span><span>  </span><span class="comment">// In real-world app we usually need the more powerful `cats.effect.Async[F]`.
+</span><span>  </span><span class="keyword">def</span><span> </span><span class="declaration-name">apply</span><span>[</span><span class="type-name">F</span><span>[</span><span class="identifier">_</span><span>]: </span><span class="type-name">Concurrent</span><span>]: </span><span class="type-name">Resource</span><span>[</span><span class="type-name">F</span><span>, </span><span class="identifier">ff4s</span><span>.</span><span class="type-name">Store</span><span>[</span><span class="type-name">F</span><span>, </span><span class="type-name">State</span><span>, </span><span class="type-name">Action</span><span>]] =
     </span><span class="identifier">ff4s</span><span>.</span><span class="type-name">Store</span><span>[</span><span class="type-name">F</span><span>, </span><span class="type-name">State</span><span>, </span><span class="type-name">Action</span><span>](</span><span class="type-name">State</span><span>()) { </span><span class="identifier">_</span><span> =&gt;
       </span><span class="identifier">_</span><span> </span><span class="keyword">match</span><span> {
         </span><span class="keyword">case</span><span> </span><span class="type-name">Inc</span><span>(</span><span class="identifier">amount</span><span>) =&gt;
           </span><span class="identifier">state</span><span> =&gt; </span><span class="identifier">state</span><span>.</span><span class="identifier">copy</span><span>(</span><span class="identifier">counter</span><span> = </span><span class="identifier">state</span><span>.</span><span class="identifier">counter</span><span> + </span><span class="identifier">amount</span><span>) -&gt; </span><span class="identifier">none</span><span>
-        </span><span class="keyword">case</span><span> </span><span class="type-name">Reset</span><span>() =&gt; </span><span class="identifier">_</span><span>.</span><span class="identifier">copy</span><span>(</span><span class="identifier">counter</span><span> = </span><span class="number-literal">0</span><span>) -&gt; </span><span class="identifier">none</span><span>
+        </span><span class="keyword">case</span><span> </span><span class="type-name">Reset</span><span> =&gt; </span><span class="identifier">_</span><span>.</span><span class="identifier">copy</span><span>(</span><span class="identifier">counter</span><span> = </span><span class="number-literal">0</span><span>) -&gt; </span><span class="identifier">none</span><span>
       }
     }
 
@@ -143,8 +145,7 @@
         <p>The fact that <code>store</code> is a <code>Resource</code> is extremely useful because it allows
         us to do interesting things in the background (think WebSockets,
         subscribing to state changes, etc.).
-        Be sure to check out the examples provided in this repo to see more elaborate
-        store logic, including WebSocket messaging and REST calls.</p>
+        Be sure to check out the other examples to see more elaborate store logic.</p>
         
         <h2 id="view" class="section"><a class="anchor-link left" href="#view"><i class="icofont-laika">&#xef71;</i></a>View</h2>
         <p>Finally, we describe how our page should be rendered using the built-in DSL
@@ -159,8 +160,7 @@
     </span><span class="identifier">useState</span><span> { </span><span class="identifier">state</span><span> =&gt;
       </span><span class="identifier">div</span><span>(
         </span><span class="identifier">cls</span><span> := </span><span class="string-literal">&quot;counter-example&quot;</span><span>, </span><span class="comment">// cls b/c class is a reserved keyword in scala
-</span><span>        </span><span class="identifier">h1</span><span>(</span><span class="string-literal">&quot;A counter&quot;</span><span>),
-        </span><span class="identifier">div</span><span>(</span><span class="string-literal">s&quot;value: </span><span class="substitution">${state.counter}</span><span class="string-literal">&quot;</span><span>),
+</span><span>        </span><span class="identifier">div</span><span>(</span><span class="string-literal">s&quot;value: </span><span class="substitution">${state.counter}</span><span class="string-literal">&quot;</span><span>),
         </span><span class="identifier">button</span><span>(
           </span><span class="identifier">cls</span><span> := </span><span class="string-literal">&quot;counter-button&quot;</span><span>,
           </span><span class="string-literal">&quot;increment&quot;</span><span>,
@@ -174,7 +174,7 @@
         </span><span class="identifier">button</span><span>(
           </span><span class="identifier">cls</span><span> := </span><span class="string-literal">&quot;counter-button&quot;</span><span>,
           </span><span class="string-literal">&quot;reset&quot;</span><span>,
-          </span><span class="identifier">onClick</span><span> := (</span><span class="identifier">_</span><span> =&gt; </span><span class="type-name">Some</span><span>(</span><span class="type-name">Reset</span><span>()))
+          </span><span class="identifier">onClick</span><span> := (</span><span class="identifier">_</span><span> =&gt; </span><span class="type-name">Some</span><span>(</span><span class="type-name">Reset</span><span>))
         )
       )
     }
@@ -183,17 +183,15 @@
 }</span></code></pre>
         
         <h2 id="app" class="section"><a class="anchor-link left" href="#app"><i class="icofont-laika">&#xef71;</i></a>App</h2>
-        <p>To turn this into an app all we need to do is implement the <code>ff4s.App</code>
-        trait using <code>store</code> and <code>view</code> from above and pass an
-        instance of it to the <code>IOEntryPoint</code> class, which in turn defines an
-        appropriate <code>main</code> method for us:</p>
-        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="comment">// A basic store requires `cats.effect.Concurrent[F]`.
-// In real-world applications we usually need the more powerful `cats.effect.Async[F]`.
+        <p>To turn this into an app, we need a small amount of boilerplate:</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="comment">// App.scala
 </span><span class="keyword">class</span><span> </span><span class="type-name">App</span><span>[</span><span class="type-name">F</span><span>[</span><span class="identifier">_</span><span>]](</span><span class="keyword">implicit</span><span> </span><span class="type-name">F</span><span>: </span><span class="type-name">Concurrent</span><span>[</span><span class="type-name">F</span><span>]) </span><span class="keyword">extends</span><span> </span><span class="identifier">ff4s</span><span>.</span><span class="type-name">App</span><span>[</span><span class="type-name">F</span><span>, </span><span class="type-name">State</span><span>, </span><span class="type-name">Action</span><span>] {
   </span><span class="keyword">override</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">store</span><span> = </span><span class="type-name">Store</span><span>[</span><span class="type-name">F</span><span>]
   </span><span class="keyword">override</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">view</span><span> = </span><span class="type-name">View</span><span>[</span><span class="type-name">F</span><span>]
 }
 
+</span><span class="comment">// Main.scala
+// this defines an appropriate `main` method for us
 </span><span class="keyword">object</span><span> </span><span class="type-name">Main</span><span> </span><span class="keyword">extends</span><span> </span><span class="identifier">ff4s</span><span>.</span><span class="type-name">IOEntryPoint</span><span>(</span><span class="keyword">new</span><span> </span><span class="type-name">App</span><span>) </span><span class="comment">// uses cats.effect.IO for F</span></code></pre>
         <div id="mdoc-html-run6" data-mdoc-js></div>
         <p><script type="text/javascript" src="counter.md.js" defer></script>

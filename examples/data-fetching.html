@@ -107,35 +107,58 @@
       <main class="content">
 
         <h1 id="data-fetching" class="title">Data Fetching</h1>
-        <p>Fetching data from the back-end is probably the most common type of IO in single-page applications.
-        In this example we illustrate this pattern in <code>ff4s</code> using a simple HTTP GET
-        request to the <a href="https://frankfurter.app">frankfurter API</a>, which returns foreign exchange rates for a currency pair we supply.</p>
+        <p>Fetching data from the back-end is probably the most common type of IO
+        in single-page applications. In this example we illustrate this pattern
+        using a simple HTTP GET request to the <a href="https://frankfurter.app">Frankfurter API</a>,
+        which provides foreign exchange rates published by the European Central Bank.</p>
         
         <h2 id="state" class="section"><a class="anchor-link left" href="#state"><i class="icofont-laika">&#xef71;</i></a>State</h2>
-        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">final</span><span> </span><span class="keyword">case</span><span> </span><span class="keyword">class</span><span> </span><span class="type-name">State</span><span>(
+        <p>The state needs to hold the user&#39;s input, the exchange rate returned by the API,
+        and possibly an error message in case something goes wrong.
+        We also add a convenience method for parsing currency pairs from user input.</p>
+        <pre><code class="nohighlight"><span class="keyword">final</span><span> </span><span class="keyword">case</span><span> </span><span class="keyword">class</span><span> </span><span class="type-name">State</span><span>(
     </span><span class="identifier">userInput</span><span>: </span><span class="type-name">Option</span><span>[</span><span class="type-name">String</span><span>] = </span><span class="type-name">None</span><span>,
-    </span><span class="identifier">exchangeRate</span><span>: </span><span class="type-name">Option</span><span>[</span><span class="type-name">ExchangeRate</span><span>] = </span><span class="type-name">None</span><span>,
-    </span><span class="identifier">error</span><span>: </span><span class="type-name">Option</span><span>[</span><span class="type-name">String</span><span>] = </span><span class="type-name">None</span><span>
-)</span></code></pre>
-        <p>We model the JSON API response using a case class with a derived <a href="https://circe.github.io/circe/">circe</a> decoder:</p>
+    </span><span class="identifier">apiResponse</span><span>: </span><span class="type-name">Option</span><span>[</span><span class="type-name">ApiResponse</span><span>] = </span><span class="type-name">None</span><span>,
+    </span><span class="identifier">errorMessage</span><span>: </span><span class="type-name">Option</span><span>[</span><span class="type-name">String</span><span>] = </span><span class="type-name">None</span><span>
+) {
+
+  </span><span class="keyword">def</span><span> </span><span class="declaration-name">ccyPairOption</span><span>: </span><span class="type-name">Option</span><span>[(</span><span class="type-name">String</span><span>, </span><span class="type-name">String</span><span>)] =
+    </span><span class="identifier">userInput</span><span>.</span><span class="identifier">flatMap</span><span> {
+      </span><span class="identifier">_</span><span> </span><span class="keyword">match</span><span> {
+        </span><span class="keyword">case</span><span> </span><span class="type-name">Utils</span><span>.</span><span class="identifier">ccyPairPattern</span><span>(</span><span class="identifier">ccy1</span><span>, </span><span class="identifier">ccy2</span><span>) =&gt; </span><span class="type-name">Some</span><span>((</span><span class="identifier">ccy1</span><span>, </span><span class="identifier">ccy2</span><span>))
+        </span><span class="keyword">case</span><span> </span><span class="identifier">_</span><span>                                =&gt; </span><span class="type-name">None</span><span>
+      }
+    }
+
+}
+
+</span><span class="keyword">object</span><span> </span><span class="type-name">Utils</span><span> {
+
+  </span><span class="keyword">val</span><span> </span><span class="identifier">ccyPairPattern</span><span> = </span><span class="string-literal">&quot;&quot;&quot;([a-zA-Z]{3})/?([a-zA-Z]{3})&quot;&quot;&quot;</span><span>.</span><span class="identifier">r</span><span>
+
+}</span></code></pre>
+        <p>As per usual, we model the JSON API response using a case class with a
+        derived <a href="https://circe.github.io/circe/">circe</a> decoder:</p>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">io</span><span>.</span><span class="identifier">circe</span><span>.</span><span class="identifier">_</span><span>
 </span><span class="keyword">import</span><span> </span><span class="identifier">io</span><span>.</span><span class="identifier">circe</span><span>.</span><span class="identifier">generic</span><span>.</span><span class="identifier">semiauto</span><span>.</span><span class="identifier">_</span><span>
 
-</span><span class="keyword">case</span><span> </span><span class="keyword">class</span><span> </span><span class="type-name">ExchangeRate</span><span>(</span><span class="identifier">rates</span><span>: </span><span class="type-name">Map</span><span>[</span><span class="type-name">String</span><span>, </span><span class="type-name">Double</span><span>])
-</span><span class="keyword">object</span><span> </span><span class="type-name">ExchangeRate</span><span> {
-  </span><span class="keyword">implicit</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">decoder</span><span>: </span><span class="type-name">Decoder</span><span>[</span><span class="type-name">ExchangeRate</span><span>] = </span><span class="identifier">deriveDecoder</span><span>
+</span><span class="keyword">case</span><span> </span><span class="keyword">class</span><span> </span><span class="type-name">ApiResponse</span><span>(</span><span class="identifier">rates</span><span>: </span><span class="type-name">Map</span><span>[</span><span class="type-name">String</span><span>, </span><span class="type-name">Double</span><span>])
+</span><span class="keyword">object</span><span> </span><span class="type-name">ApiResponse</span><span> {
+  </span><span class="keyword">implicit</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">decoder</span><span>: </span><span class="type-name">Decoder</span><span>[</span><span class="type-name">ApiResponse</span><span>] = </span><span class="identifier">deriveDecoder</span><span>
 }</span></code></pre>
         
         <h2 id="actions" class="section"><a class="anchor-link left" href="#actions"><i class="icofont-laika">&#xef71;</i></a>Actions</h2>
         <p>The action encoding is straightforward.</p>
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">sealed</span><span> </span><span class="keyword">trait</span><span> </span><span class="type-name">Action</span><span>
-</span><span class="keyword">case</span><span> </span><span class="keyword">object</span><span> </span><span class="type-name">GetExchangeRate</span><span> </span><span class="keyword">extends</span><span> </span><span class="type-name">Action</span><span>
-</span><span class="keyword">case</span><span> </span><span class="keyword">class</span><span> </span><span class="type-name">SetExchangeRate</span><span>(</span><span class="identifier">exchangeRate</span><span>: </span><span class="type-name">Option</span><span>[</span><span class="type-name">ExchangeRate</span><span>]) </span><span class="keyword">extends</span><span> </span><span class="type-name">Action</span><span>
-</span><span class="keyword">case</span><span> </span><span class="keyword">class</span><span> </span><span class="type-name">SetUserInput</span><span>(</span><span class="identifier">userInput</span><span>: </span><span class="type-name">Option</span><span>[</span><span class="type-name">String</span><span>]) </span><span class="keyword">extends</span><span> </span><span class="type-name">Action</span><span>
-</span><span class="keyword">case</span><span> </span><span class="keyword">class</span><span> </span><span class="type-name">SetError</span><span>(</span><span class="identifier">error</span><span>: </span><span class="type-name">Option</span><span>[</span><span class="type-name">String</span><span>]) </span><span class="keyword">extends</span><span> </span><span class="type-name">Action</span></code></pre>
+</span><span class="keyword">case</span><span> </span><span class="keyword">class</span><span> </span><span class="type-name">SetUserInput</span><span>(</span><span class="identifier">input</span><span>: </span><span class="type-name">Option</span><span>[</span><span class="type-name">String</span><span>]) </span><span class="keyword">extends</span><span> </span><span class="type-name">Action</span><span>
+</span><span class="keyword">case</span><span> </span><span class="keyword">object</span><span> </span><span class="type-name">MakeApiRequest</span><span> </span><span class="keyword">extends</span><span> </span><span class="type-name">Action</span><span>
+</span><span class="keyword">case</span><span> </span><span class="keyword">class</span><span> </span><span class="type-name">SetApiResponse</span><span>(</span><span class="identifier">response</span><span>: </span><span class="type-name">Option</span><span>[</span><span class="type-name">ApiResponse</span><span>]) </span><span class="keyword">extends</span><span> </span><span class="type-name">Action</span><span>
+</span><span class="keyword">case</span><span> </span><span class="keyword">class</span><span> </span><span class="type-name">SetErrorMessage</span><span>(</span><span class="identifier">msg</span><span>: </span><span class="type-name">Option</span><span>[</span><span class="type-name">String</span><span>]) </span><span class="keyword">extends</span><span> </span><span class="type-name">Action</span></code></pre>
         
         <h2 id="store" class="section"><a class="anchor-link left" href="#store"><i class="icofont-laika">&#xef71;</i></a>Store</h2>
-        <p>The only interesting bit in the store is the handling of <code>GetExchangeRate</code>. Note how we retrieve the currency pair from the state and how we are updating the state with the retrieved rate using <code>store.dispatch</code>.</p>
+        <p>The interesting bit in the store is the handling of <code>MakeApiRequest</code>.
+        Note how we retrieve the currency pair from the state and how we
+        are updating the state with the response using <code>store.dispatch</code>.</p>
         <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">cats</span><span>.</span><span class="identifier">effect</span><span>.</span><span class="identifier">_</span><span>
 </span><span class="keyword">import</span><span> </span><span class="identifier">cats</span><span>.</span><span class="identifier">syntax</span><span>.</span><span class="identifier">all</span><span>.</span><span class="identifier">_</span><span>
 
@@ -144,35 +167,33 @@
   </span><span class="keyword">def</span><span> </span><span class="declaration-name">apply</span><span>[</span><span class="type-name">F</span><span>[</span><span class="identifier">_</span><span>]: </span><span class="type-name">Async</span><span>]: </span><span class="type-name">Resource</span><span>[</span><span class="type-name">F</span><span>, </span><span class="identifier">ff4s</span><span>.</span><span class="type-name">Store</span><span>[</span><span class="type-name">F</span><span>, </span><span class="type-name">State</span><span>, </span><span class="type-name">Action</span><span>]] =
     </span><span class="identifier">ff4s</span><span>.</span><span class="type-name">Store</span><span>[</span><span class="type-name">F</span><span>, </span><span class="type-name">State</span><span>, </span><span class="type-name">Action</span><span>](</span><span class="type-name">State</span><span>()) { </span><span class="identifier">store</span><span> =&gt;
       </span><span class="identifier">_</span><span> </span><span class="keyword">match</span><span> {
-        </span><span class="keyword">case</span><span> </span><span class="type-name">SetExchangeRate</span><span>(</span><span class="identifier">rate</span><span>) =&gt;
-          </span><span class="identifier">_</span><span>.</span><span class="identifier">copy</span><span>(</span><span class="identifier">exchangeRate</span><span> = </span><span class="identifier">rate</span><span>, </span><span class="identifier">error</span><span> = </span><span class="type-name">None</span><span>) -&gt; </span><span class="identifier">none</span><span>
-        </span><span class="keyword">case</span><span> </span><span class="type-name">SetUserInput</span><span>(</span><span class="identifier">userInput</span><span>) =&gt; </span><span class="identifier">_</span><span>.</span><span class="identifier">copy</span><span>(</span><span class="identifier">userInput</span><span> = </span><span class="identifier">userInput</span><span>) -&gt; </span><span class="identifier">none</span><span>
-        </span><span class="keyword">case</span><span> </span><span class="type-name">SetError</span><span>(</span><span class="identifier">error</span><span>)         =&gt; </span><span class="identifier">_</span><span>.</span><span class="identifier">copy</span><span>(</span><span class="identifier">error</span><span> = </span><span class="identifier">error</span><span>) -&gt; </span><span class="identifier">none</span><span>
-        </span><span class="keyword">case</span><span> </span><span class="type-name">GetExchangeRate</span><span> =&gt;
+        </span><span class="keyword">case</span><span> </span><span class="type-name">SetApiResponse</span><span>(</span><span class="identifier">response</span><span>) =&gt;
+          </span><span class="identifier">_</span><span>.</span><span class="identifier">copy</span><span>(</span><span class="identifier">apiResponse</span><span> = </span><span class="identifier">response</span><span>, </span><span class="identifier">errorMessage</span><span> = </span><span class="type-name">None</span><span>) -&gt; </span><span class="identifier">none</span><span>
+        </span><span class="keyword">case</span><span> </span><span class="type-name">SetUserInput</span><span>(</span><span class="identifier">input</span><span>)  =&gt; </span><span class="identifier">_</span><span>.</span><span class="identifier">copy</span><span>(</span><span class="identifier">userInput</span><span> = </span><span class="identifier">input</span><span>) -&gt; </span><span class="identifier">none</span><span>
+        </span><span class="keyword">case</span><span> </span><span class="type-name">SetErrorMessage</span><span>(</span><span class="identifier">msg</span><span>) =&gt; </span><span class="identifier">_</span><span>.</span><span class="identifier">copy</span><span>(</span><span class="identifier">errorMessage</span><span> = </span><span class="identifier">msg</span><span>) -&gt; </span><span class="identifier">none</span><span>
+        </span><span class="keyword">case</span><span> </span><span class="type-name">MakeApiRequest</span><span> =&gt;
           </span><span class="identifier">state</span><span> =&gt;
             (
               </span><span class="identifier">state</span><span>,
-              </span><span class="identifier">state</span><span>.</span><span class="identifier">userInput</span><span>
-                .</span><span class="identifier">flatMap</span><span> { </span><span class="identifier">input</span><span> =&gt;
-                  (
-                    </span><span class="identifier">input</span><span>.</span><span class="identifier">split</span><span>(</span><span class="string-literal">&quot;/&quot;</span><span>).</span><span class="identifier">headOption</span><span>,
-                    </span><span class="identifier">input</span><span>.</span><span class="identifier">split</span><span>(</span><span class="string-literal">&quot;/&quot;</span><span>).</span><span class="identifier">tail</span><span>.</span><span class="identifier">headOption</span><span>
-                  ).</span><span class="identifier">tupled</span><span>
-                }
-                .</span><span class="identifier">map</span><span> { </span><span class="keyword">case</span><span> (</span><span class="identifier">base</span><span>, </span><span class="identifier">quote</span><span>) =&gt;
-                  </span><span class="identifier">ff4s</span><span>
-                    .</span><span class="type-name">HttpClient</span><span>[</span><span class="type-name">F</span><span>]
-                    .</span><span class="identifier">get</span><span>[</span><span class="type-name">ExchangeRate</span><span>](
-                      </span><span class="string-literal">s&quot;https://api.frankfurter.app/latest?from=</span><span class="substitution">$base</span><span class="string-literal">&amp;to=</span><span class="substitution">$quote</span><span class="string-literal">&quot;</span><span>
+              </span><span class="identifier">state</span><span>.</span><span class="identifier">ccyPairOption</span><span>.</span><span class="identifier">map</span><span> { </span><span class="keyword">case</span><span> (</span><span class="identifier">ccy1</span><span>, </span><span class="identifier">ccy2</span><span>) =&gt;
+                </span><span class="identifier">ff4s</span><span>
+                  .</span><span class="type-name">HttpClient</span><span>[</span><span class="type-name">F</span><span>]
+                  .</span><span class="identifier">get</span><span>[</span><span class="type-name">ApiResponse</span><span>](
+                    </span><span class="string-literal">s&quot;https://api.frankfurter.app/latest?from=</span><span class="substitution">$ccy1</span><span class="string-literal">&amp;to=</span><span class="substitution">$ccy2</span><span class="string-literal">&quot;</span><span>
+                  )
+                  .</span><span class="identifier">flatMap</span><span>(</span><span class="identifier">response</span><span> =&gt;
+                    </span><span class="identifier">store</span><span>.</span><span class="identifier">dispatch</span><span>(</span><span class="type-name">SetApiResponse</span><span>(</span><span class="identifier">response</span><span>.</span><span class="identifier">some</span><span>))
+                  )
+                  .</span><span class="identifier">handleErrorWith</span><span>(</span><span class="identifier">t</span><span> =&gt;
+                    </span><span class="identifier">store</span><span>.</span><span class="identifier">dispatch</span><span>(
+                      </span><span class="type-name">SetErrorMessage</span><span>(</span><span class="string-literal">s&quot;Failed to get FX rate: </span><span class="substitution">$t</span><span class="string-literal">&quot;</span><span>.</span><span class="identifier">some</span><span>)
                     )
-                    .</span><span class="identifier">flatMap</span><span>(</span><span class="identifier">rate</span><span> =&gt; </span><span class="identifier">store</span><span>.</span><span class="identifier">dispatch</span><span>(</span><span class="type-name">SetExchangeRate</span><span>(</span><span class="identifier">rate</span><span>.</span><span class="identifier">some</span><span>)))
-                    .</span><span class="identifier">handleErrorWith</span><span> { </span><span class="identifier">_</span><span> =&gt;
-                      </span><span class="identifier">store</span><span>.</span><span class="identifier">dispatch</span><span>(</span><span class="type-name">SetError</span><span>(</span><span class="string-literal">&quot;Failed to get rate!&quot;</span><span>.</span><span class="identifier">some</span><span>))
-                    }
-                }
+                  )
+              }
             )
       }
     }
+
 }</span></code></pre>
         
         <h2 id="view" class="section"><a class="anchor-link left" href="#view"><i class="icofont-laika">&#xef71;</i></a>View</h2>
@@ -188,7 +209,7 @@
       </span><span class="identifier">div</span><span>(
         </span><span class="identifier">input</span><span>(
           </span><span class="identifier">tpe</span><span> := </span><span class="string-literal">&quot;text&quot;</span><span>,
-          </span><span class="identifier">placeholder</span><span> := </span><span class="string-literal">&quot;CHF/USD&quot;</span><span>,
+          </span><span class="identifier">placeholder</span><span> := </span><span class="string-literal">&quot;e.g. EUR/USD or EURUSD&quot;</span><span>,
           </span><span class="identifier">onInput</span><span> := ((</span><span class="identifier">ev</span><span>: </span><span class="identifier">dom</span><span>.</span><span class="type-name">Event</span><span>) =&gt;
             </span><span class="identifier">ev</span><span>.</span><span class="identifier">target</span><span> </span><span class="keyword">match</span><span> {
               </span><span class="keyword">case</span><span> </span><span class="identifier">el</span><span>: </span><span class="identifier">dom</span><span>.</span><span class="type-name">HTMLInputElement</span><span> =&gt;
@@ -198,14 +219,15 @@
           )
         ),
         </span><span class="identifier">button</span><span>(
-          </span><span class="string-literal">&quot;Exchange rate&quot;</span><span>,
-          </span><span class="identifier">onClick</span><span> := (</span><span class="identifier">_</span><span> =&gt; </span><span class="type-name">GetExchangeRate</span><span>.</span><span class="identifier">some</span><span>)
+          </span><span class="string-literal">&quot;Get FX Rate&quot;</span><span>,
+          </span><span class="identifier">onClick</span><span> := (</span><span class="identifier">_</span><span> =&gt; </span><span class="type-name">MakeApiRequest</span><span>.</span><span class="identifier">some</span><span>),
+          </span><span class="identifier">disabled</span><span> := </span><span class="identifier">state</span><span>.</span><span class="identifier">ccyPairOption</span><span>.</span><span class="identifier">isEmpty</span><span>
         ),
-        </span><span class="identifier">state</span><span>.</span><span class="identifier">error</span><span> </span><span class="keyword">match</span><span> {
-          </span><span class="keyword">case</span><span> </span><span class="type-name">Some</span><span>(</span><span class="identifier">error</span><span>) =&gt; </span><span class="identifier">div</span><span>(</span><span class="identifier">error</span><span>)
+        </span><span class="identifier">state</span><span>.</span><span class="identifier">errorMessage</span><span> </span><span class="keyword">match</span><span> {
+          </span><span class="keyword">case</span><span> </span><span class="type-name">Some</span><span>(</span><span class="identifier">errorMsg</span><span>) =&gt; </span><span class="identifier">div</span><span>(</span><span class="identifier">styleAttr</span><span> := </span><span class="string-literal">&quot;color: red&quot;</span><span>, </span><span class="identifier">errorMsg</span><span>)
           </span><span class="keyword">case</span><span> </span><span class="type-name">None</span><span> =&gt;
             </span><span class="identifier">div</span><span>(
-              </span><span class="string-literal">s&quot;</span><span class="substitution">${state.exchangeRate.flatMap(_.rates.values.toList.headOption).getOrElse(&quot;&quot;)}</span><span class="string-literal">&quot;</span><span>
+              </span><span class="string-literal">s&quot;</span><span class="substitution">${state.apiResponse.flatMap(_.rates.values.toList.headOption).getOrElse(&quot;&quot;)}</span><span class="string-literal">&quot;</span><span>
             )
         }
       )
@@ -215,7 +237,7 @@
 }</span></code></pre>
         
         <h2 id="app" class="section"><a class="anchor-link left" href="#app"><i class="icofont-laika">&#xef71;</i></a>App</h2>
-        <p>The construction of <code>ff4s.App</code> and <code>ff4s.IOEntryPoint</code> is straightforward and omitted for brevity.</p>
+        <p>The boilerplate for <code>ff4s.App</code> and <code>ff4s.IOEntryPoint</code> is omitted.</p>
         <div id="mdoc-html-run5" data-mdoc-js></div>
         <p><script type="text/javascript" src="data-fetching.md.js" defer></script>
         <script type="text/javascript" src="mdoc.js" defer></script></p>
