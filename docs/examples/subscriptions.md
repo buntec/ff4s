@@ -7,18 +7,34 @@ The fact that the store in ff4s is a `Resource` and that `store.state` is a `Sig
 ```scala mdoc:js:shared
 final case class State(
     userInput: Option[String] = None,
-    exchangeRate: Option[ExchangeRate] = None,
-    error: Option[String] = None
-)
+    apiResponse: Option[ApiResponse] = None,
+    errorMessage: Option[String] = None
+) {
+
+  def ccyPairOption: Option[(String, String)] =
+    userInput.flatMap {
+      _ match {
+        case Utils.ccyPairPattern(ccy1, ccy2) => Some((ccy1, ccy2))
+        case _                                => None
+      }
+    }
+
+}
+
+object Utils {
+
+  val ccyPairPattern = """([a-zA-Z]{3})/?([a-zA-Z]{3})""".r
+
+}
 ```
 
 ```scala mdoc:js:shared
 import io.circe._
 import io.circe.generic.semiauto._
 
-case class ExchangeRate(rates: Map[String, Double])
-object ExchangeRate {
-  implicit val decoder: Decoder[ExchangeRate] = deriveDecoder
+case class ApiResponse(rates: Map[String, Double])
+object ApiResponse {
+  implicit val decoder: Decoder[ApiResponse] = deriveDecoder
 }
 ```
 
@@ -26,10 +42,10 @@ object ExchangeRate {
 
 ```scala mdoc:js:shared
 sealed trait Action
-case class GetExchangeRate(base: String, quote: String) extends Action
-case class SetExchangeRate(exchangeRate: Option[ExchangeRate]) extends Action
 case class SetUserInput(userInput: Option[String]) extends Action
-case class SetError(error: Option[String]) extends Action
+case class MakeApiRequest(ccy1: String, ccy2: String) extends Action
+case class SetApiResponse(response: Option[ApiResponse]) extends Action
+case class SetErrorMessage(msg: Option[String]) extends Action
 ```
 
 ## Store
@@ -46,24 +62,26 @@ object Store {
     ff4s
       .Store[F, State, Action](State()) { store =>
         _ match {
-          case SetExchangeRate(rate) =>
-            _.copy(exchangeRate = rate, error = None) -> none
+          case SetApiResponse(response) =>
+            _.copy(apiResponse = response, errorMessage = None) -> none
           case SetUserInput(userInput) => _.copy(userInput = userInput) -> none
-          case SetError(error)         => _.copy(error = error) -> none
-          case GetExchangeRate(base: String, quote: String) =>
+          case SetErrorMessage(msg)    => _.copy(errorMessage = msg) -> none
+          case MakeApiRequest(ccy1: String, ccy2: String) =>
             state =>
               (
                 state,
                 ff4s
                   .HttpClient[F]
-                  .get[ExchangeRate](
-                    s"https://api.frankfurter.app/latest?from=$base&to=$quote"
+                  .get[ApiResponse](
+                    s"https://api.frankfurter.app/latest?from=$ccy1&to=$ccy2"
                   )
-                  .flatMap { rate =>
-                    store.dispatch(SetExchangeRate(rate.some))
+                  .flatMap { response =>
+                    store.dispatch(SetApiResponse(response.some))
                   }
-                  .handleErrorWith { _ =>
-                    store.dispatch(SetError("Failed to get rate!".some))
+                  .handleErrorWith { t =>
+                    store.dispatch(
+                      SetErrorMessage(s"Failed to get FX rate: $t".some)
+                    )
                   }
                   .some
               )
@@ -74,21 +92,14 @@ object Store {
         // subscribe to changes in user input and trigger debounced API calls
         store =>
           store.state
-            .map(_.userInput)
+            .map(_.ccyPairOption)
             .discrete
             .changes
-            .map {
-              _.flatMap { userInput =>
-                (
-                  userInput.split("/").headOption,
-                  userInput.split("/").tail.headOption
-                ).tupled
-              }
-            }
-            .unNone
             .debounce(1.second)
-            .evalMap { case (base, quote) =>
-              store.dispatch(GetExchangeRate(base, quote))
+            .evalMap {
+              case Some((ccy1, ccy2)) =>
+                store.dispatch(MakeApiRequest(ccy1, ccy2))
+              case None => store.dispatch(SetApiResponse(None))
             }
             .compile
             .drain
@@ -113,7 +124,7 @@ object View {
       div(
         input(
           tpe := "text",
-          placeholder := "CHF/USD",
+          placeholder := "e.g. EUR/USD or EURUSD",
           onInput := ((ev: dom.Event) =>
             ev.target match {
               case el: dom.HTMLInputElement =>
@@ -122,11 +133,11 @@ object View {
             }
           )
         ),
-        state.error match {
-          case Some(error) => div(error)
+        state.errorMessage match {
+          case Some(errorMsg) => div(styleAttr := "color: red", errorMsg)
           case None =>
             div(
-              s"${state.exchangeRate.flatMap(_.rates.values.toList.headOption).getOrElse("")}"
+              s"${state.apiResponse.flatMap(_.rates.values.toList.headOption).getOrElse("")}"
             )
         }
       )
