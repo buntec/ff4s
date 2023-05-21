@@ -32,7 +32,6 @@ def customSelect[F[_], S, A, O: Show: Eq](
       ),
       options.map { name =>
         option(
-          cls := "p-2",
           selected := (name === selected0(state)), // use of Eq[O] implicit
           key := name.show, // use of Show[O] implicit
           value := name.show,
@@ -67,6 +66,9 @@ def customButton[F[_], S, A](
   }
 }
 ```
+
+In this simple button component, users can control click events and perform actions on each click
+using the `onClick0` method. The button can be disabled as a function of the state using the `isDisabled` method.
 
 ## State
 
