@@ -1,69 +1,70 @@
 # Reusable Components
 
 In this example, we illustrate how the creation of reusable UI components works using `ff4s`. Two of many,
-a button and dropdown components are crucial in frontend development and hence we are going to use them
-in this example along with the [numbers API](http://numbersapi.com/).
+button and select components are popular in frontend development and hence are going to be used in this example along with the [Frankfurter API](https://frankfurter.app).
 
-## Dropdown List Component
+## Select Component
 
-A dropdown list component can be modelled as follows. Note that `F[_]` encodes the effect type, `A` for action, `S` for state and `O` encodes
-the type of elements of the dropdown list.
+A select component can be modelled as follows:
 
 ```scala mdoc:js:shared
 import org.scalajs.dom
-import cats.std.Eq
-import cats.std.Show
+import cats.Show
+import cats.kernel.Eq
+import cats.syntax.all._
 
-def dropdown[F[_], A, S, O: Show: Eq](
-  fromString : String => Option[O],
-  onChange0: (S, O) => Option[A],
-  options: List[O],
-  selected0: S => O
+def customSelect[F[_], S, A, O: Show: Eq](
+    fromString: String => Option[O],
+    onChange0: (S, O) => Option[A],
+    options: List[O],
+    selected0: S => O
 )(implicit dsl: ff4s.Dsl[F, S, A]): dsl.V = {
-import dsl._
-import dsl.html._
-    useState { state =>
-      select(
-        onChange := ((ev: dom.Event) =>
-          ev.target match {
-            case el: dom.HTMLSelectElement =>
-              fromString(el.value).flatMap(onChange0(state, _))
-            case _ => None
-          }
-        ),
-        options.map { name =>
-          option(
-            cls := "p-2",
-            selected := (name === selected0(state)),
-            key := name.show,
-            value := name.show,
-            name.show
-          )
+  import dsl._
+  import dsl.html._
+  useState { state =>
+    select(
+      onChange := ((ev: dom.Event) =>
+        ev.target match {
+          case el: dom.HTMLSelectElement =>
+            fromString(el.value).flatMap(onChange0(state, _))
+          case _ => None
         }
-      )
-    }
+      ),
+      options.map { name =>
+        option(
+          cls := "p-2",
+          selected := (name === selected0(state)), // use of Eq[O] implicit
+          key := name.show, // use of Show[O] implicit
+          value := name.show,
+          name.show
+        )
+      }
+    )
+  }
 
 }
 ```
+
+Note that `F` denotes the effect type, `A` the action, `S` the state and `O` the type of the list elements.
 
 ## Button Component
 
 A button component can be modelled as follows:
 
 ```scala mdoc:js:shared
-def btn[F[_], A, S](dsl: ff4s.Dsl[F, A, S])(child:
-        dsl.V, onClick0: S => Option[A],
-        isDisabled: S => Boolean): dsl.V = {
-            import dsl._
-            import dsl.html._
+def customButton[F[_], S, A](
+    dsl: ff4s.Dsl[F, S, A]
+)(child: dsl.V, onClick0: S => Option[A], isDisabled: S => Boolean): dsl.V = {
+  import dsl._
+  import dsl.html._
 
-            useState { state =>
-             button(
-              dsl.V,
-              disabled := isDisabled(state),
-              onClick :=  (_ => onClick0(state))
-            )
-}
+  useState { state =>
+    button(
+      child,
+      disabled := isDisabled(state),
+      onClick := (_ => onClick0(state))
+    )
+  }
 }
 ```
 
@@ -71,20 +72,36 @@ def btn[F[_], A, S](dsl: ff4s.Dsl[F, A, S])(child:
 
 ```scala mdoc:js:shared
 final case class State(
-    buttonClicks: Int = 0,
-    currencyPair: [CurrencyPair] = CurrencyPair.EURUSD,
-    apiResponse: Option[FxRate] = None
-)
+    numOfApiUsages: Int = 0,
+    currencyPair: CurrencyPair = CurrencyPair.EURUSD,
+    apiResponse: Option[ApiResponse] = None
+) {
+
+  def ccyPairOption: (String, String) =
+    (
+      currencyPair.show.toString.take(3),
+      currencyPair.show.toString.takeRight(3)
+    )
+
+}
 ```
 
 ```scala mdoc:js:shared
-final case class FxRate(rates: Map[String, Double])
+import io.circe._
+import io.circe.generic.semiauto._
+
+final case class ApiResponse(rates: Map[String, Double])
+object ApiResponse {
+  implicit val decoder: Decoder[ApiResponse] = deriveDecoder
+}
 ```
 
-In this example, the dropdown list is a list of currency pairs. A generic currency pair is modelled by a
-`CurrencyPair` trait. Specific pairs are `case object`s extending from the latter.
+In this example, the elements of `customSelect` are a list of currency pairs. A generic currency pair is modelled by a
+`CurrencyPair` trait. Specific pairs are `case object`'s extending from the latter.
 
 ```scala mdoc:js:shared
+import cats.Show
+import cats.kernel.Eq
 
 sealed trait CurrencyPair
 
@@ -100,15 +117,20 @@ object CurrencyPair {
     case "USDCHF" => USDCHF.some
     case "GBPUSD" => GBPUSD.some
     case "CHFEUR" => CHFEUR.some
-    case _ => none
-    }
+    case _        => none
+  }
 
-    // all available currency pairs
-    val all = List(EURUSD, USDCHF, GBPUSD, CHFEUR)
+  // all available currency pairs
+  val all = List(EURUSD, USDCHF, GBPUSD, CHFEUR)
 
-    implicit val show: Show[CurrencyPair] = Show.of(_.toString)
+  implicit val show: Show[CurrencyPair] = Show.show {
+    case EURUSD => "EURUSD"
+    case USDCHF => "USDCHF"
+    case GBPUSD => "GBPUSD"
+    case CHFEUR => "CHFEUR"
+  }
 
-    implicit val eq: Eq[CurrencyPair] = Eq.fromUniversalEq
+  implicit val eq: Eq[CurrencyPair] = Eq.fromUniversalEquals
 }
 ```
 
@@ -116,10 +138,9 @@ object CurrencyPair {
 
 ```scala mdoc:js:shared
 sealed trait Action
-case object IncClicks extends Action
 case class SetCurrencyPair(pair: CurrencyPair) extends Action
 case object MakeApiRequest extends Action
-case object SetApiResponse(response: Option[FxRate]) extends Action
+case class SetApiResponse(response: Option[ApiResponse]) extends Action
 ```
 
 ## Store
@@ -133,20 +154,29 @@ object Store {
   def apply[F[_]: Async]: Resource[F, ff4s.Store[F, State, Action]] =
     ff4s.Store[F, State, Action](State()) { store =>
       _ match {
-        case IncClicks     => state => state.copy(buttonClicks = state.buttonClicks + 1) -> none
-        case SetCurrencyPair(pair) => _.copy(pair = pair) -> none
-        case SetApiResponse(response) => _.copy(apiResponse = response.some) -> none
+        case SetCurrencyPair(pair) => _.copy(currencyPair = pair) -> none
+        case SetApiResponse(response) =>
+          state =>
+            state.copy(
+              apiResponse = response,
+              numOfApiUsages = state.numOfApiUsages + 1
+            ) -> none
         case MakeApiRequest =>
           state =>
             (
               state,
-              ff4s
-                .HttpClient[F]
-                .get[FxRate](s"http://numbersapi.com/${state.number}?json")
-                .flatMap(rate => store.dispatch(SetApiResponse(rate.some)))
-                .some
-            )
+              state.ccyPairOption.some.map { case (ccy1, ccy2) =>
+                ff4s
+                  .HttpClient[F]
+                  .get[ApiResponse](
+                    s"https://api.frankfurter.app/latest?from=$ccy1&to=$ccy2"
+                  )
+                  .flatMap(response =>
+                    store.dispatch(SetApiResponse(response.some))
+                  )
 
+              }
+            )
       }
     }
 }
@@ -155,17 +185,39 @@ object Store {
 ## View
 
 ```scala mdoc:js:shared
+import cats.syntax.all._
+
 object View {
 
   def apply[F[_]](implicit dsl: ff4s.Dsl[F, State, Action]) = {
 
     import dsl._
     import dsl.html._
-    import org.scalajs.dom
 
     useState { state =>
-    div ()
-
+      div(
+        customSelect[F, State, Action, CurrencyPair](
+          CurrencyPair.fromString,
+          (_, pair) => SetCurrencyPair(pair).some,
+          CurrencyPair.all,
+          _ => state.currencyPair
+        ),
+        div(s"Select currency pair: ${state.currencyPair}"),
+        customButton[F, State, Action](dsl)(
+          span("Get FX Rate"),
+          _ => MakeApiRequest.some,
+          _.numOfApiUsages == 10
+        ),
+        div(
+          s"Fx rate: ${state.apiResponse.flatMap(_.rates.values.headOption).getOrElse("")}"
+        ),
+        if (state.numOfApiUsages == 10)
+          div(
+            styleAttr := "color: red",
+            "Button disabled after 10 usages! Please refresh page."
+          )
+        else empty
+      )
     }
 
   }
