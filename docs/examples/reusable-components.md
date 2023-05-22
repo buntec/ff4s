@@ -10,7 +10,7 @@ with type parameters `F` for the effect type, `S` for the state type and `A` for
 
 ### Select
 
-For the modelling of a simple select component with options of type `O` we require the following functions:
+A select component with options of type `O` is modelled by a function with the following inputs:
 
 1. `fromString`: converts a string option to type `O`.
 2. `onChange0`: performs an action based on selected option and state.
@@ -19,7 +19,7 @@ For the modelling of a simple select component with options of type `O` we requi
 
 ### Button
 
-The same for a button component, we require the following functions:
+Likewise for a button component inputs:
 
 1. `onClick0`: react to click events by performing an action.
 2. `isDisabled`: disable the button based on the state.
