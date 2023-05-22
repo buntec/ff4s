@@ -3,14 +3,26 @@
 In this example, we illustrate how the creation of reusable UI components works using `ff4s`. Two of many,
 button and select components are popular in frontend development and are going to be used in this example along with the [Frankfurter API](https://frankfurter.app).
 
-## Select Component
+## Components
 
-For the modelling of a simple select component with elements of type `O`, a minimal requirement is the following methods:
+In this example, custom select and button components are implemented as member methods of a `Components` class
+with type parameters `F` for the effect type, `S` for the state type and `A` for the action type.
 
-1. `fromString`: converts a string to type `O`.
-2. `onChange0`: performs an action of type `A` based on selected option and state of type `S`.
+### Select
+
+For the modelling of a simple select component with options of type `O` we require the following functions:
+
+1. `fromString`: converts a string option to type `O`.
+2. `onChange0`: performs an action based on selected option and state.
 3. `options`: list of options.
 4. `selected0`: currently selected option function of the state.
+
+### Button
+
+The same for a button component, we require the following functions:
+
+1. `onClick0`: react to click events by performing an action.
+2. `isDisabled`: disable the button based on the state.
 
 ```scala mdoc:js:shared
 import org.scalajs.dom
@@ -18,63 +30,62 @@ import cats.Show
 import cats.kernel.Eq
 import cats.syntax.all._
 
-def customSelect[F[_], S, A, O: Show: Eq](
-    fromString: String => Option[O],
-    onChange0: (S, O) => Option[A],
-    options: List[O],
-    selected0: S => O
-)(implicit dsl: ff4s.Dsl[F, S, A]): dsl.V = {
-  import dsl._
-  import dsl.html._
-  useState { state =>
-    select(
-      onChange := ((ev: dom.Event) =>
-        ev.target match {
-          case el: dom.HTMLSelectElement =>
-            fromString(el.value).flatMap(onChange0(state, _))
-          case _ => None
+// Class defining all components
+class Components[F[_], S, A] {
+
+  // Custom select component
+  def customSelect[O: Show: Eq](
+      fromString: String => Option[O],
+      onChange0: (S, O) => Option[A],
+      options: List[O],
+      selected0: S => O
+  )(implicit dsl: ff4s.Dsl[F, S, A]): dsl.V = {
+    import dsl._
+    import dsl.html._
+    useState { state =>
+      select(
+        onChange := ((ev: dom.Event) =>
+          ev.target match {
+            case el: dom.HTMLSelectElement =>
+              fromString(el.value).flatMap(onChange0(state, _))
+            case _ => None
+          }
+        ),
+        options.map { name =>
+          option(
+            selected := (name === selected0(state)), // use of Eq[O] implicit
+            key := name.show, // use of Show[O] implicit
+            value := name.show,
+            name.show
+          )
         }
-      ),
-      options.map { name =>
-        option(
-          selected := (name === selected0(state)), // use of Eq[O] implicit
-          key := name.show, // use of Show[O] implicit
-          value := name.show,
-          name.show
-        )
-      }
-    )
+      )
+    }
+
+  }
+
+  // Custom button component
+  def customButton(
+      dsl: ff4s.Dsl[F, S, A]
+  )(child: dsl.V, onClick0: S => Option[A], isDisabled: S => Boolean): dsl.V = {
+    import dsl._
+    import dsl.html._
+
+    useState { state =>
+      button(
+        child,
+        disabled := isDisabled(state),
+        onClick := (_ => onClick0(state))
+      )
+    }
   }
 
 }
 ```
-
-## Button Component
-
-A simple button component can be modelled with two main functionalities.
-The first is to react to click events by performing actions of type `A` and function of the state of type `S` via a method `onClick0`.
-The second is to disable the button based on the state via a method `isDisabled`.
 
 Note that an instance of `ff4s.Dsl` is passed explicitly to the `customButton` function
 as the `child` argument type depends explicitly on it, contrary to the select component example where
 the instance is passed as an implicit.
-
-```scala mdoc:js:shared
-def customButton[F[_], S, A](
-    dsl: ff4s.Dsl[F, S, A]
-)(child: dsl.V, onClick0: S => Option[A], isDisabled: S => Boolean): dsl.V = {
-  import dsl._
-  import dsl.html._
-
-  useState { state =>
-    button(
-      child,
-      disabled := isDisabled(state),
-      onClick := (_ => onClick0(state))
-    )
-  }
-}
-```
 
 ## State
 
@@ -203,16 +214,20 @@ object View {
     import dsl._
     import dsl.html._
 
+    // create a `Components` instance and import components
+    val components = new Components[F, State, Action]
+    import components._
+
     useState { state =>
       div(
-        customSelect[F, State, Action, CurrencyPair](
+        customSelect[CurrencyPair](
           CurrencyPair.fromString,
           (_, pair) => SetCurrencyPair(pair).some,
           CurrencyPair.all,
           _ => state.currencyPair
         ),
         div(s"Selected currency pair: ${state.currencyPair}"),
-        customButton[F, State, Action](dsl)(
+        customButton(dsl)(
           span("Get FX Rate"),
           _ => MakeApiRequest.some,
           _.numOfRequests == 10
@@ -223,9 +238,9 @@ object View {
         if (state.numOfRequests == 10)
           div(
             styleAttr := "color: red",
-            "Button disabled after 10 requests!"
+            "Button disabled after 10 requests! Refresh page for more."
           )
-        else div(s"${10 - state.numOfRequests} available requests!")
+        else div(s"${10 - state.numOfRequests} remaining requests!")
       )
     }
 
