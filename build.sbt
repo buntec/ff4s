@@ -23,17 +23,17 @@ ThisBuild / tlFatalWarningsInCi := false
 
 ThisBuild / scalafixDependencies += "com.github.liancheng" %% "organize-imports" % "0.6.0"
 
-lazy val scalajsDomVersion = "2.4.0"
+lazy val scalajsDomVersion = "2.6.0"
 lazy val circeVersion = "0.14.5"
 lazy val catsVersion = "2.9.0"
-lazy val catsEffectVersion = "3.4.10"
-lazy val fs2Version = "3.6.1"
+lazy val catsEffectVersion = "3.5.0"
+lazy val fs2Version = "3.7.0"
 lazy val kindProjectorVersion = "0.13.2"
-lazy val http4sDomVersion = "0.2.8"
-lazy val http4sVersion = "0.23.18"
+lazy val http4sDomVersion = "0.2.9"
+lazy val http4sVersion = "0.23.19"
 lazy val betterMonadicForVersion = "0.3.1"
 lazy val scalaJsSnabbdomVersion = "0.2.0-M3"
-lazy val fs2DomVersion = "0.2.0-RC3"
+lazy val fs2DomVersion = "0.2.1"
 
 lazy val generateDomDefs = taskKey[Seq[File]]("Generate SDT sources")
 
