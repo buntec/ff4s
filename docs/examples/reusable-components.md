@@ -1,11 +1,16 @@
 # Reusable Components
 
 In this example, we illustrate how the creation of reusable UI components works using `ff4s`. Two of many,
-button and select components are popular in frontend development and hence are going to be used in this example along with the [Frankfurter API](https://frankfurter.app).
+button and select components are popular in frontend development and are going to be used in this example along with the [Frankfurter API](https://frankfurter.app).
 
 ## Select Component
 
-A select component can be modelled as follows:
+For the modelling of a simple select component with elements of type `O`, a minimal requirement is the following methods:
+
+1. `fromString`: converts a string to type `O`.
+2. `onChange0`: performs an action of type `A` based on selected option and state of type `S`.
+3. `options`: list of options.
+4. `selected0`: currently selected option function of the state.
 
 ```scala mdoc:js:shared
 import org.scalajs.dom
@@ -44,11 +49,15 @@ def customSelect[F[_], S, A, O: Show: Eq](
 }
 ```
 
-Note that `F` denotes the effect type, `A` the action, `S` the state and `O` the type of the list elements.
-
 ## Button Component
 
-A button component can be modelled as follows:
+A simple button component can be modelled with two main functionalities.
+The first is to react to click events by performing actions of type `A` and function of the state of type `S` via a method `onClick0`.
+The second is to disable the button based on the state via a method `isDisabled`.
+
+Note that an instance of `ff4s.Dsl` is passed explicitly to the `customButton` function
+as the `child` argument type depends explicitly on it, contrary to the select component example where
+the instance is passed as an implicit.
 
 ```scala mdoc:js:shared
 def customButton[F[_], S, A](
@@ -67,14 +76,11 @@ def customButton[F[_], S, A](
 }
 ```
 
-In this simple button component, users can control click events and perform actions on each click
-using the `onClick0` method. The button can be disabled as a function of the state using the `isDisabled` method.
-
 ## State
 
 ```scala mdoc:js:shared
 final case class State(
-    numOfApiUsages: Int = 0,
+    numOfRequests: Int = 0,
     currencyPair: CurrencyPair = CurrencyPair.EURUSD,
     apiResponse: Option[ApiResponse] = None
 ) {
@@ -98,7 +104,7 @@ object ApiResponse {
 }
 ```
 
-In this example, the elements of `customSelect` are a list of currency pairs. A generic currency pair is modelled by a
+In this example, the elements of `customSelect` are currency pairs. A generic currency pair is modelled by a
 `CurrencyPair` trait. Specific pairs are `case object`'s extending from the latter.
 
 ```scala mdoc:js:shared
@@ -108,6 +114,7 @@ import cats.kernel.Eq
 sealed trait CurrencyPair
 
 object CurrencyPair {
+  // In this example, we choose few currency pairs
   case object EURUSD extends CurrencyPair
   case object USDCHF extends CurrencyPair
   case object GBPUSD extends CurrencyPair
@@ -161,7 +168,7 @@ object Store {
           state =>
             state.copy(
               apiResponse = response,
-              numOfApiUsages = state.numOfApiUsages + 1
+              numOfRequests = state.numOfRequests + 1
             ) -> none
         case MakeApiRequest =>
           state =>
@@ -204,21 +211,21 @@ object View {
           CurrencyPair.all,
           _ => state.currencyPair
         ),
-        div(s"Select currency pair: ${state.currencyPair}"),
+        div(s"Selected currency pair: ${state.currencyPair}"),
         customButton[F, State, Action](dsl)(
           span("Get FX Rate"),
           _ => MakeApiRequest.some,
-          _.numOfApiUsages == 10
+          _.numOfRequests == 10
         ),
         div(
           s"Fx rate: ${state.apiResponse.flatMap(_.rates.values.headOption).getOrElse("")}"
         ),
-        if (state.numOfApiUsages == 10)
+        if (state.numOfRequests == 10)
           div(
             styleAttr := "color: red",
-            "Button disabled after 10 usages! Please refresh page."
+            "Button disabled after 10 requests!"
           )
-        else empty
+        else div(s"${10 - state.numOfRequests} available requests!")
       )
     }
 
