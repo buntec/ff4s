@@ -224,7 +224,7 @@ object View {
           CurrencyPair.fromString,
           (_, pair) => SetCurrencyPair(pair).some,
           CurrencyPair.all,
-          _ => state.currencyPair
+          _.currencyPair
         ),
         div(s"Selected currency pair: ${state.currencyPair}"),
         customButton(dsl)(
