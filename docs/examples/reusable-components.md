@@ -10,7 +10,8 @@ import cats.Show
 import cats.kernel.Eq
 import cats.syntax.all._
 
-class Components[F[_], S, A] {
+// S and A are the state and action types, respectively
+trait Elements[F[_], S, A] {
 
   def customSelect[O: Show: Eq](
       fromString: String => Option[O],
