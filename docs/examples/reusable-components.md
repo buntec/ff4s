@@ -120,8 +120,7 @@ case object Inc extends Action
 The construction of the store is straightforward and omitted for brevity.
 
 
-The interesting bit of the `View` is the instantiation of the `Components` class that allows
-us to import and use all components created.
+With concrete state and action types we can instantiate our components and build the view.
 
 ```scala mdoc:js:shared
 import cats.syntax.all._
