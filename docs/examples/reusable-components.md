@@ -128,9 +128,8 @@ object View extends {
     import dsl._
     import dsl.html._
 
-    class Components extends Elements[F, State, Action]
-    val components = new Components
-    import components._
+    object Components extends Elements[F, State, Action]
+    import Components._
 
     useState { state =>
       div(
