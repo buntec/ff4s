@@ -110,7 +110,6 @@ object Fruit {
 }
 ```
 
-## Actions
 
 ```scala mdoc:js:shared
 sealed trait Action
