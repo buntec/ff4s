@@ -1,7 +1,7 @@
 # Reusable Components
 
-In this example, we illustrate how the creation of reusable UI components works using `ff4s`. Two of many,
-button and select components are popular in frontend development and are going to be used in this example.
+Reusable UI components are crucial in frontend development allowing developers to impose style uniformity and avoid code repeatability.
+Button and select components are two of the most popular UI components and will be used in this example.
 
 ## Components
 
