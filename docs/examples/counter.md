@@ -73,17 +73,17 @@ object View {
         div(s"value: ${state.counter}"),
         button(
           cls := "counter-button",
-          "increment",
+          "Increment",
           onClick := (_ => Some(Inc(1)))
         ),
         button(
           cls := "counter-button",
-          "decrement",
+          "Decrement",
           onClick := (_ => Some(Inc(-1)))
         ),
         button(
           cls := "counter-button",
-          "reset",
+          "Reset",
           onClick := (_ => Some(Reset))
         )
       )
