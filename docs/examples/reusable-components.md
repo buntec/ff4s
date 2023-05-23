@@ -116,7 +116,6 @@ case class SetFruit(fruit: Fruit) extends Action
 case object Inc extends Action
 ```
 
-## Store
 
 The construction of the store is straightforward and omitted for brevity.
 
