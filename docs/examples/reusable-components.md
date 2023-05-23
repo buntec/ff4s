@@ -1,7 +1,6 @@
 # Reusable Components
 
-Reusable UI components are crucial in frontend development allowing developers to impose style uniformity and avoid code repeatability.
-Button and select components are two of the most popular UI components and will be used in this example.
+The ability to factor out and reuse components, possibly across project boundaries, is an essential feature of any UI framework or library. To accomplish this in ff4s we have to work with generic state and action types. Here we illustrate the general approach with some toy examples.
 
 ## Components
 
