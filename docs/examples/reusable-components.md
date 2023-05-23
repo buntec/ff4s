@@ -108,30 +108,28 @@ object Fruit {
 }
 ```
 
-
 ```scala mdoc:js:shared
 sealed trait Action
 case class SetFruit(fruit: Fruit) extends Action
 case object Inc extends Action
 ```
 
-
 The construction of the store is straightforward and omitted for brevity.
-
 
 With concrete state and action types we can instantiate our components and build the view.
 
 ```scala mdoc:js:shared
 import cats.syntax.all._
 
-object View {
+object View extends {
 
   def apply[F[_]](implicit dsl: ff4s.Dsl[F, State, Action]) = {
 
     import dsl._
     import dsl.html._
 
-    val components = new Components[F, State, Action]
+    class Components extends Elements[F, State, Action]
+    val components = new Components
     import components._
 
     useState { state =>
@@ -160,7 +158,6 @@ object View {
   }
 }
 ```
-
 
 ```scala mdoc:js:invisible
 import cats.effect._
