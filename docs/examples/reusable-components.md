@@ -5,26 +5,7 @@ Button and select components are two of the most popular UI components and will 
 
 ## Components
 
-Custom select and button components are implemented as member methods of a `Components` class
-with type parameters `F` for the effect type, `S` for the state type and `A` for the action type.
-
-<!---->
-<!-- ### Select -->
-<!---->
-<!-- A select component with options of type `O` is modelled by a function with the following inputs: -->
-<!---->
-<!-- 1. `fromString`: converts a string option to type `O`. -->
-<!-- 2. `onChange0`: performs an action based on selected option and state. -->
-<!-- 3. `options`: list of options. -->
-<!-- 4. `selected0`: currently selected option function of the state. -->
-<!---->
-<!-- ### Button -->
-<!---->
-<!-- Likewise for a button component inputs: -->
-<!---->
-<!-- 1. `onClick0`: react to click events by performing an action. -->
-<!-- 2. `isDisabled`: disable the button based on the state. -->
-<!---->
+Components can be implemented as member methods of a class with type parameters `F` for the effect type, `S` for the state type and `A` for the action type.
 
 ```scala mdoc:js:shared
 import org.scalajs.dom
@@ -83,15 +64,18 @@ class Components[F[_], S, A] {
 }
 ```
 
-Note that an instance of `ff4s.Dsl` is passed explicitly to the `customButton` function
-as the `child` argument type depends explicitly on it, contrary to the select component example where
-the instance is passed as an implicit.
+Interesting to note is how an instance of `ff4s.Dsl` is passed as parameter to the components.
+For components whose parameters' types do not depend on the dsl, the latter is passed as an implicit (in this case the `customSelect` component).
+If this is not the case, components must require the dsl to be passed explicitly (in this case the `customButton`).
+This is particularly powerful as we can pass complex HTML elements (`div`, `span`, etc ..) to the button component.
 
 ## State
 
 ```scala mdoc:js:shared
 final case class State(counter: Int = 0, fruit: Fruit = Fruit.Banana)
 ```
+
+For this example, elements of the select component are fruits modelled as follows:
 
 ```scala mdoc:js:shared
 import cats.Show
@@ -139,6 +123,9 @@ case object Inc extends Action
 The construction of the store is straightforward and omitted for brevity.
 
 ## View
+
+The interesting bit of the `View` is the creation of the `components` variable as an instance of the `Components` class that allows
+us to import and use all components created.
 
 ```scala mdoc:js:shared
 import cats.syntax.all._
