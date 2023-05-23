@@ -74,7 +74,7 @@ This is particularly powerful as we can pass complex HTML elements (`div`, `span
 final case class State(counter: Int = 0, fruit: Fruit = Fruit.Banana)
 ```
 
-For this example, elements of the select component are fruits each of type `Fruit` and modelled as follows:
+To show off our custom selection component we define an enumeration with the required `Eq` and `Show` instances.
 
 ```scala mdoc:js:shared
 import cats.Show
