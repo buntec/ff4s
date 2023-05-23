@@ -2,9 +2,7 @@
 
 The ability to factor out and reuse components, possibly across project boundaries, is an essential feature of any UI framework or library. To accomplish this in ff4s we have to work with generic state and action types. Here we illustrate the general approach with some toy examples.
 
-## Components
-
-Components can be implemented as member methods of a class with type parameters `F` for the effect type, `S` for the state type and `A` for the action type.
+We recommend organizing components into generic traits:
 
 ```scala mdoc:js:shared
 import org.scalajs.dom
