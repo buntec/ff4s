@@ -75,7 +75,7 @@ This is particularly powerful as we can pass complex HTML elements (`div`, `span
 final case class State(counter: Int = 0, fruit: Fruit = Fruit.Banana)
 ```
 
-For this example, elements of the select component are fruits modelled as follows:
+For this example, elements of the select component are fruits each of type `Fruit` and modelled as follows:
 
 ```scala mdoc:js:shared
 import cats.Show
@@ -124,7 +124,7 @@ The construction of the store is straightforward and omitted for brevity.
 
 ## View
 
-The interesting bit of the `View` is the creation of the `components` variable as an instance of the `Components` class that allows
+The interesting bit of the `View` is the instantiation of the `Components` class that allows
 us to import and use all components created.
 
 ```scala mdoc:js:shared
