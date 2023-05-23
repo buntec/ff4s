@@ -163,9 +163,6 @@ object View {
 }
 ```
 
-## App
-
-The construction of `ff4s.App` and `ff4s.IOEntryPoint` is straightforward and omitted for brevity.
 
 ```scala mdoc:js:invisible
 import cats.effect._
