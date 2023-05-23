@@ -119,7 +119,6 @@ case object Inc extends Action
 
 The construction of the store is straightforward and omitted for brevity.
 
-## View
 
 The interesting bit of the `View` is the instantiation of the `Components` class that allows
 us to import and use all components created.
