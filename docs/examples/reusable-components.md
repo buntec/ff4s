@@ -64,12 +64,7 @@ trait Elements[F[_], S, A] {
 }
 ```
 
-Interesting to note is how an instance of `ff4s.Dsl` is passed as parameter to the components.
-For components whose parameters' types do not depend on the dsl, the latter is passed as an implicit (in this case the `customSelect` component).
-If this is not the case, components must require the dsl to be passed explicitly (in this case the `customButton`).
-This is particularly powerful as we can pass complex HTML elements (`div`, `span`, etc ..) to the button component.
-
-## State
+Unfortunately, if a component takes another component as a parameter, then `dsl` cannot be passed implicitly due to dependent typing.
 
 ```scala mdoc:js:shared
 final case class State(counter: Int = 0, fruit: Fruit = Fruit.Banana)
