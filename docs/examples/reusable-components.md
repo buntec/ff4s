@@ -125,8 +125,8 @@ object View extends {
     import dsl._
     import dsl.html._
 
-    object Components extends Elements[F, State, Action]
-    import Components._
+    object components extends Selects[F, State, Action] with Buttons[F, State, Action]
+    import components._
 
     useState { state =>
       div(
