@@ -42,7 +42,11 @@ trait Selects[F[_], S, A] {
     }
 
   }
+// more ...
 
+}
+
+trait Buttons[F[_], S, A] {
   def customButton(
       dsl: ff4s.Dsl[F, S, A]
   )(child: dsl.V, onClick: S => Option[A], isDisabled: S => Boolean): dsl.V = {
