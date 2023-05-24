@@ -59,6 +59,8 @@ trait Elements[F[_], S, A] {
     }
   }
 
+// more ...
+
 }
 ```
 
