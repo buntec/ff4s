@@ -10,7 +10,7 @@ import cats._
 import cats.syntax.all._
 
 // S and A are the state and action types, respectively
-trait Elements[F[_], S, A] {
+trait Selects[F[_], S, A] {
 
   def customSelect[O: Show: Eq](
       fromString: String => Option[O],
