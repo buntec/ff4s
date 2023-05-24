@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="Laika 0.18.1 + Helium Theme" />
+    <title>Reusable Components</title>
+    
+      <meta name="author" content="Christoph Bunte"/>
+    
+    
+      <meta name="description" content="docs"/>
+    
+    
+      <link rel="icon" sizes="32x32" type="image/png" href="https://typelevel.org/img/favicon.png"/>
+    
+    
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Lato:300">
+    
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/firacode@6.2.0/distr/fira_code.css">
+    
+    <link rel="stylesheet" type="text/css" href="../helium/icofont.min.css" />
+    <link rel="stylesheet" type="text/css" href="../helium/laika-helium.css" />
+    <link rel="stylesheet" type="text/css" href="../site/styles.css" />
+    <script src="../helium/laika-helium.js"></script>
+    
+    
+    <script> /* for avoiding page load transitions */ </script>
+  </head>
+
+  <body>
+
+    <header id="top-bar">
+
+      <div class="row">
+        <a id="nav-icon">
+          <i class="icofont-laika" title="Navigation">&#xefa2;</i>
+        </a>
+        
+      </div>
+
+      <!--<a class="icon-link" href="index.html"><i class="icofont-laika" title="Home"></i></a>-->
+
+      <span class="row links"><a class="icon-link svg-link" href="https://github.com/buntec/ff4s"><span title="Source Code"><svg class="svg-icon" width="100%" height="100%" viewBox="0 0 100 100" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
+  <g class="svg-shape">
+    <path d="M49.995,1c-27.609,-0 -49.995,22.386 -49.995,50.002c-0,22.09 14.325,40.83 34.194,47.444c2.501,0.458 3.413,-1.086 3.413,-2.412c0,-1.185 -0.043,-4.331 -0.067,-8.503c-13.908,3.021 -16.843,-6.704 -16.843,-6.704c-2.274,-5.773 -5.552,-7.311 -5.552,-7.311c-4.54,-3.103 0.344,-3.042 0.344,-3.042c5.018,0.356 7.658,5.154 7.658,5.154c4.46,7.64 11.704,5.433 14.552,4.156c0.454,-3.232 1.744,-5.436 3.174,-6.685c-11.102,-1.262 -22.775,-5.553 -22.775,-24.713c-0,-5.457 1.949,-9.92 5.147,-13.416c-0.516,-1.265 -2.231,-6.348 0.488,-13.233c0,0 4.199,-1.344 13.751,5.126c3.988,-1.108 8.266,-1.663 12.518,-1.682c4.245,0.019 8.523,0.574 12.517,1.682c9.546,-6.47 13.736,-5.126 13.736,-5.126c2.728,6.885 1.013,11.968 0.497,13.233c3.204,3.496 5.141,7.959 5.141,13.416c0,19.209 -11.691,23.436 -22.83,24.673c1.795,1.544 3.394,4.595 3.394,9.26c0,6.682 -0.061,12.076 -0.061,13.715c0,1.338 0.899,2.894 3.438,2.406c19.853,-6.627 34.166,-25.354 34.166,-47.438c-0,-27.616 -22.389,-50.002 -50.005,-50.002"/>
+  </g>
+</svg></span></a></span>
+
+    </header>
+
+    <nav id="sidebar">
+
+      <div class="row">
+        <a class="icon-link svg-link" href="https://github.com/buntec/ff4s"><span title="Source Code"><svg class="svg-icon" width="100%" height="100%" viewBox="0 0 100 100" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
+  <g class="svg-shape">
+    <path d="M49.995,1c-27.609,-0 -49.995,22.386 -49.995,50.002c-0,22.09 14.325,40.83 34.194,47.444c2.501,0.458 3.413,-1.086 3.413,-2.412c0,-1.185 -0.043,-4.331 -0.067,-8.503c-13.908,3.021 -16.843,-6.704 -16.843,-6.704c-2.274,-5.773 -5.552,-7.311 -5.552,-7.311c-4.54,-3.103 0.344,-3.042 0.344,-3.042c5.018,0.356 7.658,5.154 7.658,5.154c4.46,7.64 11.704,5.433 14.552,4.156c0.454,-3.232 1.744,-5.436 3.174,-6.685c-11.102,-1.262 -22.775,-5.553 -22.775,-24.713c-0,-5.457 1.949,-9.92 5.147,-13.416c-0.516,-1.265 -2.231,-6.348 0.488,-13.233c0,0 4.199,-1.344 13.751,5.126c3.988,-1.108 8.266,-1.663 12.518,-1.682c4.245,0.019 8.523,0.574 12.517,1.682c9.546,-6.47 13.736,-5.126 13.736,-5.126c2.728,6.885 1.013,11.968 0.497,13.233c3.204,3.496 5.141,7.959 5.141,13.416c0,19.209 -11.691,23.436 -22.83,24.673c1.795,1.544 3.394,4.595 3.394,9.26c0,6.682 -0.061,12.076 -0.061,13.715c0,1.338 0.899,2.894 3.438,2.406c19.853,-6.627 34.166,-25.354 34.166,-47.438c-0,-27.616 -22.389,-50.002 -50.005,-50.002"/>
+  </g>
+</svg></span></a>
+      </div>
+
+      <ul class="nav-list">
+        <li class="level1"><a href="../index.html">ff4s</a></li>
+        <li class="level1"><a href="../concepts.html">Concepts</a></li>
+        <li class="level1 nav-header">examples</li>
+        <li class="level2"><a href="counter.html">A Counter</a></li>
+        <li class="level2"><a href="data-fetching.html">Data Fetching</a></li>
+        <li class="level2"><a href="cancellation.html">Cancellation</a></li>
+        <li class="level2"><a href="subscriptions.html">Subscriptions</a></li>
+        <li class="level2"><a href="websockets.html">WebSockets</a></li>
+        <li class="level2 active"><a href="#">Reusable Components</a></li>
+      </ul>
+
+      <ul class="nav-list">
+        <li class="level1 nav-header">Related Projects</li>
+        
+          <li class="level2"><a href="https://typelevel.org/cats/">cats</a></li>
+        
+          <li class="level2"><a href="https://typelevel.org/cats-effect/">cats-effect</a></li>
+        
+          <li class="level2"><a href="https://fs2.io/">fs2</a></li>
+        
+          <li class="level2"><a href="https://github.com/armanbilge/fs2-dom/">fs2-dom</a></li>
+        
+          <li class="level2"><a href="https://http4s.github.io/http4s-dom/">http4s-dom</a></li>
+        
+      </ul>
+
+    </nav>
+
+    <div id="container">
+
+      <nav id="page-nav">
+        <p class="header"><a href="#">Reusable Components</a></p>
+
+        <ul class="nav-list">
+        </ul>
+
+        <p class="footer"></p>
+      </nav>
+
+      <main class="content">
+
+        <h1 id="reusable-components" class="title">Reusable Components</h1>
+        <p>The ability to factor out and reuse components, possibly across project boundaries, is an essential feature of any UI framework or library. To accomplish this in ff4s we have to work with generic state and action types. Here we illustrate the general approach with some toy examples.</p>
+        <p>We recommend organizing components into generic traits:</p>
+        <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">org</span><span>.</span><span class="identifier">scalajs</span><span>.</span><span class="identifier">dom</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">cats</span><span>.</span><span class="identifier">_</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">cats</span><span>.</span><span class="identifier">syntax</span><span>.</span><span class="identifier">all</span><span>.</span><span class="identifier">_</span><span>
+
+</span><span class="comment">// S and A are the state and action types, respectively
+</span><span class="keyword">trait</span><span> </span><span class="type-name">Selects</span><span>[</span><span class="type-name">F</span><span>[</span><span class="identifier">_</span><span>], </span><span class="type-name">S</span><span>, </span><span class="type-name">A</span><span>] {
+
+  </span><span class="keyword">def</span><span> </span><span class="declaration-name">customSelect</span><span>[</span><span class="type-name">O</span><span>: </span><span class="type-name">Show</span><span>: </span><span class="type-name">Eq</span><span>](
+      </span><span class="identifier">fromString</span><span>: </span><span class="type-name">String</span><span> =&gt; </span><span class="type-name">Option</span><span>[</span><span class="type-name">O</span><span>],
+      </span><span class="identifier">onChange</span><span>: (</span><span class="type-name">S</span><span>, </span><span class="type-name">O</span><span>) =&gt; </span><span class="type-name">Option</span><span>[</span><span class="type-name">A</span><span>],
+      </span><span class="identifier">options</span><span>: </span><span class="type-name">List</span><span>[</span><span class="type-name">O</span><span>],
+      </span><span class="identifier">selected</span><span>: </span><span class="type-name">S</span><span> =&gt; </span><span class="type-name">O</span><span>
+  )(</span><span class="keyword">implicit</span><span> </span><span class="identifier">dsl</span><span>: </span><span class="identifier">ff4s</span><span>.</span><span class="type-name">Dsl</span><span>[</span><span class="type-name">F</span><span>, </span><span class="type-name">S</span><span>, </span><span class="type-name">A</span><span>]): </span><span class="identifier">dsl</span><span>.</span><span class="type-name">V</span><span> = {
+    </span><span class="keyword">import</span><span> </span><span class="identifier">dsl</span><span>.</span><span class="identifier">_</span><span>
+    </span><span class="keyword">import</span><span> </span><span class="identifier">dsl</span><span>.</span><span class="identifier">html</span><span>.{</span><span class="identifier">onChange</span><span> =&gt; </span><span class="identifier">onChange0</span><span>, </span><span class="identifier">selected</span><span> =&gt; </span><span class="identifier">selected0</span><span>, </span><span class="identifier">_</span><span>}
+
+    </span><span class="identifier">useState</span><span> { </span><span class="identifier">state</span><span> =&gt;
+      </span><span class="identifier">select</span><span>(
+        </span><span class="identifier">onChange0</span><span> := ((</span><span class="identifier">ev</span><span>: </span><span class="identifier">dom</span><span>.</span><span class="type-name">Event</span><span>) =&gt;
+          </span><span class="identifier">ev</span><span>.</span><span class="identifier">target</span><span> </span><span class="keyword">match</span><span> {
+            </span><span class="keyword">case</span><span> </span><span class="identifier">el</span><span>: </span><span class="identifier">dom</span><span>.</span><span class="type-name">HTMLSelectElement</span><span> =&gt;
+              </span><span class="identifier">fromString</span><span>(</span><span class="identifier">el</span><span>.</span><span class="identifier">value</span><span>).</span><span class="identifier">flatMap</span><span>(</span><span class="identifier">onChange</span><span>(</span><span class="identifier">state</span><span>, </span><span class="identifier">_</span><span>))
+            </span><span class="keyword">case</span><span> </span><span class="identifier">_</span><span> =&gt; </span><span class="type-name">None</span><span>
+          }
+        ),
+        </span><span class="identifier">options</span><span>.</span><span class="identifier">map</span><span> { </span><span class="identifier">name</span><span> =&gt;
+          </span><span class="identifier">option</span><span>(
+            </span><span class="identifier">selected0</span><span> := (</span><span class="identifier">name</span><span> === </span><span class="identifier">selected</span><span>(</span><span class="identifier">state</span><span>)),
+            </span><span class="identifier">key</span><span> := </span><span class="identifier">name</span><span>.</span><span class="identifier">show</span><span>,
+            </span><span class="identifier">value</span><span> := </span><span class="identifier">name</span><span>.</span><span class="identifier">show</span><span>,
+            </span><span class="identifier">name</span><span>.</span><span class="identifier">show</span><span>
+          )
+        }
+      )
+    }
+
+  }
+</span><span class="comment">// more ...
+</span><span>
+}
+
+</span><span class="keyword">trait</span><span> </span><span class="type-name">Buttons</span><span>[</span><span class="type-name">F</span><span>[</span><span class="identifier">_</span><span>], </span><span class="type-name">S</span><span>, </span><span class="type-name">A</span><span>] {
+  </span><span class="keyword">def</span><span> </span><span class="declaration-name">customButton</span><span>(
+      </span><span class="identifier">dsl</span><span>: </span><span class="identifier">ff4s</span><span>.</span><span class="type-name">Dsl</span><span>[</span><span class="type-name">F</span><span>, </span><span class="type-name">S</span><span>, </span><span class="type-name">A</span><span>]
+  )(</span><span class="identifier">child</span><span>: </span><span class="identifier">dsl</span><span>.</span><span class="type-name">V</span><span>, </span><span class="identifier">onClick</span><span>: </span><span class="type-name">S</span><span> =&gt; </span><span class="type-name">Option</span><span>[</span><span class="type-name">A</span><span>], </span><span class="identifier">isDisabled</span><span>: </span><span class="type-name">S</span><span> =&gt; </span><span class="type-name">Boolean</span><span>): </span><span class="identifier">dsl</span><span>.</span><span class="type-name">V</span><span> = {
+    </span><span class="keyword">import</span><span> </span><span class="identifier">dsl</span><span>.</span><span class="identifier">_</span><span>
+    </span><span class="keyword">import</span><span> </span><span class="identifier">dsl</span><span>.</span><span class="identifier">html</span><span>.{</span><span class="identifier">onClick</span><span> =&gt; </span><span class="identifier">onClick0</span><span>, </span><span class="identifier">_</span><span>}
+
+    </span><span class="identifier">useState</span><span> { </span><span class="identifier">state</span><span> =&gt;
+      </span><span class="identifier">button</span><span>(
+        </span><span class="identifier">child</span><span>,
+        </span><span class="identifier">disabled</span><span> := </span><span class="identifier">isDisabled</span><span>(</span><span class="identifier">state</span><span>),
+        </span><span class="identifier">onClick0</span><span> := (</span><span class="identifier">_</span><span> =&gt; </span><span class="identifier">onClick</span><span>(</span><span class="identifier">state</span><span>))
+      )
+    }
+  }
+
+</span><span class="comment">// more ...
+</span><span>
+}</span></code></pre>
+        <p>Unfortunately, if a component takes another component as a parameter, then <code>dsl</code> cannot be passed implicitly due to dependent typing.</p>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">final</span><span> </span><span class="keyword">case</span><span> </span><span class="keyword">class</span><span> </span><span class="type-name">State</span><span>(</span><span class="identifier">counter</span><span>: </span><span class="type-name">Int</span><span> = </span><span class="number-literal">0</span><span>, </span><span class="identifier">fruit</span><span>: </span><span class="type-name">Fruit</span><span> = </span><span class="type-name">Fruit</span><span>.</span><span class="type-name">Banana</span><span>)</span></code></pre>
+        <p>To show off our custom selection component we define an enumeration with the required <code>Eq</code> and <code>Show</code> instances.</p>
+        <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">cats</span><span>.</span><span class="type-name">Show</span><span>
+</span><span class="keyword">import</span><span> </span><span class="identifier">cats</span><span>.</span><span class="identifier">kernel</span><span>.</span><span class="type-name">Eq</span><span>
+
+</span><span class="keyword">sealed</span><span> </span><span class="keyword">trait</span><span> </span><span class="type-name">Fruit</span><span>
+
+</span><span class="keyword">object</span><span> </span><span class="type-name">Fruit</span><span> {
+  </span><span class="keyword">case</span><span> </span><span class="keyword">object</span><span> </span><span class="type-name">Apple</span><span> </span><span class="keyword">extends</span><span> </span><span class="type-name">Fruit</span><span>
+  </span><span class="keyword">case</span><span> </span><span class="keyword">object</span><span> </span><span class="type-name">Banana</span><span> </span><span class="keyword">extends</span><span> </span><span class="type-name">Fruit</span><span>
+  </span><span class="keyword">case</span><span> </span><span class="keyword">object</span><span> </span><span class="type-name">Orange</span><span> </span><span class="keyword">extends</span><span> </span><span class="type-name">Fruit</span><span>
+  </span><span class="keyword">case</span><span> </span><span class="keyword">object</span><span> </span><span class="type-name">Strawberry</span><span> </span><span class="keyword">extends</span><span> </span><span class="type-name">Fruit</span><span>
+
+  </span><span class="keyword">def</span><span> </span><span class="declaration-name">fromString</span><span>(</span><span class="identifier">s</span><span>: </span><span class="type-name">String</span><span>): </span><span class="type-name">Option</span><span>[</span><span class="type-name">Fruit</span><span>] = </span><span class="identifier">s</span><span> </span><span class="keyword">match</span><span> {
+    </span><span class="keyword">case</span><span> </span><span class="string-literal">&quot;Apple&quot;</span><span>      =&gt; </span><span class="type-name">Apple</span><span>.</span><span class="identifier">some</span><span>
+    </span><span class="keyword">case</span><span> </span><span class="string-literal">&quot;Banana&quot;</span><span>     =&gt; </span><span class="type-name">Banana</span><span>.</span><span class="identifier">some</span><span>
+    </span><span class="keyword">case</span><span> </span><span class="string-literal">&quot;Orange&quot;</span><span>     =&gt; </span><span class="type-name">Orange</span><span>.</span><span class="identifier">some</span><span>
+    </span><span class="keyword">case</span><span> </span><span class="string-literal">&quot;Strawberry&quot;</span><span> =&gt; </span><span class="type-name">Strawberry</span><span>.</span><span class="identifier">some</span><span>
+    </span><span class="keyword">case</span><span> </span><span class="identifier">_</span><span>            =&gt; </span><span class="identifier">none</span><span>
+  }
+
+  </span><span class="keyword">val</span><span> </span><span class="identifier">all</span><span> = </span><span class="type-name">List</span><span>(</span><span class="type-name">Apple</span><span>, </span><span class="type-name">Banana</span><span>, </span><span class="type-name">Orange</span><span>, </span><span class="type-name">Strawberry</span><span>)
+
+  </span><span class="keyword">implicit</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">show</span><span>: </span><span class="type-name">Show</span><span>[</span><span class="type-name">Fruit</span><span>] = </span><span class="type-name">Show</span><span>.</span><span class="identifier">show</span><span> {
+    </span><span class="keyword">case</span><span> </span><span class="type-name">Apple</span><span>      =&gt; </span><span class="string-literal">&quot;Apple&quot;</span><span>
+    </span><span class="keyword">case</span><span> </span><span class="type-name">Banana</span><span>     =&gt; </span><span class="string-literal">&quot;Banana&quot;</span><span>
+    </span><span class="keyword">case</span><span> </span><span class="type-name">Orange</span><span>     =&gt; </span><span class="string-literal">&quot;Orange&quot;</span><span>
+    </span><span class="keyword">case</span><span> </span><span class="type-name">Strawberry</span><span> =&gt; </span><span class="string-literal">&quot;Strawberry&quot;</span><span>
+  }
+
+  </span><span class="keyword">implicit</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">eq</span><span>: </span><span class="type-name">Eq</span><span>[</span><span class="type-name">Fruit</span><span>] = </span><span class="type-name">Eq</span><span>.</span><span class="identifier">fromUniversalEquals</span><span>
+}</span></code></pre>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">sealed</span><span> </span><span class="keyword">trait</span><span> </span><span class="type-name">Action</span><span>
+</span><span class="keyword">case</span><span> </span><span class="keyword">class</span><span> </span><span class="type-name">SetFruit</span><span>(</span><span class="identifier">fruit</span><span>: </span><span class="type-name">Fruit</span><span>) </span><span class="keyword">extends</span><span> </span><span class="type-name">Action</span><span>
+</span><span class="keyword">case</span><span> </span><span class="keyword">object</span><span> </span><span class="type-name">Inc</span><span> </span><span class="keyword">extends</span><span> </span><span class="type-name">Action</span></code></pre>
+        <p>We omit the straightforward definition of the store.</p>
+        <p>With concrete state and action types we can instantiate our components and build the view.</p>
+        <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">cats</span><span>.</span><span class="identifier">syntax</span><span>.</span><span class="identifier">all</span><span>.</span><span class="identifier">_</span><span>
+
+</span><span class="keyword">object</span><span> </span><span class="type-name">View</span><span> </span><span class="keyword">extends</span><span> {
+
+  </span><span class="keyword">def</span><span> </span><span class="declaration-name">apply</span><span>[</span><span class="type-name">F</span><span>[</span><span class="identifier">_</span><span>]](</span><span class="keyword">implicit</span><span> </span><span class="identifier">dsl</span><span>: </span><span class="identifier">ff4s</span><span>.</span><span class="type-name">Dsl</span><span>[</span><span class="type-name">F</span><span>, </span><span class="type-name">State</span><span>, </span><span class="type-name">Action</span><span>]) = {
+
+    </span><span class="keyword">import</span><span> </span><span class="identifier">dsl</span><span>.</span><span class="identifier">_</span><span>
+    </span><span class="keyword">import</span><span> </span><span class="identifier">dsl</span><span>.</span><span class="identifier">html</span><span>.</span><span class="identifier">_</span><span>
+
+    </span><span class="keyword">object</span><span> </span><span class="identifier">components</span><span>
+        </span><span class="keyword">extends</span><span> </span><span class="type-name">Selects</span><span>[</span><span class="type-name">F</span><span>, </span><span class="type-name">State</span><span>, </span><span class="type-name">Action</span><span>]
+        </span><span class="keyword">with</span><span> </span><span class="type-name">Buttons</span><span>[</span><span class="type-name">F</span><span>, </span><span class="type-name">State</span><span>, </span><span class="type-name">Action</span><span>]
+    </span><span class="keyword">import</span><span> </span><span class="identifier">components</span><span>.</span><span class="identifier">_</span><span>
+
+    </span><span class="identifier">useState</span><span> { </span><span class="identifier">state</span><span> =&gt;
+      </span><span class="identifier">div</span><span>(
+        </span><span class="identifier">customSelect</span><span>[</span><span class="type-name">Fruit</span><span>](
+          </span><span class="type-name">Fruit</span><span>.</span><span class="identifier">fromString</span><span>,
+          (</span><span class="identifier">_</span><span>, </span><span class="identifier">fruit</span><span>) =&gt; </span><span class="type-name">SetFruit</span><span>(</span><span class="identifier">fruit</span><span>).</span><span class="identifier">some</span><span>,
+          </span><span class="type-name">Fruit</span><span>.</span><span class="identifier">all</span><span>,
+          </span><span class="identifier">_</span><span>.</span><span class="identifier">fruit</span><span>
+        ),
+        </span><span class="identifier">div</span><span>(</span><span class="string-literal">s&quot;Selected fruit: </span><span class="substitution">${state.fruit}</span><span class="string-literal">&quot;</span><span>),
+        </span><span class="identifier">customButton</span><span>(</span><span class="identifier">dsl</span><span>)(
+          </span><span class="identifier">span</span><span>(</span><span class="string-literal">&quot;Increment&quot;</span><span>),
+          </span><span class="identifier">_</span><span> =&gt; </span><span class="type-name">Inc</span><span>.</span><span class="identifier">some</span><span>,
+          </span><span class="identifier">_</span><span>.</span><span class="identifier">counter</span><span> == </span><span class="number-literal">10</span><span>
+        ),
+        </span><span class="keyword">if</span><span> (</span><span class="identifier">state</span><span>.</span><span class="identifier">counter</span><span> == </span><span class="number-literal">10</span><span>)
+          </span><span class="identifier">div</span><span>(
+            </span><span class="identifier">styleAttr</span><span> := </span><span class="string-literal">&quot;color: red&quot;</span><span>,
+            </span><span class="string-literal">&quot;Button disabled!&quot;</span><span>
+          )
+        </span><span class="keyword">else</span><span> </span><span class="identifier">div</span><span>(</span><span class="string-literal">s&quot;</span><span class="substitution">${10 - state.counter}</span><span class="string-literal"> increments remaining!&quot;</span><span>)
+      )
+    }
+
+  }
+}</span></code></pre>
+        <div id="mdoc-html-run5" data-mdoc-js></div>
+        <p><script type="text/javascript" src="reusable-components.md.js" defer></script>
+        <script type="text/javascript" src="mdoc.js" defer></script></p>
+
+        <hr style="margin-top: 30px"/>
+        <footer style="font-size: 90%; text-align: center">
+          ff4s is distributed under the <a href="https://www.apache.org/licenses/LICENSE-2.0.txt">Apache-2.0</a> license.
+        </footer>
+
+      </main>
+
+    </div>
+
+  </body>
+</html>

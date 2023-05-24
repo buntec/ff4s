@@ -69,6 +69,7 @@
         <li class="level2 active"><a href="#">Cancellation</a></li>
         <li class="level2"><a href="subscriptions.html">Subscriptions</a></li>
         <li class="level2"><a href="websockets.html">WebSockets</a></li>
+        <li class="level2"><a href="reusable-components.html">Reusable Components</a></li>
       </ul>
 
       <ul class="nav-list">
@@ -125,7 +126,7 @@
 
 </span><span class="keyword">case</span><span> </span><span class="keyword">class</span><span> </span><span class="type-name">Activity</span><span>(</span><span class="identifier">activity</span><span>: </span><span class="type-name">String</span><span>)
 </span><span class="keyword">object</span><span> </span><span class="type-name">Activity</span><span> {
-  </span><span class="keyword">implicit</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">codec</span><span>: </span><span class="type-name">Decoder</span><span>[</span><span class="type-name">Activity</span><span>] = </span><span class="identifier">deriveDecoder</span><span>
+  </span><span class="keyword">implicit</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">decoder</span><span>: </span><span class="type-name">Decoder</span><span>[</span><span class="type-name">Activity</span><span>] = </span><span class="identifier">deriveDecoder</span><span>
 }</span></code></pre>
         
         <h2 id="actions" class="section"><a class="anchor-link left" href="#actions"><i class="icofont-laika">&#xef71;</i></a>Actions</h2>

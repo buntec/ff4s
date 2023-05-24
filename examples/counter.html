@@ -69,6 +69,7 @@
         <li class="level2"><a href="cancellation.html">Cancellation</a></li>
         <li class="level2"><a href="subscriptions.html">Subscriptions</a></li>
         <li class="level2"><a href="websockets.html">WebSockets</a></li>
+        <li class="level2"><a href="reusable-components.html">Reusable Components</a></li>
       </ul>
 
       <ul class="nav-list">
@@ -163,17 +164,17 @@
 </span><span>        </span><span class="identifier">div</span><span>(</span><span class="string-literal">s&quot;value: </span><span class="substitution">${state.counter}</span><span class="string-literal">&quot;</span><span>),
         </span><span class="identifier">button</span><span>(
           </span><span class="identifier">cls</span><span> := </span><span class="string-literal">&quot;counter-button&quot;</span><span>,
-          </span><span class="string-literal">&quot;increment&quot;</span><span>,
+          </span><span class="string-literal">&quot;Increment&quot;</span><span>,
           </span><span class="identifier">onClick</span><span> := (</span><span class="identifier">_</span><span> =&gt; </span><span class="type-name">Some</span><span>(</span><span class="type-name">Inc</span><span>(</span><span class="number-literal">1</span><span>)))
         ),
         </span><span class="identifier">button</span><span>(
           </span><span class="identifier">cls</span><span> := </span><span class="string-literal">&quot;counter-button&quot;</span><span>,
-          </span><span class="string-literal">&quot;decrement&quot;</span><span>,
+          </span><span class="string-literal">&quot;Decrement&quot;</span><span>,
           </span><span class="identifier">onClick</span><span> := (</span><span class="identifier">_</span><span> =&gt; </span><span class="type-name">Some</span><span>(</span><span class="type-name">Inc</span><span>(-</span><span class="number-literal">1</span><span>)))
         ),
         </span><span class="identifier">button</span><span>(
           </span><span class="identifier">cls</span><span> := </span><span class="string-literal">&quot;counter-button&quot;</span><span>,
-          </span><span class="string-literal">&quot;reset&quot;</span><span>,
+          </span><span class="string-literal">&quot;Reset&quot;</span><span>,
           </span><span class="identifier">onClick</span><span> := (</span><span class="identifier">_</span><span> =&gt; </span><span class="type-name">Some</span><span>(</span><span class="type-name">Reset</span><span>))
         )
       )
