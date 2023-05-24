@@ -25,7 +25,7 @@ import io.circe.generic.semiauto._
 
 case class Activity(activity: String)
 object Activity {
-  implicit val codec: Decoder[Activity] = deriveDecoder
+  implicit val decoder: Decoder[Activity] = deriveDecoder
 }
 ```
 
