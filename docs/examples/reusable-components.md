@@ -6,8 +6,7 @@ We recommend organizing components into generic traits:
 
 ```scala mdoc:js:shared
 import org.scalajs.dom
-import cats.Show
-import cats.kernel.Eq
+import cats._
 import cats.syntax.all._
 
 // S and A are the state and action types, respectively
