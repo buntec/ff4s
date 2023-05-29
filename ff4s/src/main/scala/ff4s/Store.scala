@@ -37,6 +37,8 @@ trait Store[F[_], State, Action] {
   def state: Signal[F, State]
 
   /** Wraps a (cancellable) effect to make it cancellable using `cancel(key)`.
+    * Repeated evaluation of the resulting effect will cancel previous
+    * evaluations.
     */
   def withCancellationKey(key: CancellationKey)(fu: F[Unit]): F[Unit]
 

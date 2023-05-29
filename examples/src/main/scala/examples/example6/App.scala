@@ -17,6 +17,7 @@
 package examples.example6
 
 import cats.effect.Temporal
+import cats.effect.implicits._
 import cats.syntax.all._
 
 import scala.concurrent.duration.FiniteDuration
@@ -29,33 +30,54 @@ final case class State(counter: Int = 0)
 
 sealed trait Action
 
-// Increments the counter by `amount` after waiting for `delay`, unless cancelled.
-case class DelayedInc(delay: FiniteDuration, amount: Int) extends Action
+// Increments the counter after waiting for `delay`, unless cancelled.
+case class DelayedInc(delay: FiniteDuration) extends Action
+
+// Decrements the counter after waiting for `delay`, unless cancelled.
+case class DelayedDec(delay: FiniteDuration) extends Action
 
 case class Inc(amount: Int) extends Action
 
+// Cancels any outstanding inc/dec.
 case object Cancel extends Action
 
 class App[F[_]](implicit F: Temporal[F]) extends ff4s.App[F, State, Action] {
 
-  private val incCancelKey = ff4s.CancellationKey("inc")
+  val makeCancelKey = ff4s.CancellationKey[F].toResource
 
-  override val store = ff4s.Store[F, State, Action](State()) { store =>
-    _ match {
-      case Inc(amount) =>
-        state => state.copy(counter = state.counter + amount) -> none
+  override val store = for {
+    (incCancelKey, decCancelKey) <- (
+      makeCancelKey,
+      makeCancelKey
+    ).parTupled
 
-      // repeated dispatch will cancel previous invocations if they haven't completed yet.
-      case DelayedInc(delay, amount) =>
-        _ -> store
-          .withCancellationKey(incCancelKey)(
-            F.sleep(delay) *> store.dispatch(Inc(amount))
-          )
-          .some
+    store <- ff4s.Store[F, State, Action](State()) { store =>
+      _ match {
+        case Inc(amount) =>
+          state => state.copy(counter = state.counter + amount) -> none
 
-      case Cancel => _ -> store.cancel(incCancelKey).some
+        case DelayedInc(delay) =>
+          _ -> store
+            .withCancellationKey(incCancelKey)(
+              F.sleep(delay) *> store.dispatch(Inc(1))
+            )
+            .some
+
+        case DelayedDec(delay) =>
+          _ -> store
+            .withCancellationKey(decCancelKey)(
+              F.sleep(delay) *> store.dispatch(Inc(-1))
+            )
+            .some
+
+        case Cancel =>
+          _ -> (
+            store.cancel(incCancelKey),
+            store.cancel(decCancelKey)
+          ).parTupled.void.some
+      }
     }
-  }
+  } yield store
 
   import dsl._
   import dsl.html._
@@ -67,12 +89,12 @@ class App[F[_]](implicit F: Temporal[F]) extends ff4s.App[F, State, Action] {
       button(
         cls := btnCls,
         "+",
-        onClick := (_ => DelayedInc(1.second, 1).some)
+        onClick := (_ => DelayedInc(1.second).some)
       ),
       button(
         cls := btnCls,
         "-",
-        onClick := (_ => DelayedInc(1.second, -1).some)
+        onClick := (_ => DelayedDec(1.second).some)
       ),
       button(
         cls := btnCls,

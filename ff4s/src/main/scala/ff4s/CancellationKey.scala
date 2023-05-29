@@ -16,14 +16,20 @@
 
 package ff4s
 
+import cats.Applicative
 import cats.Eq
-import cats.Show
+import cats.effect.Unique
+import cats.syntax.all._
 
-final case class CancellationKey(key: String)
+final case class CancellationKey private[ff4s] (
+    private[ff4s] val token: Unique.Token
+)
 
 object CancellationKey {
 
-  implicit val show: Show[CancellationKey] = Show.show(_.key)
+  /** Generates a unique cancellation key. */
+  def apply[F[_]: Unique: Applicative]: F[CancellationKey] =
+    Unique[F].unique.map(new CancellationKey(_))
 
   implicit val eq: Eq[CancellationKey] = Eq.fromUniversalEquals
 
