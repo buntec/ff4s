@@ -31,6 +31,6 @@ object CancellationKey {
   def apply[F[_]: Unique: Applicative]: F[CancellationKey] =
     Unique[F].unique.map(new CancellationKey(_))
 
-  implicit val eq: Eq[CancellationKey] = Eq.fromUniversalEquals
+  implicit val eq: Eq[CancellationKey] = Eq.by(_.token)
 
 }
