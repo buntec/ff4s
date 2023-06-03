@@ -29,7 +29,7 @@ import fs2.concurrent.Signal
 import fs2.concurrent.SignallingMapRef
 import fs2.concurrent.SignallingRef
 
-trait Store[F[_], State, Action] {
+sealed trait Store[F[_], State, Action] {
 
   /** Adds `action` to the queue of actions to be evaluated. */
   def dispatch(action: Action): F[Unit]
@@ -41,7 +41,7 @@ trait Store[F[_], State, Action] {
     * work the provided effect must be cancelable.) Repeated evaluation of the
     * resulting effect will cancel previous evaluations. WARNING: wrapping the
     * same effect more than once with the same key results in undefined behavior
-    * (the wrapped effect may or may not run, and a fiber might leak).
+    * (the wrapped effect may or may not run, and a fiber might deadlock).
     */
   def withCancellationKey(key: String)(fu: F[Unit]): F[Unit]
 
@@ -73,9 +73,7 @@ object Store {
     stateSR <- SignallingRef.of[F, State](init).toResource
 
     fiberMR <- MapRef
-      .ofSingleImmutableMap(
-        Map.empty[String, Fiber[F, Throwable, Unit]]
-      )
+      .ofSingleImmutableMap[F, String, Fiber[F, Throwable, Unit]]()
       .toResource
 
     runningCount <- SignallingMapRef
