@@ -26,6 +26,7 @@ import cats.effect.std.Supervisor
 import cats.syntax.all._
 import fs2.Stream
 import fs2.concurrent.Signal
+import fs2.concurrent.SignallingMapRef
 import fs2.concurrent.SignallingRef
 
 trait Store[F[_], State, Action] {
@@ -36,22 +37,24 @@ trait Store[F[_], State, Action] {
   /** Holds the current application state. */
   def state: Signal[F, State]
 
-  /** Wraps a (cancellable) effect to make it cancellable using `cancel(key)`.
-    * Repeated evaluation of the resulting effect will cancel previous
-    * evaluations.
+  /** Wraps an effect to make it cancelable using `cancel(key)`. (For this to
+    * work the provided effect must be cancelable.) Repeated evaluation of the
+    * resulting effect will cancel previous evaluations. WARNING: wrapping the
+    * same effect more than once with the same key results in undefined behavior
+    * (the wrapped effect may or may not run, and a fiber might leak).
     */
-  def withCancellationKey(key: CancellationKey)(fu: F[Unit]): F[Unit]
+  def withCancellationKey(key: String)(fu: F[Unit]): F[Unit]
 
   /** See `withCancellationKey`. */
-  def cancel(key: CancellationKey): F[Unit]
+  def cancel(key: String): F[Unit]
 
-  /** Ensures that `loadingState` evaluates to `true` while the provided effect
-    * is running. This is useful for things like loading spinners.
+  /** Ensures that `runningState(key)` evaluates to `true` while the wrapped
+    * effect is running. Useful for things like loading indicators.
     */
-  def withLoading(fu: F[Unit]): F[Unit]
+  def withRunningState(key: String)(fu: F[Unit]): F[Unit]
 
-  /** See `withLoading.` */
-  def loadingState: Signal[F, Boolean]
+  /** See `withRunningState.` */
+  def runningState(key: String): Signal[F, Boolean]
 
 }
 
@@ -71,15 +74,24 @@ object Store {
 
     fiberMR <- MapRef
       .ofSingleImmutableMap(
-        Map.empty[CancellationKey, Fiber[F, Throwable, Unit]]
+        Map.empty[String, Fiber[F, Throwable, Unit]]
       )
       .toResource
 
-    loadingCount <- SignallingRef(0).toResource
+    runningCount <- SignallingMapRef
+      .ofSingleImmutableMap[F, String, Int]()
+      .toResource
 
-    withLoadingR = Resource.make(loadingCount.update(_ + 1))(_ =>
-      loadingCount.update(_ - 1)
-    )
+    withRunningStateR = (key: String) =>
+      Resource.make(runningCount(key).update {
+        case None    => Some(1)
+        case Some(n) => Some(n + 1)
+      })(_ =>
+        runningCount(key).update {
+          case None    => None
+          case Some(n) => Some(n - 1)
+        }
+      )
 
     store = new Store[F, State, Action] {
 
@@ -88,7 +100,7 @@ object Store {
       override def state: Signal[F, State] = stateSR
 
       override def withCancellationKey(
-          key: CancellationKey
+          key: String
       )(fu: F[Unit]): F[Unit] =
         supervisor
           .supervise(fu)
@@ -100,13 +112,14 @@ object Store {
               .void
           )
 
-      override def cancel(key: CancellationKey): F[Unit] =
+      override def cancel(key: String): F[Unit] =
         fiberMR(key).getAndSet(none).flatMap(_.foldMapM(_.cancel))
 
-      override def withLoading(fu: F[Unit]): F[Unit] = withLoadingR.surround(fu)
+      override def withRunningState(key: String)(fu: F[Unit]): F[Unit] =
+        withRunningStateR(key).surround(fu)
 
-      override def loadingState: Signal[F, Boolean] =
-        loadingCount.map(_ > 0).changes
+      override def runningState(key: String): Signal[F, Boolean] =
+        runningCount(key).map(_.exists(_ > 0)).changes
 
     }
 

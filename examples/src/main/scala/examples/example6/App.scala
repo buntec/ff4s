@@ -24,9 +24,9 @@ import scala.concurrent.duration.FiniteDuration
 
 import concurrent.duration._
 
-// A minimal example showing how long-running effects can be made cancellable.
+// A minimal example demonstrating the use of cancellation and running state.
 
-final case class State(counter: Int = 0)
+final case class State(counter: Int = 0, loading: Boolean = false)
 
 sealed trait Action
 
@@ -41,17 +41,16 @@ case class Inc(amount: Int) extends Action
 // Cancels any outstanding inc/dec.
 case object Cancel extends Action
 
+case class SetLoadingState(loading: Boolean) extends Action
+
 class App[F[_]](implicit F: Temporal[F]) extends ff4s.App[F, State, Action] {
 
-  val makeCancelKey = ff4s.CancellationKey[F].toResource
+  private val incCancelKey = "inc"
+  private val decCancelKey = "dec"
+  private val loadingKey = "loading"
 
-  override val store = for {
-    (incCancelKey, decCancelKey) <- (
-      makeCancelKey,
-      makeCancelKey
-    ).parTupled
-
-    store <- ff4s.Store[F, State, Action](State()) { store =>
+  override val store = ff4s
+    .Store[F, State, Action](State()) { store =>
       _ match {
         case Inc(amount) =>
           state => state.copy(counter = state.counter + amount) -> none
@@ -59,14 +58,18 @@ class App[F[_]](implicit F: Temporal[F]) extends ff4s.App[F, State, Action] {
         case DelayedInc(delay) =>
           _ -> store
             .withCancellationKey(incCancelKey)(
-              F.sleep(delay) *> store.dispatch(Inc(1))
+              store.withRunningState(loadingKey)(
+                F.sleep(delay) *> store.dispatch(Inc(1))
+              )
             )
             .some
 
         case DelayedDec(delay) =>
           _ -> store
             .withCancellationKey(decCancelKey)(
-              F.sleep(delay) *> store.dispatch(Inc(-1))
+              store.withRunningState(loadingKey)(
+                F.sleep(delay) *> store.dispatch(Inc(-1))
+              )
             )
             .some
 
@@ -75,9 +78,20 @@ class App[F[_]](implicit F: Temporal[F]) extends ff4s.App[F, State, Action] {
             store.cancel(incCancelKey),
             store.cancel(decCancelKey)
           ).parTupled.void.some
+
+        case SetLoadingState(loading) =>
+          _.copy(loading = loading) -> none
       }
     }
-  } yield store
+    .flatTap { store =>
+      store
+        .runningState(loadingKey)
+        .discrete
+        .evalMap(loading => store.dispatch(SetLoadingState(loading)))
+        .compile
+        .drain
+        .background
+    }
 
   import dsl._
   import dsl.html._
@@ -100,7 +114,8 @@ class App[F[_]](implicit F: Temporal[F]) extends ff4s.App[F, State, Action] {
         cls := btnCls,
         "cancel",
         onClick := (_ => Cancel.some)
-      )
+      ),
+      if (state.loading) div("loading...") else empty
     )
   }
 
