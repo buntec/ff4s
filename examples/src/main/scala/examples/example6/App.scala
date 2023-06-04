@@ -18,73 +18,80 @@ package examples.example6
 
 import cats.effect.Temporal
 import cats.effect.implicits._
-import cats.effect.kernel.Fiber
-import cats.effect.std.MapRef
-import cats.effect.std.Supervisor
 import cats.syntax.all._
 
 import scala.concurrent.duration.FiniteDuration
 
 import concurrent.duration._
 
-// A minimal example showing how actions can be made cancellable.
+// A minimal example demonstrating the use of cancellation and running state.
 
-final case class State(counter: Int = 0)
+final case class State(counter: Int = 0, loading: Boolean = false)
 
 sealed trait Action
 
-// Cancellable actions need a `cancelKey` to be used as a cancellation token.
-sealed trait CancellableAction extends Action { def cancelKey: String }
+// Increments the counter after waiting for `delay`, unless cancelled.
+case class DelayedInc(delay: FiniteDuration) extends Action
 
-// Increments the counter by `amount` after waiting for `delay`, unless cancelled.
-case class DelayedInc(delay: FiniteDuration, amount: Int, cancelKey: String)
-    extends CancellableAction
+// Decrements the counter after waiting for `delay`, unless cancelled.
+case class DelayedDec(delay: FiniteDuration) extends Action
 
 case class Inc(amount: Int) extends Action
 
-// Cancels a running action with the given `cancelKey`; otherwise it is a no-op.
-case class Cancel(cancelKey: String) extends Action
+// Cancels any outstanding inc/dec.
+case object Cancel extends Action
+
+case class SetLoadingState(loading: Boolean) extends Action
 
 class App[F[_]](implicit F: Temporal[F]) extends ff4s.App[F, State, Action] {
 
-  override val store = for {
-    supervisor <- Supervisor[F]
+  private val incCancelKey = "inc"
+  private val decCancelKey = "dec"
+  private val loadingKey = "loading"
 
-    // we keep the fibers of running actions in a map indexed by the cancellation key.
-    fibers <- MapRef
-      .ofSingleImmutableMap[F, String, Fiber[F, Throwable, Unit]]()
-      .toResource
-
-    store <- ff4s.Store[F, State, Action](State()) { store =>
+  override val store = ff4s
+    .Store[F, State, Action](State()) { store =>
       _ match {
         case Inc(amount) =>
           state => state.copy(counter = state.counter + amount) -> none
 
-        // repeated dispatch will cancel previous invocations if they haven't completed yet.
-        case DelayedInc(delay, amount, cancelKey) =>
-          (
-            _,
-            supervisor
-              .supervise(F.sleep(delay) *> store.dispatch(Inc(amount)))
-              .flatMap { fiber =>
-                fibers
-                  .getAndSetKeyValue(cancelKey, fiber)
-                  .flatMap(_.foldMapM(_.cancel))
-              }
-              .some
-          )
+        case DelayedInc(delay) =>
+          _ -> store
+            .withCancellationKey(incCancelKey)(
+              store.withRunningState(loadingKey)(
+                F.sleep(delay) *> store.dispatch(Inc(1))
+              )
+            )
+            .some
 
-        case Cancel(cancelKey) =>
-          (
-            _,
-            fibers(cancelKey).get
-              .flatMap(_.foldMapM(_.cancel))
-              .some
-          )
+        case DelayedDec(delay) =>
+          _ -> store
+            .withCancellationKey(decCancelKey)(
+              store.withRunningState(loadingKey)(
+                F.sleep(delay) *> store.dispatch(Inc(-1))
+              )
+            )
+            .some
+
+        case Cancel =>
+          _ -> (
+            store.cancel(incCancelKey),
+            store.cancel(decCancelKey)
+          ).parTupled.void.some
+
+        case SetLoadingState(loading) =>
+          _.copy(loading = loading) -> none
       }
     }
-
-  } yield store
+    .flatTap { store =>
+      store
+        .runningState(loadingKey)
+        .discrete
+        .evalMap(loading => store.dispatch(SetLoadingState(loading)))
+        .compile
+        .drain
+        .background
+    }
 
   import dsl._
   import dsl.html._
@@ -96,18 +103,19 @@ class App[F[_]](implicit F: Temporal[F]) extends ff4s.App[F, State, Action] {
       button(
         cls := btnCls,
         "+",
-        onClick := (_ => DelayedInc(1.second, 1, "inc").some)
+        onClick := (_ => DelayedInc(1.second).some)
       ),
       button(
         cls := btnCls,
         "-",
-        onClick := (_ => DelayedInc(1.second, -1, "inc").some)
+        onClick := (_ => DelayedDec(1.second).some)
       ),
       button(
         cls := btnCls,
         "cancel",
-        onClick := (_ => Cancel("inc").some)
-      )
+        onClick := (_ => Cancel.some)
+      ),
+      if (state.loading) div("loading...") else empty
     )
   }
 
