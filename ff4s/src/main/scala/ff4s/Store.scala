@@ -37,23 +37,27 @@ sealed trait Store[F[_], State, Action] {
   /** Holds the current application state. */
   def state: Signal[F, State]
 
-  /** Wraps an effect to make it cancelable using `cancel(key)`. (For this to
-    * work the provided effect must be cancelable.) Repeated evaluation of the
-    * resulting effect will cancel previous evaluations. WARNING: wrapping the
-    * same effect more than once with the same key results in undefined behavior
-    * (the wrapped effect may or may not run, and a fiber might deadlock).
+  /** Wraps `fu` and makes it cancelable using `cancel(key)`. Repeated
+    * evaluation of the returned effect will cancel previous evaluations. The
+    * returned effect runs exactly as long as `fu`. In particular,
+    * `withRunningState(...)(withCancellationKey(...)(fu))` has the same
+    * semantics as `withCancellationKey(...)(withRunningState(...)(fu))`.
+    *
+    * WARNING: Nested wrapping using the same key more than once results in
+    * undefined behavior of the returned effect (`fu` may or may not run, and a
+    * fiber might deadlock).
     */
   def withCancellationKey(key: String)(fu: F[Unit]): F[Unit]
 
   /** See `withCancellationKey`. */
   def cancel(key: String): F[Unit]
 
-  /** Ensures that `runningState(key)` evaluates to `true` while the wrapped
-    * effect is running. Useful for things like loading indicators.
+  /** Ensures that `runningState(key)` evaluates to `true` while `fu` is
+    * running. Useful for things like loading indicators.
     */
   def withRunningState(key: String)(fu: F[Unit]): F[Unit]
 
-  /** See `withRunningState.` */
+  /** See `withRunningState`. */
   def runningState(key: String): Signal[F, Boolean]
 
 }
@@ -81,14 +85,8 @@ object Store {
       .toResource
 
     withRunningStateR = (key: String) =>
-      Resource.make(runningCount(key).update {
-        case None    => Some(1)
-        case Some(n) => Some(n + 1)
-      })(_ =>
-        runningCount(key).update {
-          case None    => None
-          case Some(n) => Some(n - 1)
-        }
+      Resource.make(runningCount(key).update(_.fold(1)(_ + 1).some))(_ =>
+        runningCount(key).update(_.map(_ - 1))
       )
 
     store = new Store[F, State, Action] {
