@@ -16,12 +16,18 @@
 
 package ff4s
 
-import cats.effect._
+import cats.effect.Concurrent
+import cats.effect.Fiber
+import cats.effect.Resource
 import cats.effect.implicits._
-import cats.effect.std._
+import cats.effect.std.MapRef
+import cats.effect.std.Queue
+import cats.effect.std.Supervisor
 import cats.syntax.all._
 import fs2.Stream
-import fs2.concurrent._
+import fs2.concurrent.Signal
+import fs2.concurrent.SignallingMapRef
+import fs2.concurrent.SignallingRef
 
 sealed trait Store[F[_], State, Action] {
 
