@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package examples.example3
+package examples.example2
 
 import cats.Show
 import cats.syntax.all._

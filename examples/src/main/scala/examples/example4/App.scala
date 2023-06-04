@@ -16,89 +16,106 @@
 
 package examples.example4
 
-import cats.effect.Async
+import cats.effect.Temporal
 import cats.effect.implicits._
 import cats.syntax.all._
-import ff4s.Router
-import org.http4s.Uri
 
-case class State(
-    uri: Option[Uri] = None
-)
+import scala.concurrent.duration.FiniteDuration
+
+import concurrent.duration._
+
+// A minimal example demonstrating the use of cancellation and running state.
+
+final case class State(counter: Int = 0, loading: Boolean = false)
 
 sealed trait Action
 
-object Action {
+// Increments the counter after waiting for `delay`, unless cancelled.
+case class DelayedInc(delay: FiniteDuration) extends Action
 
-  case class SetUri(uri: Uri) extends Action
+// Decrements the counter after waiting for `delay`, unless cancelled.
+case class DelayedDec(delay: FiniteDuration) extends Action
 
-  case class NavigateTo(uri: Uri) extends Action
+case class Inc(amount: Int) extends Action
 
-}
+// Cancels any outstanding inc/dec.
+case object Cancel extends Action
 
-// This example shows one way to use the built-in router.
-class App[F[_]](implicit val F: Async[F]) extends ff4s.App[F, State, Action] {
+case class SetLoadingState(loading: Boolean) extends Action
 
-  private val window = fs2.dom.Window[F]
+class App[F[_]](implicit F: Temporal[F]) extends ff4s.App[F, State, Action] {
 
-  override val store = for {
+  private val incCancelKey = "inc"
+  private val decCancelKey = "dec"
+  private val loadingKey = "loading"
 
-    router <- Router[F](window)
-
-    store <- ff4s.Store[F, State, Action](State())(_ =>
+  override val store = ff4s
+    .Store[F, State, Action](State()) { store =>
       _ match {
-        case Action.NavigateTo(uri) =>
-          (_, router.navigateTo(uri).some)
-        case Action.SetUri(uri) => _.copy(uri = Some(uri)) -> none
+        case Inc(amount) =>
+          state => state.copy(counter = state.counter + amount) -> none
+
+        case DelayedInc(delay) =>
+          _ -> store
+            .withCancellationKey(incCancelKey)(
+              store.withRunningState(loadingKey)(
+                F.sleep(delay) *> store.dispatch(Inc(1))
+              )
+            )
+            .some
+
+        case DelayedDec(delay) =>
+          _ -> store
+            .withCancellationKey(decCancelKey)(
+              store.withRunningState(loadingKey)(
+                F.sleep(delay) *> store.dispatch(Inc(-1))
+              )
+            )
+            .some
+
+        case Cancel =>
+          _ -> (
+            store.cancel(incCancelKey),
+            store.cancel(decCancelKey)
+          ).parTupled.void.some
+
+        case SetLoadingState(loading) =>
+          _.copy(loading = loading) -> none
       }
-    )
-
-    _ <- router.location.discrete
-      .evalMap(uri => store.dispatch(Action.SetUri(uri)))
-      .compile
-      .drain
-      .background
-
-  } yield store
+    }
+    .flatTap { store =>
+      store
+        .runningState(loadingKey)
+        .discrete
+        .evalMap(loading => store.dispatch(SetLoadingState(loading)))
+        .compile
+        .drain
+        .background
+    }
 
   import dsl._
   import dsl.html._
 
-  val heading = h1(cls := "m-4 text-4xl", "A Router App")
-
-  val currentRoute = useState { state =>
-    div(
-      cls := "m-1",
-      s"Current route: ${state.uri.map(_.renderString).getOrElse("")}"
-    )
-  }
-
   override val view = useState { state =>
-    val matchedPath = state.uri.flatMap { uri =>
-      uri.path.segments match {
-        case Vector(path) => Some(path.toString)
-        case _            => None
-      }
-    }
-
+    val btnCls = "m-1 p-2 border rounded"
     div(
-      cls := "flex flex-col items-center h-screen",
-      heading,
-      currentRoute,
-      div(
-        cls := "m-2 flex flex-col items-center",
-        p("Navigation"),
-        List("foo", "bar", "baz").map { path =>
-          div(
-            cls := s"m-1 w-full rounded text-center cursor-pointer border ${if (matchedPath == Some(path)) "bg-purple-300"
-              else ""}",
-            path,
-            onClick := (_ =>
-              Some(Action.NavigateTo(Uri.unsafeFromString(path)))
-            )
-          )
-        }
-      )
+      span(s"count: ${state.counter}"),
+      button(
+        cls := btnCls,
+        "+",
+        onClick := (_ => DelayedInc(1.second).some)
+      ),
+      button(
+        cls := btnCls,
+        "-",
+        onClick := (_ => DelayedDec(1.second).some)
+      ),
+      button(
+        cls := btnCls,
+        "cancel",
+        onClick := (_ => Cancel.some)
+      ),
+      if (state.loading) div("loading...") else empty
     )
   }
 

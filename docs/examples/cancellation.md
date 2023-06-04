@@ -42,56 +42,37 @@ case object Cancel extends Action
 ## Store
 
 The interesting bit is the contruction of the store.
-We use a `Supervisor` to fork safely the long running effect onto a new fiber.
-That fiber is held in a `Ref` where we can retrieve it for cancellation at any time.
-Another interesting detail is how we maintain the loading state.
-To this end, we have an additional `SignallingRef` counting the number of running
-effects. We increment the counter before every data fetch and
-decrement it regardless of outcome by wrapping the effect in a `Resource#surround`.
-We then subscribe to changes to this signal and set the loading state
-to `true` whenever the counter is greater than zero, and to `false`
-otherwise.
+By wrapping the data fetching effect with `store.withCancellationKey`, we can cancel it using `store.cancel`.
+By wrapping it with `store.withRunningState`, we can observe whether it is running using `store.runningState`. 
+Finally, we keep the `loading` state in sync by subscribing to changes of `store.runningState`.
 
 ```scala mdoc:js:shared
 import cats.effect._
 import cats.effect.implicits._
 import cats.syntax.all._
-import cats.effect.std.Supervisor
 import scala.concurrent.duration._
-import fs2.concurrent.SignallingRef
 
 object Store {
+
+  private val cancelKey = "activity"
+  private val loadingKey = "loading"
 
   def apply[F[_]](implicit
       F: Async[F]
   ): Resource[F, ff4s.Store[F, State, Action]] = for {
-    supervisor <- Supervisor[F]
-
-    // Since there is at most one running effect a single `Ref` suffices.
-    // In case of multiple cancellable effects running at the same time,
-    // we could use a `MapRef` and index the fibers by a cancellation token.
-    fiberRef <- F.ref[Option[Fiber[F, Throwable, Unit]]](None).toResource
-
-    // the number of currently running effects
-    runningCount <- SignallingRef(0).toResource
-
-    // an auxiliary resource for incrementing the counter while an effect is running
-    incRunning = Resource.make(runningCount.update(_ + 1))(_ =>
-      runningCount.update(_ - 1)
-    )
 
     store <- ff4s.Store[F, State, Action](State()) { store =>
       _ match {
         case SetActivity(activity) => _.copy(activity = activity) -> none
         case SetLoading(loading)   => _.copy(loading = loading) -> none
-        case Cancel => (_, fiberRef.get.flatMap(_.foldMapM(_.cancel)).some)
+        case Cancel => _ -> store.cancel(cancelKey).some
         case GetRandomActivity =>
           state =>
             (
               state.copy(activity = none),
-              supervisor
-                .supervise(
-                  incRunning.surround(
+              store
+                .withCancellationKey(cancelKey)(
+                  store.withRunningState(loadingKey)(
                     F.sleep(
                       1.second // pretend that this is really long running
                     ) *>
@@ -103,21 +84,14 @@ object Store {
                         )
                   )
                 )
-                .flatMap(fiber =>
-                  fiberRef
-                    .getAndSet(fiber.some)
-                    .flatMap(
-                      _.foldMapM(_.cancel)
-                    ) // cancel running request, if any, and store fiber of new request
-                )
                 .some
             )
       }
     }
 
-    _ <- runningCount.discrete
-      .map(_ > 0)
-      .changes
+    _ <- store
+      .runningState(loadingKey)
+      .discrete
       .evalMap(loading => store.dispatch(SetLoading(loading)))
       .compile
       .drain
