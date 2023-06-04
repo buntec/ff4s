@@ -42,11 +42,9 @@ case object Cancel extends Action
 ## Store
 
 The interesting bit is the contruction of the store.
-We use the store method `store.withCancellationKey` to control
-the cancellation of the wrapped long running effect at any time.
-Another interesting detail is how we maintain the loading state. This can be achieved
-by wrapping the effect in another store method `store.withRunningState`.
-We then subscribe to changes to the loading state signal and set the loading state accordingly.
+By wrapping the data fetching effect with `store.withCancellationKey`, we can cancel it using `store.cancel`.
+By wrapping it with `store.withRunningState`, we can observe whether it is running using `store.runningState`. 
+Finally, we keep the `loading` state in sync by subscribing to changes of `store.runningState`.
 
 ```scala mdoc:js:shared
 import cats.effect._
