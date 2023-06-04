@@ -16,53 +16,8 @@
 
 package examples.example2
 
-import cats.kernel.Eq
-
-// Define our app's state space.
 case class State(
-    name: Option[String] = None,
-    pets: Pets = Pets.Cats,
+    weekday: Weekday = Weekday.Monday,
     counter: Int = 0,
-    bored: Option[Bored] = None,
-    favoriteDish: Dish = Dish.Sushi,
-    magic: Boolean = false,
-    svgCoords: SvgCoords = SvgCoords(0, 0),
-    websocketResponse: Option[String] = None
+    buttonOff: Boolean = false
 )
-
-case class SvgCoords(x: Double, y: Double)
-
-case class Bored(activity: String, `type`: String)
-
-sealed trait Dish
-
-object Dish {
-  case object Sushi extends Dish
-  case object Pizza extends Dish
-  case object Pasta extends Dish
-  case object Ramen extends Dish
-
-  implicit val eq: Eq[Dish] = Eq.fromUniversalEquals
-
-  val all: Seq[Dish] = Seq(Sushi, Pizza, Pasta, Ramen)
-
-  def fromString(s: String): Option[Dish] = s match {
-    case "Sushi" => Some(Sushi)
-    case "Pizza" => Some(Pizza)
-    case "Pasta" => Some(Pasta)
-    case "Ramen" => Some(Ramen)
-    case _       => None
-  }
-
-}
-
-sealed trait Pets
-
-object Pets {
-
-  case object Cats extends Pets
-  case object Dogs extends Pets
-
-  val all: Seq[Pets] = Seq(Cats, Dogs)
-
-}

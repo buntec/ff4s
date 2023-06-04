@@ -14,16 +14,32 @@
  * limitations under the License.
  */
 
-package examples.example3
+package examples.example1
 
 sealed trait Action
 
 object Action {
 
-  case class Inc() extends Action
+  case object Magic extends Action
 
-  case class Dec() extends Action
+  case class SetName(name: String) extends Action
 
-  case class SetWeekday(weekday: Weekday) extends Action
+  case class SetPets(pets: Pets) extends Action
+
+  case class SetFavoriteDish(dish: Dish) extends Action
+
+  case object IncrementCounter extends Action
+
+  case object DecrementCounter extends Action
+
+  case object GetActivity extends Action
+
+  case class SetActivity(activity: Bored) extends Action
+
+  case class SetSvgCoords(x: Double, y: Double) extends Action
+
+  case class SendWebsocketMessage(msg: String) extends Action
+
+  case class WebsocketMessageReceived(msg: String) extends Action
 
 }

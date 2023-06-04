@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package examples.example2
+package examples.example1
 
 import cats.effect.Async
 import cats.effect.Resource
