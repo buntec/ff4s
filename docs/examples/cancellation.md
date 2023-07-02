@@ -65,7 +65,7 @@ object Store {
       _ match {
         case SetActivity(activity) => _.copy(activity = activity) -> none
         case SetLoading(loading)   => _.copy(loading = loading) -> none
-        case Cancel => _ -> store.cancel(cancelKey).some
+        case Cancel                => _ -> store.cancel(cancelKey).some
         case GetRandomActivity =>
           state =>
             (
