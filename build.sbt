@@ -24,7 +24,7 @@ ThisBuild / tlFatalWarningsInCi := false
 ThisBuild / scalafixDependencies += "com.github.liancheng" %% "organize-imports" % "0.6.0"
 
 lazy val scalajsDomVersion = "2.6.0"
-lazy val circeVersion = "0.14.5"
+lazy val circeVersion = "0.14.6"
 lazy val catsVersion = "2.10.0"
 lazy val catsEffectVersion = "3.5.1"
 lazy val fs2Version = "3.8.0"
