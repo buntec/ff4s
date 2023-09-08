@@ -5,7 +5,7 @@ ThisBuild / tlBaseVersion := "0.17"
 
 lazy val scala213 = "2.13.10"
 ThisBuild / scalaVersion := scala213
-ThisBuild / crossScalaVersions := Seq(scala213, "3.3.0")
+ThisBuild / crossScalaVersions := Seq(scala213, "3.3.1")
 
 ThisBuild / organization := "io.github.buntec"
 ThisBuild / organizationName := "buntec"
