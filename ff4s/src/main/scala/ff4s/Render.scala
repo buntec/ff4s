@@ -43,9 +43,11 @@ private[ff4s] object Render {
   )(
       view: dsl.V, // must be curried b/c of dependent type
       rootElementId: String,
-      replaceRoot: Boolean
+      replaceRoot: Boolean,
+      cacheLiterals: Boolean
   )(implicit F: Async[F]): F[Unit] =
     (store, Dispatcher.sequential[F]).tupled.use { case (store, dispatcher) =>
+      val compiler = Compiler[F, State, Action](cacheLiterals)
       for {
         root <- F.delay {
           val root0 = document.getElementById(rootElementId)
@@ -56,10 +58,10 @@ private[ff4s] object Render {
               .asInstanceOf[dom.Element]
         }
         state0 <- store.state.get
-        vnode0 <- F.delay(view.foldMap(Compiler(dsl, state0, store.dispatch)))
+        vnode0 <- F.delay(view.foldMap(compiler(dsl, state0, store.dispatch)))
         proxy0 <- F.delay(patch(root, vnode0.toSnabbdom(dispatcher)))
         _ <- store.state.discrete
-          .map(state => view.foldMap(Compiler(dsl, state, store.dispatch)))
+          .map(state => view.foldMap(compiler(dsl, state, store.dispatch)))
           .evalMapAccumulate(proxy0) { case (prevProxy, vnode) =>
             F.async_[PatchedVNode] { cb =>
               dom.window.requestAnimationFrame { _ =>

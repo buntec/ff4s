@@ -21,11 +21,16 @@ import cats.effect.unsafe.implicits.global
 
 class IOEntryPoint[State, Action](
     app: App[IO, State, Action],
-    replaceRoot: Boolean = true
+    replaceRoot: Boolean = true,
+    cacheLiterals: Boolean = true
 ) {
 
   final def main(args: Array[String]): Unit =
-    Render(app.dsl, app.store)(app.view, app.rootElementId, replaceRoot)
-      .unsafeRunAndForget()
+    Render(app.dsl, app.store)(
+      app.view,
+      app.rootElementId,
+      replaceRoot,
+      cacheLiterals
+    ).unsafeRunAndForget()
 
 }
