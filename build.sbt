@@ -3,7 +3,7 @@ Global / resolvers += "Sonatype S01 OSS Snapshots" at "https://s01.oss.sonatype.
 
 ThisBuild / tlBaseVersion := "0.17"
 
-lazy val scala213 = "2.13.10"
+lazy val scala213 = "2.13.12"
 ThisBuild / scalaVersion := scala213
 ThisBuild / crossScalaVersions := Seq(scala213, "3.3.0")
 
@@ -23,11 +23,11 @@ ThisBuild / tlFatalWarningsInCi := false
 
 ThisBuild / scalafixDependencies += "com.github.liancheng" %% "organize-imports" % "0.6.0"
 
-lazy val scalajsDomVersion = "2.6.0"
+lazy val scalajsDomVersion = "2.7.0"
 lazy val circeVersion = "0.14.6"
 lazy val catsVersion = "2.10.0"
 lazy val catsEffectVersion = "3.5.1"
-lazy val fs2Version = "3.9.1"
+lazy val fs2Version = "3.9.2"
 lazy val kindProjectorVersion = "0.13.2"
 lazy val http4sDomVersion = "0.2.9"
 lazy val http4sVersion = "0.23.23"
