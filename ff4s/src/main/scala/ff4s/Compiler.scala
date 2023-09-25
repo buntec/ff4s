@@ -35,98 +35,63 @@ private[ff4s] trait Compiler[F[_], State, Action] {
 
 private[ff4s] object Compiler {
 
-  def apply[F[_], State, Action](cacheLiterals: Boolean) =
-    new Compiler[F, State, Action] {
+  def apply[F[_], State, Action] = new Compiler[F, State, Action] {
 
-      private val literalsCache: HashMap[String, VNode[F]] =
-        collection.mutable.HashMap.empty[String, VNode[F]]
+    private val literalsCache: HashMap[String, VNode[F]] =
+      collection.mutable.HashMap.empty[String, VNode[F]]
 
-      override def apply(
-          dsl: Dsl[F, State, Action],
-          state: State,
-          actionDispatch: Action => F[Unit]
-      ): (dsl.ViewA ~> Id) = {
-        import dsl._
+    override def apply(
+        dsl: Dsl[F, State, Action],
+        state: State,
+        actionDispatch: Action => F[Unit]
+    ): (dsl.ViewA ~> Id) = {
+      import dsl._
 
-        new (ViewA ~> Id) {
+      new (ViewA ~> Id) {
 
-          private var id0: Long = 0L
+        private var id0: Long = 0L
 
-          private def fromLiteral(html: String): VNode[F] =
-            VNode[F] {
-              val elm = dom.document.createElement("div")
-              elm.innerHTML = html
-              val vnode = snabbdom.toVNode(elm).toVNode
-              vnode match {
-                case snabbdom.VNode.Element(_, _, child :: Nil) =>
-                  child // unwrap div if there is a single child
-                case _ =>
-                  vnode // otherwise keep the wrapper div (TODO: throw instead?)
-              }
+        private def fromLiteral(html: String): VNode[F] =
+          VNode[F] {
+            val elm = dom.document.createElement("div")
+            elm.innerHTML = html
+            val vnode = snabbdom.toVNode(elm).toVNode
+            vnode match {
+              case snabbdom.VNode.Element(_, _, child :: Nil) =>
+                child // unwrap div if there is a single child
+              case _ =>
+                vnode // otherwise keep the wrapper div (TODO: throw instead?)
             }
+          }
 
-          override def apply[A](fa: ViewA[A]): Id[A] = fa match {
+        override def apply[A](fa: ViewA[A]): Id[A] = fa match {
 
-            case GetState() => state
+          case GetState() => state
 
-            case Text(s) => VNode[F](snabbdom.VNode.text(s))
+          case Text(s) => VNode[F](snabbdom.VNode.text(s))
 
-            case Empty() => VNode[F](snabbdom.VNode.empty)
+          case Empty() => VNode[F](snabbdom.VNode.empty)
 
-            case Literal(html) =>
-              if (cacheLiterals)
-                literalsCache.getOrElseUpdate(html, fromLiteral(html))
-              else fromLiteral(html)
+          case Literal(html, cache) =>
+            if (cache) literalsCache.getOrElseUpdate(html, fromLiteral(html))
+            else fromLiteral(html)
 
-            case Element(
-                  tag,
-                  children,
-                  eventHandlers,
-                  cls,
-                  key,
-                  onInsert,
-                  onDestroy,
-                  props,
-                  attrs,
-                  style,
-                  thunkArgs
-                ) =>
-              thunkArgs match {
-                case Some(args) => {
-                  val renderFn = () => {
-                    VNode[F, Action](
-                      tag,
-                      children,
-                      cls,
-                      key,
-                      props,
-                      attrs,
-                      style,
-                      eventHandlers,
-                      onInsert,
-                      onDestroy,
-                      actionDispatch
-                    )
-                  }
-
-                  VNode[F]((dispatcher: Dispatcher[F]) =>
-                    snabbdom.thunk(
-                      tag,
-                      key.getOrElse(""): String,
-                      (_: Any) =>
-                        renderFn()
-                          .toSnabbdom(
-                            dispatcher
-                          )
-                          .asInstanceOf[
-                            snabbdom.VNode.Element
-                          ], // TODO: this is broken
-                      Seq(args(state))
-                    )
-                  )
-                }
-
-                case _ =>
+          case Element(
+                tag,
+                children,
+                eventHandlers,
+                cls,
+                key,
+                onInsert,
+                onDestroy,
+                props,
+                attrs,
+                style,
+                thunkArgs
+              ) =>
+            thunkArgs match {
+              case Some(args) => {
+                val renderFn = () => {
                   VNode[F, Action](
                     tag,
                     children,
@@ -140,17 +105,50 @@ private[ff4s] object Compiler {
                     onDestroy,
                     actionDispatch
                   )
+                }
 
+                VNode[F]((dispatcher: Dispatcher[F]) =>
+                  snabbdom.thunk(
+                    tag,
+                    key.getOrElse(""): String,
+                    (_: Any) =>
+                      renderFn()
+                        .toSnabbdom(
+                          dispatcher
+                        )
+                        .asInstanceOf[
+                          snabbdom.VNode.Element
+                        ], // TODO: this is broken
+                    Seq(args(state))
+                  )
+                )
               }
 
-            case GetUUID() => java.util.UUID.randomUUID()
+              case _ =>
+                VNode[F, Action](
+                  tag,
+                  children,
+                  cls,
+                  key,
+                  props,
+                  attrs,
+                  style,
+                  eventHandlers,
+                  onInsert,
+                  onDestroy,
+                  actionDispatch
+                )
 
-            case GetId() => { id0 += 1; id0 }
-          }
+            }
 
+          case GetUUID() => java.util.UUID.randomUUID()
+
+          case GetId() => { id0 += 1; id0 }
         }
+
       }
     }
+  }
 
   def transpile[F[_], StateA, StateB, ActionA, ActionB](
       dslA: Dsl[F, StateA, ActionA],
@@ -162,10 +160,10 @@ private[ff4s] object Compiler {
     new (dslA.ViewA ~> dslB.View) {
 
       override def apply[A](fa: dslA.ViewA[A]): dslB.View[A] = fa match {
-        case dslA.Text(s)       => dslB.text(s)
-        case dslA.Literal(html) => dslB.literal(html)
-        case dslA.Empty()       => dslB.empty
-        case dslA.GetState()    => dslB.getState.map(f)
+        case dslA.Text(s)              => dslB.text(s)
+        case dslA.Literal(html, cache) => dslB.literal(html, cache)
+        case dslA.Empty()              => dslB.empty
+        case dslA.GetState()           => dslB.getState.map(f)
         case dslA.Element(
               tag,
               children,

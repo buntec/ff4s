@@ -43,11 +43,10 @@ private[ff4s] object Render {
   )(
       view: dsl.V, // must be curried b/c of dependent type
       rootElementId: String,
-      replaceRoot: Boolean,
-      cacheLiterals: Boolean
+      replaceRoot: Boolean
   )(implicit F: Async[F]): F[Unit] =
     (store, Dispatcher.sequential[F]).tupled.use { case (store, dispatcher) =>
-      val compiler = Compiler[F, State, Action](cacheLiterals)
+      val compiler = Compiler[F, State, Action]
       for {
         root <- F.delay {
           val root0 = document.getElementById(rootElementId)
