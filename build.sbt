@@ -1,7 +1,7 @@
 Global / onChangedBuildSource := ReloadOnSourceChanges
 Global / resolvers += "Sonatype S01 OSS Snapshots" at "https://s01.oss.sonatype.org/content/repositories/snapshots"
 
-ThisBuild / tlBaseVersion := "0.17"
+ThisBuild / tlBaseVersion := "0.18"
 
 lazy val scala213 = "2.13.12"
 ThisBuild / scalaVersion := scala213
@@ -20,8 +20,6 @@ ThisBuild / developers := List(
 ThisBuild / tlSitePublishBranch := Some("main")
 
 ThisBuild / tlFatalWarningsInCi := false
-
-ThisBuild / scalafixDependencies += "com.github.liancheng" %% "organize-imports" % "0.6.0"
 
 lazy val scalajsDomVersion = "2.7.0"
 lazy val circeVersion = "0.14.6"

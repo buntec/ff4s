@@ -42,7 +42,8 @@ class Dsl[F[_], State, Action] { self =>
       thunkArgs: Option[State => Any]
   ) extends ViewA[VNode[F]]
 
-  private[ff4s] case class Literal(html: String) extends ViewA[VNode[F]]
+  private[ff4s] case class Literal(html: String, cache: Boolean)
+      extends ViewA[VNode[F]]
 
   private[ff4s] case class Text(s: String) extends ViewA[VNode[F]]
 
@@ -88,7 +89,7 @@ class Dsl[F[_], State, Action] { self =>
     )(implicit
         async: Async[F],
         store: Resource[F, Store[F, State, Action]]
-    ): F[Unit] = Render(self, store)(view, rootElementId, false)
+    ): F[Unit] = Render(self, store)(view, rootElementId, replaceRoot = false)
 
     /** Runs this ff4s program and renders it into the unique DOM node with the
       * given id. Prefer to use [[ff4s.IOEntryPoint]].
@@ -98,7 +99,7 @@ class Dsl[F[_], State, Action] { self =>
     )(implicit
         async: Async[F],
         store: Resource[F, Store[F, State, Action]]
-    ): F[Unit] = Render(self, store)(view, rootElementId, true)
+    ): F[Unit] = Render(self, store)(view, rootElementId, replaceRoot = true)
 
   }
 
@@ -154,11 +155,15 @@ class Dsl[F[_], State, Action] { self =>
     )
   )
 
-  /** Constructs a ff4s program from a literal html string. This can be useful
-    * for things like SVG icons. Note that this methods is unsafe in the sense
-    * that the validity of the html string is only checked at render time.
+  /** Constructs a ff4s program from a HTML or SVG string. This is useful for
+    * things like SVG icons. Note that this methods is unsafe in the sense that
+    * there is no compile-time validation of the provided string. By default,
+    * the generated virtual DOM nodes are cached for performance. If you need to
+    * create a very large or even unbounded number of literals, then consider
+    * setting `cache = false` to avoid memory leaks.
     */
-  def literal(html: String): V = liftF[ViewA, VNode[F]](Literal(html))
+  def literal(html: String, cache: Boolean = true): V =
+    liftF[ViewA, VNode[F]](Literal(html, cache))
 
   def text(s: String): V = liftF[ViewA, VNode[F]](Text(s))
 
