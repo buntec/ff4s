@@ -20,6 +20,7 @@ import cats.Id
 import cats.effect.std.Dispatcher
 import cats.~>
 import org.scalajs.dom
+
 import scala.collection.mutable.HashMap
 
 private[ff4s] trait Compiler[F[_], State, Action] {
