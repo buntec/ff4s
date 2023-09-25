@@ -194,22 +194,22 @@ class Dsl[F[_], State, Action] { self =>
         handler: dom.Event => Option[Action]
     ) extends Modifier
 
-    case class HtmlAttr[V](
+    case class HtmlAttr[A](
         name: String,
-        value: V,
-        codec: Codec[V, String]
+        value: A,
+        codec: Codec[A, String]
     ) extends Modifier
 
-    case class SvgAttr[V](
+    case class SvgAttr[A](
         name: String,
-        value: V,
-        codec: Codec[V, String]
+        value: A,
+        codec: Codec[A, String]
     ) extends Modifier
 
-    case class Prop[V, DomV](
+    case class Prop[A, B](
         name: String,
-        value: V,
-        codec: Codec[V, DomV]
+        value: A,
+        codec: Codec[A, B]
     ) extends Modifier
 
     case class ChildNode(view: V) extends Modifier
@@ -275,14 +275,14 @@ class Dsl[F[_], State, Action] { self =>
       Modifier.DestroyHook(onDestroy)
   }
 
-  implicit class HtmlAttrsOps[V](attr: HtmlAttr[V]) {
-    def :=(value: V): Modifier =
+  implicit class HtmlAttrsOps[A](attr: HtmlAttr[A]) {
+    def :=(value: A): Modifier =
       Modifier.HtmlAttr(attr.name, value, attr.codec)
   }
 
-  implicit class HtmlPropOps[V, DomV](prop: HtmlProp[V, DomV]) {
-    def :=(value: V): Modifier =
-      Modifier.Prop[V, DomV](prop.name, value, prop.codec)
+  implicit class HtmlPropOps[A, B](prop: HtmlProp[A, B]) {
+    def :=(value: A): Modifier =
+      Modifier.Prop[A, B](prop.name, value, prop.codec)
   }
 
   implicit class EventPropOps[Ev](prop: EventProp[Ev]) {
@@ -416,8 +416,8 @@ class Dsl[F[_], State, Action] { self =>
 
   }
 
-  implicit class SvgAttrsOps[V](attr: SvgAttr[V]) {
-    def :=(value: V): Modifier =
+  implicit class SvgAttrsOps[A](attr: SvgAttr[A]) {
+    def :=(value: A): Modifier =
       Modifier.SvgAttr(attr.name, value, attr.codec)
   }
 

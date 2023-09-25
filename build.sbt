@@ -19,7 +19,7 @@ ThisBuild / developers := List(
 // publish website from this branch
 ThisBuild / tlSitePublishBranch := Some("main")
 
-ThisBuild / tlFatalWarningsInCi := false
+ThisBuild / tlFatalWarnings := false
 
 lazy val scalajsDomVersion = "2.7.0"
 lazy val circeVersion = "0.14.6"
@@ -98,13 +98,8 @@ lazy val docs = project
   .enablePlugins(TypelevelSitePlugin)
   .settings(
     tlSiteApiPackage := Some("ff4s"),
+    tlSiteIsTypelevelProject := Some(TypelevelProject.Affiliate),
     mdocJS := Some(ff4s),
-    tlSiteRelatedProjects ++= Seq(
-      TypelevelProject.CatsEffect,
-      TypelevelProject.Fs2,
-      "fs2-dom" -> url("https://github.com/armanbilge/fs2-dom/"),
-      "http4s-dom" -> url("https://http4s.github.io/http4s-dom/")
-    ),
     laikaConfig ~= { _.withRawContent },
-    tlSiteHeliumConfig ~= { HeliumConfig.customize(_) }
+    tlSiteHelium ~= { HeliumConfig.customize(_) }
   )

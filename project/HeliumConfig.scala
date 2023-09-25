@@ -10,10 +10,23 @@ import laika.helium.config.AnchorPlacement
 import laika.helium.Helium
 
 import LengthUnit._
+import laika.helium.config.ThemeNavigationSection
+import laika.helium.config.TextLink
+import cats.data.NonEmptyList
 
 object HeliumConfig {
 
   def customize(helium: Helium): Helium = {
+
+    val relevantProjectLinks = NonEmptyList.of(
+      TextLink.external("https://typelevel.org/cats-effect", "cats-effect"),
+      TextLink.external("https://typelevel.org/fs2", "fs2"),
+      TextLink.external("https://github.com/armanbilge/fs2-dom/", "fs2-dom"),
+      TextLink.external("https://http4s.github.io/http4s-dom/", "http4s-dom")
+    )
+
+    val relevantProjects =
+      ThemeNavigationSection("Related projects", relevantProjectLinks)
 
     // tailwindcss colors - MIT License
     val `sky-800` = Color.hex("075985")
@@ -116,23 +129,12 @@ object HeliumConfig {
       .layout(
         contentWidth = px(860),
         navigationWidth = px(250), // default = px(275),
-        topBarHeight = px(35),
         defaultBlockSpacing = px(10),
         defaultLineHeight = 1.5,
         anchorPlacement = AnchorPlacement.Left
       )
       .site
-      .autoLinkJS() // Actually, this *disables* auto-linking, to avoid duplicates with mdoc
-      .site
-      .topNavigationBar(navLinks =
-        List(
-          IconLink.external(
-            "https://github.com/buntec/ff4s",
-            HeliumIcon.github,
-            options = Styles("svg-link")
-          )
-        )
-      )
+      .mainNavigation(appendLinks = Seq(relevantProjects))
   }
 
 }
