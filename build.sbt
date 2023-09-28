@@ -21,7 +21,7 @@ ThisBuild / tlSitePublishBranch := Some("main")
 
 ThisBuild / tlFatalWarnings := false
 
-lazy val scalajsDomVersion = "2.7.0"
+lazy val scalajsDomVersion = "2.8.0"
 lazy val circeVersion = "0.14.6"
 lazy val catsVersion = "2.10.0"
 lazy val catsEffectVersion = "3.5.1"
