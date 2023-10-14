@@ -18,15 +18,14 @@ object HeliumConfig {
 
   def customize(helium: Helium): Helium = {
 
-    val relevantProjectLinks = NonEmptyList.of(
-      TextLink.external("https://typelevel.org/cats-effect", "cats-effect"),
-      TextLink.external("https://typelevel.org/fs2", "fs2"),
-      TextLink.external("https://github.com/armanbilge/fs2-dom/", "fs2-dom"),
-      TextLink.external("https://http4s.github.io/http4s-dom/", "http4s-dom")
-    )
-
     val relevantProjects =
-      ThemeNavigationSection("Related projects", relevantProjectLinks)
+      ThemeNavigationSection(
+        "Related projects",
+        TextLink.external("https://typelevel.org/cats-effect", "cats-effect"),
+        TextLink.external("https://typelevel.org/fs2", "fs2"),
+        TextLink.external("https://github.com/armanbilge/fs2-dom/", "fs2-dom"),
+        TextLink.external("https://http4s.github.io/http4s-dom/", "http4s-dom")
+      )
 
     // tailwindcss colors - MIT License
     val `sky-800` = Color.hex("075985")
@@ -57,15 +56,15 @@ object HeliumConfig {
     val `yellow-600` = Color.hex("ca8a04")
 
     helium.all
-      .fontResources(
+      .addFontResources(
         FontDefinition(
-          Font.webCSS("https://fonts.googleapis.com/css?family=Lato:300"),
+          Font.withWebCSS("https://fonts.googleapis.com/css?family=Lato:300"),
           "Lato",
           FontWeight.Normal,
           FontStyle.Normal
         ),
         FontDefinition(
-          Font.webCSS(
+          Font.withWebCSS(
             "https://cdn.jsdelivr.net/npm/firacode@6.2.0/distr/fira_code.css"
           ),
           "Fira Code",
