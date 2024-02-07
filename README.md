@@ -16,3 +16,21 @@ Artifacts are published to Maven Central for Scala 2.13 and Scala 3.
 ```scala
 libraryDependencies += "io.github.buntec" %%% "ff4s" % "<x.y.z>"
 ```
+
+## Debugging
+
+You can query the state of your ff4s app in the Browser console by defining/declaring the
+following global variables (e.g., by adding an inline script to your `index.html`):
+
+```javascript
+var process = {
+  env: {
+    'FF4S_DEBUG': 'TRUE',
+  }
+};
+var ff4s_state;
+```
+
+The current state can then be retrieved from the `ff4s_state` variable. In particular,
+you can call `ff4s_state.toString()` (and `toString` can be customized in your Scala code).
+
