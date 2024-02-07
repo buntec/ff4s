@@ -19,6 +19,7 @@ package ff4s
 import cats.effect.kernel.Async
 import cats.effect.kernel.Resource
 import cats.effect.std.Dispatcher
+import cats.effect.std.Env
 import cats.syntax.all._
 import org.scalajs.dom
 import org.scalajs.dom.document
@@ -46,8 +47,12 @@ private[ff4s] object Render {
       replaceRoot: Boolean
   )(implicit F: Async[F]): F[Unit] =
     (store, Dispatcher.sequential[F]).tupled.use { case (store, dispatcher) =>
-      val compiler = Compiler[F, State, Action]
+      val env = Env.make[F]
       for {
+        debug <- env
+          .get("FF4S_DEBUG")
+          .map(_.flatMap(_.toBooleanOption).getOrElse(false))
+        compiler = Compiler[F, State, Action](debug)
         root <- F.delay {
           val root0 = document.getElementById(rootElementId)
           if (replaceRoot) root0
