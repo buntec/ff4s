@@ -20,6 +20,7 @@ import cats.effect.Async
 import cats.effect.implicits._
 import cats.syntax.all._
 import fs2.Stream
+
 import scala.concurrent.duration._
 
 case class State(
