@@ -8,6 +8,8 @@ import com.raquo.domtypes.codegen.{
 }
 import com.raquo.domtypes.common.{HtmlTagType, SvgTagType}
 import com.raquo.domtypes.defs.styles.StyleTraitDefs
+import com.raquo.domtypes.defs.attrs
+import com.raquo.domtypes.defs
 
 import cats.effect.IO
 import cats.syntax.all._
@@ -110,7 +112,11 @@ object DomDefsGenerator {
       val traitName = "HtmlAttrs"
 
       val fileContent = generator.generateAttrsTrait(
-        defGroups = defGroups.htmlAttrDefGroups,
+        defGroups = List(
+          "HTML Attrs" -> attrs.HtmlAttrDefs.defs,
+          "Reflected Attributes" -> defs.reflectedAttrs.ReflectedHtmlAttrDefs.defs
+            .map(_.toAttrDef)
+        ),
         printDefGroupComments = false,
         traitCommentLines = Nil,
         traitModifiers = Nil,
@@ -225,7 +231,7 @@ object DomDefsGenerator {
       val traitName = "HtmlProps"
 
       val fileContent = generator.generatePropsTrait(
-        defGroups = defGroups.propDefGroups,
+        defGroups = List("Props" -> defs.props.PropDefs.defs),
         printDefGroupComments = true,
         traitCommentLines = Nil,
         traitModifiers = Nil,
