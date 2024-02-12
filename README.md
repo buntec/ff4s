@@ -2,7 +2,7 @@
 
 ![Maven Central](https://img.shields.io/maven-central/v/io.github.buntec/ff4s_sjs1_2.13)
 
-Check out the [microsite](https://buntec.github.io/ff4s/).
+Check out the [microsite](https://buntec.github.io/ff4s/) and [Scaladocs](https://www.javadoc.io/doc/io.github.buntec/ff4s_sjs1_3/latest/index.html).
 
 See the `examples` folder for commented code examples.
 Try them out by running `examples/fastLinkJS` in sbt and serving
