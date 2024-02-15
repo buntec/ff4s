@@ -7,3 +7,5 @@ target/
 yarn.lock
 .java-version
 node_modules
+.devenv
+/.direnv
