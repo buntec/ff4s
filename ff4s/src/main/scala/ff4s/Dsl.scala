@@ -299,6 +299,12 @@ class Dsl[F[_], State, Action] { self =>
       )
   }
 
+  implicit class WebComponentOps(wc: WebComponent) {
+    def apply(modifiers: Modifier*): V = {
+      (new HtmlTag[dom.html.Element](wc.tagName, false))(modifiers: _*)
+    }
+  }
+
   implicit class HtmlTagOps(tag: HtmlTag[_]) {
 
     def apply(modifiers: Modifier*): V = {
