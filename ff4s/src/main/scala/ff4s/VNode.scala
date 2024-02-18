@@ -27,6 +27,21 @@ sealed trait VNode[F[_]] {
 
 private[ff4s] object VNode {
 
+  private[ff4s] def modifyData[F[_]](
+      node: VNode[F],
+      f: snabbdom.VNodeData => snabbdom.VNodeData
+  ): VNode[F] = new VNode[F] {
+
+    override private[ff4s] def toSnabbdom(
+        dispatcher: Dispatcher[F]
+    ): snabbdom.VNode = node.toSnabbdom(dispatcher) match {
+      case c @ snabbdom.VNode.Comment(_)       => c
+      case e @ snabbdom.VNode.Element(_, _, _) => e.copy(data = f(e.data))
+      case t @ snabbdom.VNode.Text(_)          => t
+    }
+
+  }
+
   def apply[F[_]](snabbdomVNode: snabbdom.VNode): VNode[F] =
     new VNode[F] {
       override def toSnabbdom(dispatcher: Dispatcher[F]): snabbdom.VNode =

@@ -214,6 +214,8 @@ class Dsl[F[_], State, Action] { self =>
 
     case class ChildNode(view: V) extends Modifier
 
+    case class Slot(name: String, elem: V) extends Modifier
+
     implicit def fromView(view: V): Modifier = ChildNode(view)
 
     implicit def fromVNode(vnode: VNode[F]): Modifier = ChildNode(
@@ -275,6 +277,10 @@ class Dsl[F[_], State, Action] { self =>
       Modifier.DestroyHook(onDestroy)
   }
 
+  implicit class SlotOps(slot: Slot) {
+    def :=(element: V): Modifier = Modifier.Slot(slot.name, element)
+  }
+
   implicit class HtmlAttrsOps[A](attr: HtmlAttr[A]) {
     def :=(value: A): Modifier =
       Modifier.HtmlAttr(attr.name, value, attr.codec)
@@ -330,6 +336,14 @@ class Dsl[F[_], State, Action] { self =>
           case Modifier.Style(name, value) =>
             args.copy(style = args.style + (name -> value))
           case Modifier.Thunk(tArgs) => args.copy(thunkArgs = Some(tArgs))
+          case Modifier.Slot(name, elem) =>
+            val elemWithSlotAttr = elem.map(node =>
+              VNode.modifyData(
+                node,
+                data => data.copy(attrs = data.attrs + ("slot" -> name))
+              )
+            )
+            args.copy(children = args.children :+ elemWithSlotAttr)
         }
       }
 
@@ -394,6 +408,14 @@ class Dsl[F[_], State, Action] { self =>
           case Modifier.Style(name, value) =>
             args.copy(style = args.style + (name -> value))
           case Modifier.Thunk(tArgs) => args.copy(thunkArgs = Some(tArgs))
+          case Modifier.Slot(name, elem) =>
+            val elemWithSlotAttr = elem.map(node =>
+              VNode.modifyData(
+                node,
+                data => data.copy(attrs = data.attrs + ("slot" -> name))
+              )
+            )
+            args.copy(children = args.children :+ elemWithSlotAttr)
         }
       }
 
