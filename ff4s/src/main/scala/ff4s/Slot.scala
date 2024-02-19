@@ -26,7 +26,3 @@ package ff4s
   * simple manner.
   */
 final case class Slot(name: String)
-
-object Slot {
-  def apply(name: String) = new Slot(name)
-}
