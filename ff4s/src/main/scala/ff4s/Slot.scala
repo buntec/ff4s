@@ -16,13 +16,13 @@
 
 package ff4s
 
-import ff4s.codecs.Codec
-
-class HtmlProp[V, DomV](val name: String, val codec: Codec[V, DomV])
-
-object HtmlProp {
-
-  def apply[V, DomV](name: String, codec: Codec[V, DomV]) =
-    new HtmlProp[V, DomV](name, codec)
-
-}
+/** A [[Slot]] represents a special child component of web components.
+  *
+  * Many web components reserve a `slot` attribute for some of their children,
+  * with a particular meaning.
+  *
+  * In order to have compile-time fixed slots for your elements, you can define
+  * a variable with their name, and it will allow you to attach child in a
+  * simple manner.
+  */
+final case class Slot(name: String)

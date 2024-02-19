@@ -16,13 +16,8 @@
 
 package ff4s
 
-import ff4s.codecs.Codec
+trait WebComponent {
 
-class HtmlProp[V, DomV](val name: String, val codec: Codec[V, DomV])
-
-object HtmlProp {
-
-  def apply[V, DomV](name: String, codec: Codec[V, DomV]) =
-    new HtmlProp[V, DomV](name, codec)
+  def tagName: String
 
 }
