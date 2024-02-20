@@ -17,6 +17,11 @@ Artifacts are published to Maven Central for Scala 2.13 and Scala 3.
 libraryDependencies += "io.github.buntec" %%% "ff4s" % "<x.y.z>"
 ```
 
+## Companion libraries
+
+- [ff4s-canvas](https://github.com/buntec/ff4s-canvas)
+- [ff4s-shoelace](https://github.com/buntec/ff4s-shoelace)
+
 ## Debugging
 
 You can query the state of your ff4s app in the Browser console by defining/declaring the
@@ -33,4 +38,3 @@ var ff4s_state;
 
 The current state can then be retrieved from the `ff4s_state` variable. In particular,
 you can call `ff4s_state.toString()` (and `toString` can be customized in your Scala code).
-
