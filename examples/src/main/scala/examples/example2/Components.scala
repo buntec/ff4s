@@ -16,16 +16,14 @@
 
 package examples.example2
 
+import cats.Eq
 import cats.Show
 import cats.syntax.all._
 import org.scalajs.dom
 
-/* A set of reusable components.
- *
- * Note that everything is polymorphic in the State and Action types S and A.
- * Due to how dependent types work, we cannot pass the dsl into the class
- * constructor and instead pass it to every method. For convenience, we do this
- * implicitly where possible. */
+/* We recommend organizing reusable components into traits
+ * with self-type `ff4s.Dsl` and polymorphic State and Action types.
+ */
 trait Components[F[_], S, A] { dsl: ff4s.Dsl[F, S, A] =>
 
   import html._
@@ -34,18 +32,16 @@ trait Components[F[_], S, A] { dsl: ff4s.Dsl[F, S, A] =>
 
   /* A simple button. */
   def btn(
-      label0: String,
-      onClick0: S => Option[A],
-      isDisabled: S => Boolean
+      label: String,
+      onClick: Option[A],
+      isDisabled: Boolean
   ): V =
-    useState { state =>
-      button(
-        cls := s"px-3 py-1 text-center shadow rounded bg-pink-400 hover:bg-pink-300 active:bg-pink-500 disabled:bg-gray-400",
-        disabled := isDisabled(state),
-        onClick := (_ => onClick0(state)),
-        label0
-      )
-    }
+    button(
+      cls := s"px-3 py-1 text-center shadow rounded bg-pink-400 hover:bg-pink-300 active:bg-pink-500 disabled:bg-gray-400",
+      disabled := isDisabled,
+      html.onClick := (_ => onClick),
+      label
+    )
 
   def fancyWrapper(description: String)(children: V*): V =
     div(
@@ -66,50 +62,49 @@ trait Components[F[_], S, A] { dsl: ff4s.Dsl[F, S, A] =>
     )
 
   /* A counter that can be incremented and decremented. */
-  def counter(count: S => Int, inc: S => A, dec: S => A): V =
+  def counter(count: S => Int, inc: A, dec: A): V =
     useState { state =>
       div(
         cls := "flex flex-col items-center gap-2 p-2",
         div(cls := "p-1 bg-teal-400 rounded", s"counter=${count(state)}"),
         div(
           cls := "flex flex-row items-center justify-center gap-2",
-          btn("+", s => inc(s).some, _ => false),
-          btn("-", s => dec(s).some, _ => false)
+          btn("+", inc.some, false),
+          btn("-", dec.some, false)
         )
       )
     }
 
   /* A drop-down select with label. */
-  def labeledSelect[O: Show](
-      label0: String,
-      fromString: String => Option[O],
-      onChange0: (S, O) => Option[A],
+  def labeledSelect[O: Eq: Show](
+      label: String,
       options: List[O],
-      selected0: S => O
-  ): V = useState { state =>
-    div(
-      cls := "font-light flex flex-row items-center p-1 gap-1 border border-zinc-400 rounded",
-      label(span(label0)),
-      select(
-        cls := "m-1 rounded appearance-none",
-        onChange := ((ev: dom.Event) =>
-          ev.target match {
-            case el: dom.HTMLSelectElement =>
-              fromString(el.value).flatMap(onChange0(state, _))
-            case _ => None
-          }
-        ),
-        options.map { name =>
-          option(
-            cls := "p-2",
-            selected := (name == selected0(state)),
-            key := name.show,
-            value := name.show,
-            name.show
-          )
+      selected: O,
+      onChange: O => Option[A]
+  ): V = div(
+    cls := "font-light flex flex-row items-center p-1 gap-1 border border-zinc-400 rounded",
+    html.label(span(label)),
+    select(
+      cls := "m-1 rounded appearance-none",
+      html.onChange := ((ev: dom.Event) =>
+        ev.target match {
+          case el: dom.HTMLSelectElement =>
+            options
+              .find(o => Show[O].show(o) == el.value)
+              .flatMap(onChange(_))
+          case _ => None
         }
-      )
+      ),
+      options.map { name =>
+        option(
+          cls := "p-2",
+          html.selected := (name === selected),
+          key := name.show,
+          value := name.show,
+          name.show
+        )
+      }
     )
-  }
+  )
 
 }

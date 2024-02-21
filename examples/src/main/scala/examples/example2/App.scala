@@ -44,15 +44,14 @@ class App[F[_]](implicit val F: Concurrent[F])
       div(
         cls := "flex flex-col items-center",
         fancyWrapper("A simple counter")(
-          counter(_.counter, _ => Action.Inc(), _ => Action.Dec())
+          counter(_.counter, Action.Inc(), Action.Dec())
         ),
         fancyWrapper("A drop-down select")(
           labeledSelect[Weekday](
             "Weekday",
-            (s: String) => Weekday.fromString(s),
-            (_, l) => Action.SetWeekday(l).some,
             Weekday.values,
-            _.weekday
+            state.weekday,
+            l => Action.SetWeekday(l).some
           ),
           span(s"Your selection: ${state.weekday.show}")
         )
