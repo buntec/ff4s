@@ -125,12 +125,13 @@ trait View[F[_]] { self: ff4s.Dsl[F, State, Action] =>
   }
 
 }
-
 ```
 
 
 ```scala mdoc:js:invisible
-class App[F[_]](implicit F: Async[F]) extends ff4s.App[F, State, Action] with View[F] {
+class App[F[_]](implicit F: Async[F])
+    extends ff4s.App[F, State, Action]
+    with View[F] {
   override val store = Store[F]
   override val rootElementId = node.getAttribute("id")
 }

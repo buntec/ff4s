@@ -47,7 +47,11 @@ trait Selects[F[_], S, A] { self: ff4s.Dsl[F, S, A] =>
 
 trait Buttons[F[_], S, A] { self: ff4s.Dsl[F, S, A] =>
 
-  def customButton(child: V, onClick: S => Option[A], isDisabled: S => Boolean): V = {
+  def customButton(
+      child: V,
+      onClick: S => Option[A],
+      isDisabled: S => Boolean
+  ): V = {
     import html.{onClick => onClick0, _}
 
     useState { state =>
@@ -117,13 +121,15 @@ With concrete state and action types we can instantiate our components and build
 ```scala mdoc:js:shared
 import cats.syntax.all._
 
-trait View[F[_]] extends Selects[F, State, Action] with Buttons[F, State, Action] { 
+trait View[F[_]]
+    extends Selects[F, State, Action]
+    with Buttons[F, State, Action] {
 
-    self: ff4s.App[F, State, Action]  => 
+  self: ff4s.App[F, State, Action] =>
 
-    import html._
+  import html._
 
-    val view = {
+  val view = {
 
     useState { state =>
       div(
@@ -148,10 +154,9 @@ trait View[F[_]] extends Selects[F, State, Action] with Buttons[F, State, Action
       )
     }
 
-    }
+  }
 
 }
-
 ```
 
 
@@ -170,7 +175,9 @@ object Store {
     }
 }
 
-class App[F[_]](implicit F: Async[F]) extends ff4s.App[F, State, Action] with View[F] {
+class App[F[_]](implicit F: Async[F])
+    extends ff4s.App[F, State, Action]
+    with View[F] {
   override val store = Store[F]
   override val rootElementId = node.getAttribute("id")
 }

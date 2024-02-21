@@ -60,7 +60,6 @@ Finally, we describe how our page should be rendered using the built-in DSL
 for HTML markup:
 
 ```scala mdoc:js:shared
-
 trait View[F[_]] { self: ff4s.Dsl[F, State, Action] =>
 
   val view = {
@@ -98,7 +97,9 @@ To turn this into an app, we need a small amount of boilerplate.
 
 ```scala mdoc:js:compile-only
 // App.scala
-class App[F[_]](implicit F: Concurrent[F]) extends ff4s.App[F, State, Action] with View[F] {
+class App[F[_]](implicit F: Concurrent[F])
+    extends ff4s.App[F, State, Action]
+    with View[F] {
   override val store = Store[F]
 }
 // Main.scala
@@ -107,7 +108,9 @@ object Main extends ff4s.IOEntryPoint(new App) // uses cats.effect.IO for F
 ```
 
 ```scala mdoc:js:invisible
-class App[F[_]](implicit F: Concurrent[F]) extends ff4s.App[F, State, Action] with View[F] {
+class App[F[_]](implicit F: Concurrent[F])
+    extends ff4s.App[F, State, Action]
+    with View[F] {
   override val store = Store[F]
   override val rootElementId = node.getAttribute("id")
 }
