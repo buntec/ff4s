@@ -25,8 +25,7 @@ class App[F[_]: Async] extends ff4s.App[F, State, Action] {
 
   override val store = Store[F]
 
-  import dsl._ // basic dsl
-  import dsl.html._ // nice syntax for html tags, attributes etc.
+  import html._ // nice syntax for html tags, attributes etc.
 
   // Define some classes for easy re-use.
   val linkCls = "text-pink-500"
@@ -251,8 +250,8 @@ class App[F[_]: Async] extends ff4s.App[F, State, Action] {
         // separate import for SVG tags and attributes.
         // Note the curly braces defining a new scope.
         // Html syntax can still be accessed through fully-qualified names.
-        import dsl.svg._
-        svg(
+        import svg.{svg => svgTag, _}
+        svgTag(
           height := "100",
           width := "100",
           circle(

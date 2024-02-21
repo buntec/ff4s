@@ -108,42 +108,40 @@ object Store {
 ## View
 
 ```scala mdoc:js:shared
-object View {
+trait View[F[_]] { self: ff4s.Dsl[F, State, Action] =>
 
-  def apply[F[_]](implicit dsl: ff4s.Dsl[F, State, Action]) = {
-
-    import dsl._
-    import dsl.html._
+    import html._
     import org.scalajs.dom
 
-    useState { state =>
-      div(
-        input(
-          tpe := "text",
-          placeholder := "e.g. EUR/USD or EURUSD",
-          onInput := ((ev: dom.Event) =>
-            ev.target match {
-              case el: dom.HTMLInputElement =>
-                SetUserInput(el.value.some).some
-              case _ => None
-            }
-          )
-        ),
-        button(
-          "Get FX Rate",
-          onClick := (_ => MakeApiRequest.some),
-          disabled := state.ccyPairOption.isEmpty
-        ),
-        state.errorMessage match {
-          case Some(errorMsg) => div(styleAttr := "color: red", errorMsg)
-          case None =>
-            div(
-              s"${state.apiResponse.flatMap(_.rates.values.toList.headOption).getOrElse("")}"
+    val view = {
+        useState { state =>
+        div(
+            input(
+            tpe := "text",
+            placeholder := "e.g. EUR/USD or EURUSD",
+            onInput := ((ev: dom.Event) =>
+                ev.target match {
+                case el: dom.HTMLInputElement =>
+                    SetUserInput(el.value.some).some
+                case _ => None
+                }
             )
+            ),
+            button(
+            "Get FX Rate",
+            onClick := (_ => MakeApiRequest.some),
+            disabled := state.ccyPairOption.isEmpty
+            ),
+            state.errorMessage match {
+            case Some(errorMsg) => div(styleAttr := "color: red", errorMsg)
+            case None =>
+                div(
+                s"${state.apiResponse.flatMap(_.rates.values.toList.headOption).getOrElse("")}"
+                )
+            }
+        )
         }
-      )
     }
-  }
 
 }
 ```
@@ -153,9 +151,8 @@ object View {
 The boilerplate for `ff4s.App` and `ff4s.IOEntryPoint` is omitted.
 
 ```scala mdoc:js:invisible
-class App[F[_]](implicit F: Async[F]) extends ff4s.App[F, State, Action] {
+class App[F[_]](implicit F: Async[F]) extends ff4s.App[F, State, Action] with View[F] {
   override val store = Store[F]
-  override val view = View[F]
   override val rootElementId = node.getAttribute("id")
 }
 new ff4s.IOEntryPoint(new App, false).main(Array())

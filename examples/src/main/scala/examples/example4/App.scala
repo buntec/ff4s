@@ -93,8 +93,7 @@ class App[F[_]](implicit F: Temporal[F]) extends ff4s.App[F, State, Action] {
         .background
     }
 
-  import dsl._
-  import dsl.html._
+  import html._
 
   override val view = useState { state =>
     val btnCls = "m-1 p-2 border rounded"

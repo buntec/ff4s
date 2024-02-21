@@ -61,8 +61,7 @@ class App[F[_]](implicit val F: Async[F]) extends ff4s.App[F, State, Action] {
 
   } yield store
 
-  import dsl._
-  import dsl.html._
+  import html._
 
   val heading = h1(cls := "m-4 text-4xl", "A Router App")
 
