@@ -18,7 +18,7 @@ package ff4s
 
 import org.scalajs.dom
 
-sealed trait VNode[Action] {
+sealed trait VNode[Action] { self =>
 
   private[ff4s] def toSnabbdom(actionDispatch: Action => Unit): snabbdom.VNode
 
@@ -27,7 +27,7 @@ sealed trait VNode[Action] {
   ): VNode[Action] = new VNode[Action] {
     override private[ff4s] def toSnabbdom(
         actionDispatch: Action => Unit
-    ): snabbdom.VNode = toSnabbdom(actionDispatch) match {
+    ): snabbdom.VNode = self.toSnabbdom(actionDispatch) match {
       case c @ snabbdom.VNode.Comment(_)       => c
       case e @ snabbdom.VNode.Element(_, _, _) => e.copy(data = f(e.data))
       case t @ snabbdom.VNode.Text(_)          => t
