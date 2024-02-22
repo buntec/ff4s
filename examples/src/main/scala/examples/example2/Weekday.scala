@@ -16,10 +16,12 @@
 
 package examples.example2
 
+import cats.Eq
 import cats.Show
 import cats.syntax.all._
 
 sealed trait Weekday
+
 object Weekday {
 
   case object Monday extends Weekday
@@ -43,7 +45,9 @@ object Weekday {
 
   implicit val show: Show[Weekday] = Show.fromToString
 
-  val values = List(
+  implicit val eq: Eq[Weekday] = Eq.fromUniversalEquals
+
+  val values: List[Weekday] = List(
     Monday,
     Tuesday,
     Wednesday,

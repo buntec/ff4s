@@ -22,7 +22,8 @@ import monocle.syntax.all._
 
 // This example shows how to create and use reusable components.
 class App[F[_]](implicit val F: Concurrent[F])
-    extends ff4s.App[F, State, Action] {
+    extends ff4s.App[F, State, Action]
+    with Components[F, State, Action] {
 
   override val store = ff4s.Store[F, State, Action](State()) { _ =>
     _ match {
@@ -35,28 +36,22 @@ class App[F[_]](implicit val F: Concurrent[F])
     }
   }
 
-  // instantiate components with concrete State and Action types
-  val components = new Components[F, State, Action]
-  import components._
-
-  import dsl._
-  import dsl.html._
+  import html._
 
   // build our app using the imported components
   override val view = useState { state =>
-    pageWithHeaderAndFooter(dsl)("ff4s Reusable Components")(
+    pageWithHeaderAndFooter("ff4s Reusable Components")(
       div(
         cls := "flex flex-col items-center",
-        fancyWrapper(dsl)("A simple counter")(
-          counter(_.counter, _ => Action.Inc(), _ => Action.Dec())
+        fancyWrapper("A simple counter")(
+          counter(_.counter, Action.Inc(), Action.Dec())
         ),
-        fancyWrapper(dsl)("A drop-down select")(
+        fancyWrapper("A drop-down select")(
           labeledSelect[Weekday](
             "Weekday",
-            (s: String) => Weekday.fromString(s),
-            (_, l) => Action.SetWeekday(l).some,
             Weekday.values,
-            _.weekday
+            state.weekday,
+            l => Action.SetWeekday(l).some
           ),
           span(s"Your selection: ${state.weekday.show}")
         )

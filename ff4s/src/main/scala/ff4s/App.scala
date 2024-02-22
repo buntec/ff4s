@@ -18,16 +18,13 @@ package ff4s
 
 import cats.effect.kernel.Resource
 
-trait App[F[_], State, Action] {
-
-  final implicit val dsl: ff4s.Dsl[F, State, Action] =
-    ff4s.Dsl[F, State, Action]
+trait App[F[_], State, Action] extends Dsl[F, State, Action] {
 
   /* The id of the "root" DOM node into which this app will be rendered. */
   def rootElementId = "app"
 
   /* The top-level component of this app. */
-  def view: dsl.V
+  def view: V
 
   def store: Resource[F, Store[F, State, Action]]
 

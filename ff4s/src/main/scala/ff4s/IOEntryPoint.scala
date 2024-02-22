@@ -25,7 +25,7 @@ class IOEntryPoint[State, Action](
 ) {
 
   final def main(args: Array[String]): Unit =
-    Render(app.dsl, app.store)(app.view, app.rootElementId, replaceRoot)
+    Render(app, app.store)(app.view, app.rootElementId, replaceRoot)
       .unsafeRunAndForget()
 
 }

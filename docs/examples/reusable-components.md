@@ -2,7 +2,7 @@
 
 The ability to factor out and reuse components, possibly across project boundaries, is an essential feature of any UI framework or library. To accomplish this in ff4s we have to work with generic state and action types. Here we illustrate the general approach with some toy examples.
 
-We recommend organizing components into generic traits:
+We recommend organizing components into generic traits with a `ff4s.Dsl` self-type:
 
 ```scala mdoc:js:shared
 import org.scalajs.dom
@@ -10,16 +10,15 @@ import cats._
 import cats.syntax.all._
 
 // S and A are the state and action types, respectively
-trait Selects[F[_], S, A] {
+trait Selects[F[_], S, A] { self: ff4s.Dsl[F, S, A] =>
 
   def customSelect[O: Show: Eq](
       fromString: String => Option[O],
       onChange: (S, O) => Option[A],
       options: List[O],
       selected: S => O
-  )(implicit dsl: ff4s.Dsl[F, S, A]): dsl.V = {
-    import dsl._
-    import dsl.html.{onChange => onChange0, selected => selected0, _}
+  ): V = {
+    import html.{onChange => onChange0, selected => selected0, _}
 
     useState { state =>
       select(
@@ -46,12 +45,14 @@ trait Selects[F[_], S, A] {
 
 }
 
-trait Buttons[F[_], S, A] {
+trait Buttons[F[_], S, A] { self: ff4s.Dsl[F, S, A] =>
+
   def customButton(
-      dsl: ff4s.Dsl[F, S, A]
-  )(child: dsl.V, onClick: S => Option[A], isDisabled: S => Boolean): dsl.V = {
-    import dsl._
-    import dsl.html.{onClick => onClick0, _}
+      child: V,
+      onClick: S => Option[A],
+      isDisabled: S => Boolean
+  ): V = {
+    import html.{onClick => onClick0, _}
 
     useState { state =>
       button(
@@ -67,7 +68,6 @@ trait Buttons[F[_], S, A] {
 }
 ```
 
-Unfortunately, if a component takes another component as a parameter, then `dsl` cannot be passed implicitly due to dependent typing.
 
 ```scala mdoc:js:shared
 final case class State(counter: Int = 0, fruit: Fruit = Fruit.Banana)
@@ -121,17 +121,15 @@ With concrete state and action types we can instantiate our components and build
 ```scala mdoc:js:shared
 import cats.syntax.all._
 
-object View extends {
+trait View[F[_]]
+    extends Selects[F, State, Action]
+    with Buttons[F, State, Action] {
 
-  def apply[F[_]](implicit dsl: ff4s.Dsl[F, State, Action]) = {
+  self: ff4s.App[F, State, Action] =>
 
-    import dsl._
-    import dsl.html._
+  import html._
 
-    object components
-        extends Selects[F, State, Action]
-        with Buttons[F, State, Action]
-    import components._
+  val view = {
 
     useState { state =>
       div(
@@ -142,7 +140,7 @@ object View extends {
           _.fruit
         ),
         div(s"Selected fruit: ${state.fruit}"),
-        customButton(dsl)(
+        customButton(
           span("Increment"),
           _ => Inc.some,
           _.counter == 10
@@ -157,8 +155,10 @@ object View extends {
     }
 
   }
+
 }
 ```
+
 
 ```scala mdoc:js:invisible
 import cats.effect._
@@ -175,9 +175,10 @@ object Store {
     }
 }
 
-class App[F[_]](implicit F: Async[F]) extends ff4s.App[F, State, Action] {
+class App[F[_]](implicit F: Async[F])
+    extends ff4s.App[F, State, Action]
+    with View[F] {
   override val store = Store[F]
-  override val view = View[F]
   override val rootElementId = node.getAttribute("id")
 }
 new ff4s.IOEntryPoint(new App, false).main(Array())
