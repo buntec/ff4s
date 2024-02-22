@@ -81,7 +81,7 @@ There isn't much to say about the view.
 ```scala mdoc:js:shared
 import org.scalajs.dom
 
-trait View[F[_]] { self: ff4s.Dsl[F, State, Action] =>
+trait View { self: ff4s.Dsl[State, Action] =>
 
   import html._
 
@@ -121,7 +121,7 @@ The boilerplate construction of `ff4s.App` and `ff4s.IOEntryPoint` is omitted.
 ```scala mdoc:js:invisible
 class App[F[_]](implicit F: Async[F])
     extends ff4s.App[F, State, Action]
-    with View[F] {
+    with View {
   override val store = Store[F]
   override val rootElementId = node.getAttribute("id")
 }

@@ -112,7 +112,7 @@ object Store {
 ## View
 
 ```scala mdoc:js:shared
-trait View[F[_]] { self: ff4s.Dsl[F, State, Action] =>
+trait View { self: ff4s.Dsl[State, Action] =>
 
   import html._
   import org.scalajs.dom
@@ -153,7 +153,7 @@ Implementation of `ff4s.App` and `ff4s.IOEntryPoint` is straightforward and omit
 ```scala mdoc:js:invisible
 class App[F[_]](implicit F: Async[F])
     extends ff4s.App[F, State, Action]
-    with View[F] {
+    with View {
   override val store = Store[F]
   override val rootElementId = node.getAttribute("id")
 }
