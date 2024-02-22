@@ -22,24 +22,21 @@ sealed trait VNode[Action] {
 
   private[ff4s] def toSnabbdom(actionDispatch: Action => Unit): snabbdom.VNode
 
-}
-
-private[ff4s] object VNode {
-
-  private[ff4s] def modifyData[Action](
-      node: VNode[Action],
+  private[ff4s] final def modifyData(
       f: snabbdom.VNodeData => snabbdom.VNodeData
   ): VNode[Action] = new VNode[Action] {
-
     override private[ff4s] def toSnabbdom(
         actionDispatch: Action => Unit
-    ): snabbdom.VNode = node.toSnabbdom(actionDispatch) match {
+    ): snabbdom.VNode = toSnabbdom(actionDispatch) match {
       case c @ snabbdom.VNode.Comment(_)       => c
       case e @ snabbdom.VNode.Element(_, _, _) => e.copy(data = f(e.data))
       case t @ snabbdom.VNode.Text(_)          => t
     }
-
   }
+
+}
+
+private[ff4s] object VNode {
 
   def apply[Action](snabbdomVNode: snabbdom.VNode): VNode[Action] =
     new VNode[Action] {
@@ -47,7 +44,7 @@ private[ff4s] object VNode {
         snabbdomVNode
     }
 
-  def apply[F[_], Action](
+  def apply[Action](
       tag: String,
       children: Seq[VNode[Action]],
       cls: Option[String],
@@ -95,7 +92,7 @@ private[ff4s] object VNode {
     }
   }
 
-  def fromString[Action](text: String) = new VNode[Action] {
+  def apply[Action](text: String) = new VNode[Action] {
     override def toSnabbdom(actionDispatch: Action => Unit): snabbdom.VNode =
       text
   }

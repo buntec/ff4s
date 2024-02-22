@@ -94,7 +94,7 @@ private[ff4s] object Compiler {
                   attrs,
                   style
                 ) =>
-              VNode[F, Action](
+              VNode[Action](
                 tag,
                 children,
                 cls,

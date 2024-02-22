@@ -202,7 +202,7 @@ class Dsl[State, Action] { self =>
     implicit def fromString(
         text: String
     ): Modifier =
-      fromVNode(VNode.fromString(text))
+      fromVNode(VNode.apply(text))
 
     case class ChildNodes(vnodes: Seq[V]) extends Modifier
 
@@ -312,10 +312,9 @@ class Dsl[State, Action] { self =>
           case Modifier.Style(name, value) =>
             args.copy(style = args.style + (name -> value))
           case Modifier.Slot(name, elem) =>
-            val elemWithSlotAttr = elem.map(node =>
-              VNode.modifyData(
-                node,
-                data => data.copy(attrs = data.attrs + ("slot" -> name))
+            val elemWithSlotAttr = elem.map(
+              _.modifyData(data =>
+                data.copy(attrs = data.attrs + ("slot" -> name))
               )
             )
             args.copy(children = args.children :+ elemWithSlotAttr)
@@ -382,10 +381,9 @@ class Dsl[State, Action] { self =>
           case Modifier.Style(name, value) =>
             args.copy(style = args.style + (name -> value))
           case Modifier.Slot(name, elem) =>
-            val elemWithSlotAttr = elem.map(node =>
-              VNode.modifyData(
-                node,
-                data => data.copy(attrs = data.attrs + ("slot" -> name))
+            val elemWithSlotAttr = elem.map(
+              _.modifyData(data =>
+                data.copy(attrs = data.attrs + ("slot" -> name))
               )
             )
             args.copy(children = args.children :+ elemWithSlotAttr)
