@@ -189,11 +189,11 @@
         <p>There isn&#39;t much to say about the view.</p>
         <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">org</span><span>.</span><span class="identifier">scalajs</span><span>.</span><span class="identifier">dom</span><span>
 
-</span><span class="keyword">object</span><span> </span><span class="type-name">View</span><span> {
+</span><span class="keyword">trait</span><span> </span><span class="type-name">View</span><span>[</span><span class="type-name">F</span><span>[</span><span class="identifier">_</span><span>]] { </span><span class="identifier">self</span><span>: </span><span class="identifier">ff4s</span><span>.</span><span class="type-name">Dsl</span><span>[</span><span class="type-name">F</span><span>, </span><span class="type-name">State</span><span>, </span><span class="type-name">Action</span><span>] =&gt;
 
-  </span><span class="keyword">def</span><span> </span><span class="declaration-name">apply</span><span>[</span><span class="type-name">F</span><span>[</span><span class="identifier">_</span><span>]](</span><span class="keyword">implicit</span><span> </span><span class="identifier">dsl</span><span>: </span><span class="identifier">ff4s</span><span>.</span><span class="type-name">Dsl</span><span>[</span><span class="type-name">F</span><span>, </span><span class="type-name">State</span><span>, </span><span class="type-name">Action</span><span>]) = {
-    </span><span class="keyword">import</span><span> </span><span class="identifier">dsl</span><span>.</span><span class="identifier">_</span><span>
-    </span><span class="keyword">import</span><span> </span><span class="identifier">dsl</span><span>.</span><span class="identifier">html</span><span>.</span><span class="identifier">_</span><span>
+  </span><span class="keyword">import</span><span> </span><span class="identifier">html</span><span>.</span><span class="identifier">_</span><span>
+
+  </span><span class="keyword">val</span><span> </span><span class="identifier">view</span><span> = {
 
     </span><span class="identifier">useState</span><span> { </span><span class="identifier">state</span><span> =&gt;
       </span><span class="identifier">div</span><span>(

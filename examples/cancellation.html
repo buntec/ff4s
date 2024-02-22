@@ -114,7 +114,6 @@
     <li class="level1 nav-leaf"><a href="#actions">Actions</a></li>
     <li class="level1 nav-leaf"><a href="#store">Store</a></li>
     <li class="level1 nav-leaf"><a href="#view">View</a></li>
-    <li class="level1 nav-leaf"><a href="#app">App</a></li>
   </ul>
 
   <p class="footer"></p>
@@ -212,11 +211,11 @@
 }</span></code></pre>
         
         <h2 id="view" class="section"><a class="anchor-link left" href="#view"><i class="icofont-laika link">&#xef71;</i></a>View</h2>
-        <pre><code class="nohighlight"><span class="keyword">object</span><span> </span><span class="type-name">View</span><span> {
+        <pre><code class="nohighlight"><span class="keyword">trait</span><span> </span><span class="type-name">View</span><span>[</span><span class="type-name">F</span><span>[</span><span class="identifier">_</span><span>]] { </span><span class="identifier">self</span><span>: </span><span class="identifier">ff4s</span><span>.</span><span class="type-name">Dsl</span><span>[</span><span class="type-name">F</span><span>, </span><span class="type-name">State</span><span>, </span><span class="type-name">Action</span><span>] =&gt;
 
-  </span><span class="keyword">def</span><span> </span><span class="declaration-name">apply</span><span>[</span><span class="type-name">F</span><span>[</span><span class="identifier">_</span><span>]](</span><span class="keyword">implicit</span><span> </span><span class="identifier">dsl</span><span>: </span><span class="identifier">ff4s</span><span>.</span><span class="type-name">Dsl</span><span>[</span><span class="type-name">F</span><span>, </span><span class="type-name">State</span><span>, </span><span class="type-name">Action</span><span>]) = {
-    </span><span class="keyword">import</span><span> </span><span class="identifier">dsl</span><span>.</span><span class="identifier">_</span><span>
-    </span><span class="keyword">import</span><span> </span><span class="identifier">dsl</span><span>.</span><span class="identifier">html</span><span>.</span><span class="identifier">_</span><span>
+  </span><span class="keyword">val</span><span> </span><span class="identifier">view</span><span> = {
+
+    </span><span class="keyword">import</span><span> </span><span class="identifier">html</span><span>.</span><span class="identifier">_</span><span>
 
     </span><span class="identifier">useState</span><span> { </span><span class="identifier">state</span><span> =&gt;
       </span><span class="identifier">div</span><span>(
@@ -232,9 +231,6 @@
   }
 
 }</span></code></pre>
-        
-        <h2 id="app" class="section"><a class="anchor-link left" href="#app"><i class="icofont-laika link">&#xef71;</i></a>App</h2>
-        <p>The boilerplate for <code>ff4s.App</code> and <code>ff4s.IOEntryPoint</code> is omitted.</p>
         <div id="mdoc-html-run5" data-mdoc-js></div>
         <p><script type="text/javascript" src="cancellation.md.js" defer></script>
         <script type="text/javascript" src="mdoc.js" defer></script></p>
