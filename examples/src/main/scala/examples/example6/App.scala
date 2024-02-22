@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package examples.example5
+package examples.example6
 
 import cats.effect.Async
 import cats.effect.implicits._
@@ -29,27 +29,22 @@ sealed trait Action
 
 object Action {
 
-  case class Noop() extends Action
   case class Toggle() extends Action
 
 }
 
-// This example was used to reproduce a bug:
-//
-// A previous version of ff4s mapped reflected attributes to
-// props (via scala-dom-types), which is problematic b/c snappdom cannot delete props
-// when patching a node so things like `id` can erroneously
-// survive a patch. This example demonstrates this behavior.
-// Mapping reflected attributes to attributes (by changing scala-dom-types code-gen config)
-// fixes the issue.
-
+/*
+ * This example was used to reproduce a bug: an earlier version of ff4s
+ * mapped `class` to the `className` property, which cannot be deleted
+ * so that when `class` is removed from an element it would still
+ * survive the patching. Mapping `class` to the `class` attribute fixes the issue.
+ * */
 class App[F[_]](implicit val F: Async[F]) extends ff4s.App[F, State, Action] {
 
   override val store = for {
 
     store <- ff4s.Store[F, State, Action](State())(_ =>
       _ match {
-        case Action.Noop() => (_, none)
         case Action.Toggle() =>
           state => state.copy(toggle = !state.toggle) -> none
       }
@@ -66,26 +61,12 @@ class App[F[_]](implicit val F: Async[F]) extends ff4s.App[F, State, Action] {
 
   import html._
 
-  val heading = h1(cls := "m-4 text-4xl", "Example")
-
   override val view = useState { state =>
     div(
       cls := "flex flex-col items-center h-screen",
-      heading,
-      (if (state.toggle) div("hello") else empty),
-      div(
-        idAttr := "bar",
-        div(
-          "blah"
-        )
-      ),
-      div(
-        "foo",
-        idAttr := "foo",
-        div(
-          "baz",
-          idAttr := "baz"
-        )
+      span(s"Toggle: ${state.toggle}"),
+      (
+        if (state.toggle) div("hello", cls := "foo") else div("hello")
       )
     )
 

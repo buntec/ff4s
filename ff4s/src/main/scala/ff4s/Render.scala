@@ -39,7 +39,7 @@ private[ff4s] object Render {
   )
 
   def apply[F[_], State, Action](
-      dsl: Dsl[F, State, Action],
+      dsl: Dsl[State, Action],
       store: Resource[F, Store[F, State, Action]]
   )(
       view: dsl.V, // must be curried b/c of dependent type
@@ -63,13 +63,25 @@ private[ff4s] object Render {
         }
         state0 <- store.state.get
         vnode0 <- F.delay(view.foldMap(compiler(dsl, state0, store.dispatch)))
-        proxy0 <- F.delay(patch(root, vnode0.toSnabbdom(dispatcher)))
+        proxy0 <- F.delay(
+          patch(
+            root,
+            vnode0.toSnabbdom(action =>
+              dispatcher.unsafeRunAndForget(store.dispatch(action))
+            )
+          )
+        )
         _ <- store.state.discrete
           .map(state => view.foldMap(compiler(dsl, state, store.dispatch)))
           .evalMapAccumulate(proxy0) { case (prevProxy, vnode) =>
             F.async_[PatchedVNode] { cb =>
               dom.window.requestAnimationFrame { _ =>
-                val proxy = patch(prevProxy, vnode.toSnabbdom(dispatcher))
+                val proxy = patch(
+                  prevProxy,
+                  vnode.toSnabbdom(action =>
+                    dispatcher.unsafeRunAndForget(store.dispatch(action))
+                  )
+                )
                 cb(Right(proxy))
               }
               ()

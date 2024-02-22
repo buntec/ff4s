@@ -24,13 +24,13 @@ import cats.syntax.all._
 import ff4s.codecs._
 import org.scalajs.dom
 
-class Dsl[F[_], State, Action] { self =>
+class Dsl[State, Action] { self =>
 
   private[ff4s] sealed trait ViewA[A]
 
   private[ff4s] case class Element(
       tag: String,
-      children: Seq[VNode[F]],
+      children: Seq[VNode[Action]],
       eventHandlers: Map[String, dom.Event => Option[Action]],
       cls: Option[String],
       key: Option[String],
@@ -38,16 +38,15 @@ class Dsl[F[_], State, Action] { self =>
       onDestroy: Option[dom.Element => Action],
       props: Map[String, Any],
       attrs: Map[String, snabbdom.AttrValue],
-      style: Map[String, String],
-      thunkArgs: Option[State => Any]
-  ) extends ViewA[VNode[F]]
+      style: Map[String, String]
+  ) extends ViewA[VNode[Action]]
 
   private[ff4s] case class Literal(html: String, cache: Boolean)
-      extends ViewA[VNode[F]]
+      extends ViewA[VNode[Action]]
 
-  private[ff4s] case class Text(s: String) extends ViewA[VNode[F]]
+  private[ff4s] case class Text(s: String) extends ViewA[VNode[Action]]
 
-  private[ff4s] case class Empty() extends ViewA[VNode[F]]
+  private[ff4s] case class Empty() extends ViewA[VNode[Action]]
 
   private[ff4s] case class GetState() extends ViewA[State]
 
@@ -58,33 +57,14 @@ class Dsl[F[_], State, Action] { self =>
   type View[A] = Free[ViewA, A]
 
   /* The type of an ff4s program. */
-  type V = View[VNode[F]]
-
-  implicit class ViewOps[A](view: View[A]) {
-
-    def translate[StateB, ActionB](
-        dslB: Dsl[F, StateB, ActionB]
-    )(implicit f: StateB => State, g: Action => ActionB): dslB.View[A] =
-      view.foldMap(
-        Compiler.transpile[F, State, StateB, Action, ActionB](self, dslB, f, g)
-      )
-
-  }
-
-  def embed[A, StateB, ActionB](
-      dslB: Dsl[F, StateB, ActionB],
-      f: State => StateB,
-      g: ActionB => Action
-  )(view: dslB.View[A]): View[A] = view.foldMap(
-    Compiler.transpile[F, StateB, State, ActionB, Action](dslB, self, f, g)
-  )
+  type V = View[VNode[Action]]
 
   implicit class VOps(view: V) {
 
     /** Runs this ff4s program and renders it into the unique DOM node with the
       * given id. Prefer to use [[ff4s.IOEntryPoint]].
       */
-    def renderInto(
+    def renderInto[F[_]](
         rootElementId: String
     )(implicit
         async: Async[F],
@@ -94,7 +74,7 @@ class Dsl[F[_], State, Action] { self =>
     /** Runs this ff4s program and renders it into the unique DOM node with the
       * given id. Prefer to use [[ff4s.IOEntryPoint]].
       */
-    def renderReplace(
+    def renderReplace[F[_]](
         rootElementId: String
     )(implicit
         async: Async[F],
@@ -129,7 +109,7 @@ class Dsl[F[_], State, Action] { self =>
 
   private[ff4s] def element(
       tag: String,
-      children: Seq[VNode[F]] = Seq.empty,
+      children: Seq[VNode[Action]] = Seq.empty,
       eventHandlers: Map[String, dom.Event => Option[Action]] = Map.empty,
       cls: Option[String] = None,
       key: Option[String] = None,
@@ -137,9 +117,8 @@ class Dsl[F[_], State, Action] { self =>
       onDestroy: Option[dom.Element => Action] = None,
       props: Map[String, Any] = Map.empty,
       attrs: Map[String, snabbdom.AttrValue] = Map.empty,
-      style: Map[String, String] = Map.empty,
-      thunkArgs: Option[State => Any] = None
-  ): V = liftF[ViewA, VNode[F]](
+      style: Map[String, String] = Map.empty
+  ): V = liftF[ViewA, VNode[Action]](
     Element(
       tag,
       children,
@@ -150,8 +129,7 @@ class Dsl[F[_], State, Action] { self =>
       onDestroy,
       props,
       attrs,
-      style,
-      thunkArgs
+      style
     )
   )
 
@@ -163,11 +141,11 @@ class Dsl[F[_], State, Action] { self =>
     * setting `cache = false` to avoid memory leaks.
     */
   def literal(html: String, cache: Boolean = true): V =
-    liftF[ViewA, VNode[F]](Literal(html, cache))
+    liftF[ViewA, VNode[Action]](Literal(html, cache))
 
-  def text(s: String): V = liftF[ViewA, VNode[F]](Text(s))
+  def text(s: String): V = liftF[ViewA, VNode[Action]](Text(s))
 
-  def empty: V = liftF[ViewA, VNode[F]](Empty())
+  def empty: V = liftF[ViewA, VNode[Action]](Empty())
 
   private case class ElemArgs(
       key: Option[String] = None,
@@ -177,8 +155,7 @@ class Dsl[F[_], State, Action] { self =>
       style: Map[String, String] = Map.empty,
       eventHandlers: Map[String, dom.Event => Option[Action]] = Map.empty,
       insertHook: Option[dom.Element => Action] = None,
-      destroyHook: Option[dom.Element => Action] = None,
-      thunkArgs: Option[State => Any] = None
+      destroyHook: Option[dom.Element => Action] = None
   )
 
   sealed trait Modifier
@@ -218,8 +195,8 @@ class Dsl[F[_], State, Action] { self =>
 
     implicit def fromView(view: V): Modifier = ChildNode(view)
 
-    implicit def fromVNode(vnode: VNode[F]): Modifier = ChildNode(
-      Free.pure[ViewA, VNode[F]](vnode)
+    implicit def fromVNode(vnode: VNode[Action]): Modifier = ChildNode(
+      Free.pure[ViewA, VNode[Action]](vnode)
     )
 
     implicit def fromString(
@@ -233,9 +210,9 @@ class Dsl[F[_], State, Action] { self =>
       ChildNodes(views)
 
     implicit def fromVNodes(
-        vnodes: Seq[VNode[F]]
+        vnodes: Seq[VNode[Action]]
     ): Modifier =
-      ChildNodes(vnodes.map(v => Free.pure[ViewA, VNode[F]](v)))
+      ChildNodes(vnodes.map(v => Free.pure[ViewA, VNode[Action]](v)))
 
     case class InsertHook(onInsert: dom.Element => Action) extends Modifier
 
@@ -244,8 +221,6 @@ class Dsl[F[_], State, Action] { self =>
     ) extends Modifier
 
     case class Style(name: String, value: String) extends Modifier
-
-    case class Thunk(args: State => Any) extends Modifier
 
   }
 
@@ -261,11 +236,6 @@ class Dsl[F[_], State, Action] { self =>
     * ```
     */
   val noop: Modifier = Modifier.NoOp
-
-  /** Thunks are currently broken :( */
-  object thunked {
-    def :=(args: State => Any): Modifier = Modifier.Thunk(args)
-  }
 
   object insertHook {
     def :=(onInsert: dom.Element => Action): Modifier =
@@ -341,7 +311,6 @@ class Dsl[F[_], State, Action] { self =>
             args.copy(destroyHook = Some(onDestroy))
           case Modifier.Style(name, value) =>
             args.copy(style = args.style + (name -> value))
-          case Modifier.Thunk(tArgs) => args.copy(thunkArgs = Some(tArgs))
           case Modifier.Slot(name, elem) =>
             val elemWithSlotAttr = elem.map(node =>
               VNode.modifyData(
@@ -368,8 +337,7 @@ class Dsl[F[_], State, Action] { self =>
           props = args.props,
           style = args.style,
           onInsert = args.insertHook,
-          onDestroy = args.destroyHook,
-          thunkArgs = args.thunkArgs
+          onDestroy = args.destroyHook
         )
       }
 
@@ -413,7 +381,6 @@ class Dsl[F[_], State, Action] { self =>
             args.copy(destroyHook = Some(onDestroy))
           case Modifier.Style(name, value) =>
             args.copy(style = args.style + (name -> value))
-          case Modifier.Thunk(tArgs) => args.copy(thunkArgs = Some(tArgs))
           case Modifier.Slot(name, elem) =>
             val elemWithSlotAttr = elem.map(node =>
               VNode.modifyData(
@@ -435,8 +402,7 @@ class Dsl[F[_], State, Action] { self =>
           props = args.props,
           style = args.style,
           onInsert = args.insertHook,
-          onDestroy = args.destroyHook,
-          thunkArgs = args.thunkArgs
+          onDestroy = args.destroyHook
         )
       }
 
@@ -455,8 +421,7 @@ class Dsl[F[_], State, Action] { self =>
       with HtmlProps
       with GlobalEventProps {
 
-    // Alternative: new HtmlAttr("class", StringAsIsCodec)
-    lazy val cls = new HtmlProp[String, String]("className", StringAsIsCodec)
+    lazy val cls = new HtmlAttr("class", StringAsIsCodec)
     lazy val `class` = cls
     lazy val className = cls
 
@@ -485,7 +450,7 @@ class Dsl[F[_], State, Action] { self =>
 
 object Dsl {
 
-  def apply[F[_], State, Action]: Dsl[F, State, Action] =
-    new Dsl[F, State, Action]
+  def apply[State, Action]: Dsl[State, Action] =
+    new Dsl[State, Action]
 
 }

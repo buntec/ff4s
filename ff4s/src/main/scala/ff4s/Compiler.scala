@@ -17,7 +17,6 @@
 package ff4s
 
 import cats.Id
-import cats.effect.std.Dispatcher
 import cats.~>
 import org.scalajs.dom
 
@@ -28,7 +27,7 @@ import scalajs.js
 private[ff4s] trait Compiler[F[_], State, Action] {
 
   def apply(
-      dsl: Dsl[F, State, Action],
+      dsl: Dsl[State, Action],
       state: State,
       actionDispatch: Action => F[Unit]
   ): (dsl.ViewA ~> Id)
@@ -40,11 +39,11 @@ private[ff4s] object Compiler {
   def apply[F[_], State, Action](debug: Boolean) =
     new Compiler[F, State, Action] {
 
-      private val literalsCache: HashMap[String, VNode[F]] =
-        collection.mutable.HashMap.empty[String, VNode[F]]
+      private val literalsCache: HashMap[String, VNode[Action]] =
+        collection.mutable.HashMap.empty[String, VNode[Action]]
 
       override def apply(
-          dsl: Dsl[F, State, Action],
+          dsl: Dsl[State, Action],
           state: State,
           actionDispatch: Action => F[Unit]
       ): (dsl.ViewA ~> Id) = {
@@ -58,8 +57,8 @@ private[ff4s] object Compiler {
 
           private var id0: Long = 0L
 
-          private def fromLiteral(html: String): VNode[F] =
-            VNode[F] {
+          private def fromLiteral(html: String): VNode[Action] =
+            VNode[Action] {
               val elm = dom.document.createElement("div")
               elm.innerHTML = html
               val vnode = snabbdom.toVNode(elm).toVNode
@@ -75,9 +74,9 @@ private[ff4s] object Compiler {
 
             case GetState() => state
 
-            case Text(s) => VNode[F](snabbdom.VNode.text(s))
+            case Text(s) => VNode[Action](snabbdom.VNode.text(s))
 
-            case Empty() => VNode[F](snabbdom.VNode.empty)
+            case Empty() => VNode[Action](snabbdom.VNode.empty)
 
             case Literal(html, cache) =>
               if (cache) literalsCache.getOrElseUpdate(html, fromLiteral(html))
@@ -93,60 +92,20 @@ private[ff4s] object Compiler {
                   onDestroy,
                   props,
                   attrs,
-                  style,
-                  thunkArgs
+                  style
                 ) =>
-              thunkArgs match {
-                case Some(args) => {
-                  val renderFn = () => {
-                    VNode[F, Action](
-                      tag,
-                      children,
-                      cls,
-                      key,
-                      props,
-                      attrs,
-                      style,
-                      eventHandlers,
-                      onInsert,
-                      onDestroy,
-                      actionDispatch
-                    )
-                  }
-
-                  VNode[F]((dispatcher: Dispatcher[F]) =>
-                    snabbdom.thunk(
-                      tag,
-                      key.getOrElse(""): String,
-                      (_: Any) =>
-                        renderFn()
-                          .toSnabbdom(
-                            dispatcher
-                          )
-                          .asInstanceOf[
-                            snabbdom.VNode.Element
-                          ], // TODO: this is broken
-                      Seq(args(state))
-                    )
-                  )
-                }
-
-                case _ =>
-                  VNode[F, Action](
-                    tag,
-                    children,
-                    cls,
-                    key,
-                    props,
-                    attrs,
-                    style,
-                    eventHandlers,
-                    onInsert,
-                    onDestroy,
-                    actionDispatch
-                  )
-
-              }
+              VNode[F, Action](
+                tag,
+                children,
+                cls,
+                key,
+                props,
+                attrs,
+                style,
+                eventHandlers,
+                onInsert,
+                onDestroy
+              )
 
             case GetUUID() => java.util.UUID.randomUUID()
 
@@ -156,56 +115,5 @@ private[ff4s] object Compiler {
         }
       }
     }
-
-  def transpile[F[_], StateA, StateB, ActionA, ActionB](
-      dslA: Dsl[F, StateA, ActionA],
-      dslB: Dsl[F, StateB, ActionB],
-      f: StateB => StateA,
-      g: ActionA => ActionB
-  ): dslA.ViewA ~> dslB.View = {
-
-    new (dslA.ViewA ~> dslB.View) {
-
-      override def apply[A](fa: dslA.ViewA[A]): dslB.View[A] = fa match {
-        case dslA.Text(s)              => dslB.text(s)
-        case dslA.Literal(html, cache) => dslB.literal(html, cache)
-        case dslA.Empty()              => dslB.empty
-        case dslA.GetState()           => dslB.getState.map(f)
-        case dslA.Element(
-              tag,
-              children,
-              eventHandlers,
-              cls,
-              key,
-              onInsert,
-              onDestroy,
-              props,
-              attrs,
-              style,
-              thunkArgs
-            ) =>
-          dslB.element(
-            tag,
-            children,
-            eventHandlers.map { case (key, handler) =>
-              (key -> ((ev: dom.Event) => handler(ev).map(g)))
-            },
-            cls,
-            key,
-            onInsert.map(hook => (v: dom.Element) => g(hook(v))),
-            onDestroy.map(hook => (v: dom.Element) => g(hook(v))),
-            props,
-            attrs,
-            style,
-            thunkArgs.map(t => (s: StateB) => t(f(s)))
-          )
-
-        case dslA.GetUUID() => dslB.getUUID
-
-        case dslA.GetId() => dslB.getId
-      }
-
-    }
-  }
 
 }

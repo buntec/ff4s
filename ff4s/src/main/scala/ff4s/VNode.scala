@@ -16,25 +16,24 @@
 
 package ff4s
 
-import cats.effect.std.Dispatcher
 import org.scalajs.dom
 
-sealed trait VNode[F[_]] {
+sealed trait VNode[Action] {
 
-  private[ff4s] def toSnabbdom(dispatcher: Dispatcher[F]): snabbdom.VNode
+  private[ff4s] def toSnabbdom(actionDispatch: Action => Unit): snabbdom.VNode
 
 }
 
 private[ff4s] object VNode {
 
-  private[ff4s] def modifyData[F[_]](
-      node: VNode[F],
+  private[ff4s] def modifyData[Action](
+      node: VNode[Action],
       f: snabbdom.VNodeData => snabbdom.VNodeData
-  ): VNode[F] = new VNode[F] {
+  ): VNode[Action] = new VNode[Action] {
 
     override private[ff4s] def toSnabbdom(
-        dispatcher: Dispatcher[F]
-    ): snabbdom.VNode = node.toSnabbdom(dispatcher) match {
+        actionDispatch: Action => Unit
+    ): snabbdom.VNode = node.toSnabbdom(actionDispatch) match {
       case c @ snabbdom.VNode.Comment(_)       => c
       case e @ snabbdom.VNode.Element(_, _, _) => e.copy(data = f(e.data))
       case t @ snabbdom.VNode.Text(_)          => t
@@ -42,21 +41,15 @@ private[ff4s] object VNode {
 
   }
 
-  def apply[F[_]](snabbdomVNode: snabbdom.VNode): VNode[F] =
-    new VNode[F] {
-      override def toSnabbdom(dispatcher: Dispatcher[F]): snabbdom.VNode =
+  def apply[Action](snabbdomVNode: snabbdom.VNode): VNode[Action] =
+    new VNode[Action] {
+      override def toSnabbdom(actionDispatch: Action => Unit): snabbdom.VNode =
         snabbdomVNode
-    }
-
-  def apply[F[_]](mkSnabbdomVNode: Dispatcher[F] => snabbdom.VNode): VNode[F] =
-    new VNode[F] {
-      override def toSnabbdom(dispatcher: Dispatcher[F]): snabbdom.VNode =
-        mkSnabbdomVNode(dispatcher)
     }
 
   def apply[F[_], Action](
       tag: String,
-      children: Seq[VNode[F]],
+      children: Seq[VNode[Action]],
       cls: Option[String],
       key: Option[String],
       props: Map[String, Any],
@@ -64,26 +57,23 @@ private[ff4s] object VNode {
       style: Map[String, String],
       handlers: Map[String, dom.Event => Option[Action]],
       onInsert: Option[dom.Element => Action],
-      onDestroy: Option[dom.Element => Action],
-      actionDispatch: Action => F[Unit]
-  ): VNode[F] = new VNode[F] {
-    override def toSnabbdom(dispatcher: Dispatcher[F]): snabbdom.VNode = {
+      onDestroy: Option[dom.Element => Action]
+  ): VNode[Action] = new VNode[Action] {
+    override def toSnabbdom(actionDispatch: Action => Unit): snabbdom.VNode = {
 
       val insertHook = onInsert.map { hook =>
         new snabbdom.InsertHook {
           override def apply(vNode: snabbdom.PatchedVNode): Unit =
-            dispatcher.unsafeRunAndForget(
-              actionDispatch(hook(vNode.node.asInstanceOf[dom.Element]))
-            )
+            actionDispatch(hook(vNode.node.asInstanceOf[dom.Element]))
+
         }
       }
 
       val destroyHook = onDestroy.map { hook =>
         new snabbdom.DestroyHook {
           override def apply(vNode: snabbdom.PatchedVNode): Unit =
-            dispatcher.unsafeRunAndForget(
-              actionDispatch(hook(vNode.node.asInstanceOf[dom.Element]))
-            )
+            actionDispatch(hook(vNode.node.asInstanceOf[dom.Element]))
+
         }
       }
 
@@ -95,20 +85,18 @@ private[ff4s] object VNode {
         hook = Some(snabbdom.Hooks(insert = insertHook, destroy = destroyHook)),
         on = handlers.map { case (eventName, handler) =>
           (eventName -> snabbdom.EventHandler((e: dom.Event) =>
-            handler(e).fold(())(action =>
-              dispatcher.unsafeRunAndForget(actionDispatch(action))
-            )
+            handler(e).fold(())(action => actionDispatch(action))
           ))
         }
       )
 
-      snabbdom.h(tag, data, children.map(_.toSnabbdom(dispatcher)).toList)
+      snabbdom.h(tag, data, children.map(_.toSnabbdom(actionDispatch)).toList)
 
     }
   }
 
-  def fromString[F[_]](text: String) = new VNode[F] {
-    override def toSnabbdom(dispatcher: Dispatcher[F]): snabbdom.VNode =
+  def fromString[Action](text: String) = new VNode[Action] {
+    override def toSnabbdom(actionDispatch: Action => Unit): snabbdom.VNode =
       text
   }
 

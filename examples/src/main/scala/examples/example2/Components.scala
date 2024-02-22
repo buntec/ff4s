@@ -24,7 +24,7 @@ import org.scalajs.dom
 /* We recommend organizing reusable components into traits
  * with self-type `ff4s.Dsl` and polymorphic State and Action types.
  */
-trait Components[F[_], S, A] { dsl: ff4s.Dsl[F, S, A] =>
+trait Components[S, A] { dsl: ff4s.Dsl[S, A] =>
 
   import html._
 
