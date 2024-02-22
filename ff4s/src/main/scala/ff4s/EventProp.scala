@@ -16,4 +16,8 @@
 
 package ff4s
 
-case class EventProp[Ev](name: String)
+final class EventProp[Ev](val name: String)
+
+object EventProp {
+  def apply[Ev](name: String): EventProp[Ev] = new EventProp[Ev](name)
+}

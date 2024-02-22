@@ -18,7 +18,7 @@ package ff4s
 
 import cats.effect.kernel.Resource
 
-trait App[F[_], State, Action] extends Dsl[F, State, Action] {
+trait App[F[_], State, Action] extends Dsl[State, Action] {
 
   /* The id of the "root" DOM node into which this app will be rendered. */
   def rootElementId = "app"

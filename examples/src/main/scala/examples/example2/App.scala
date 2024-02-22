@@ -23,7 +23,7 @@ import monocle.syntax.all._
 // This example shows how to create and use reusable components.
 class App[F[_]](implicit val F: Concurrent[F])
     extends ff4s.App[F, State, Action]
-    with Components[F, State, Action] {
+    with Components[State, Action] {
 
   override val store = ff4s.Store[F, State, Action](State()) { _ =>
     _ match {

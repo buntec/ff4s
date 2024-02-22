@@ -16,4 +16,11 @@
 
 package ff4s
 
-class HtmlTag[A](val name: String, val void: Boolean)
+final class HtmlTag[A](val name: String, val void: Boolean)
+
+object HtmlTag {
+
+  def apply[A](name: String, void: Boolean = false): HtmlTag[A] =
+    new HtmlTag[A](name, void)
+
+}

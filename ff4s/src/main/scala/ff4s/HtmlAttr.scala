@@ -18,11 +18,11 @@ package ff4s
 
 import ff4s.codecs.Codec
 
-class HtmlAttr[V](val name: String, val codec: Codec[V, String])
+final class HtmlAttr[V](val name: String, val codec: Codec[V, String])
 
 object HtmlAttr {
 
-  def apply[V](name: String, codec: Codec[V, String]) =
+  def apply[V](name: String, codec: Codec[V, String]): HtmlAttr[V] =
     new HtmlAttr[V](name, codec)
 
 }

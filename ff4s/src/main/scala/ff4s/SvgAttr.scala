@@ -18,8 +18,17 @@ package ff4s
 
 import ff4s.codecs.Codec
 
-class SvgAttr[V](
+final class SvgAttr[V](
     val name: String,
     val codec: Codec[V, String],
     val namespace: Option[String]
 )
+
+object SvgAttr {
+
+  def apply[V](
+      name: String,
+      codec: Codec[V, String],
+      namespace: Option[String]
+  ): SvgAttr[V] = new SvgAttr[V](name, codec, namespace)
+}
