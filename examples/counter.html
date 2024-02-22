@@ -166,7 +166,7 @@
         <h2 id="view" class="section"><a class="anchor-link left" href="#view"><i class="icofont-laika link">&#xef71;</i></a>View</h2>
         <p>Finally, we describe how our page should be rendered using the built-in DSL
         for HTML markup:</p>
-        <pre><code class="nohighlight"><span class="keyword">trait</span><span> </span><span class="type-name">View</span><span>[</span><span class="type-name">F</span><span>[</span><span class="identifier">_</span><span>]] { </span><span class="identifier">self</span><span>: </span><span class="identifier">ff4s</span><span>.</span><span class="type-name">Dsl</span><span>[</span><span class="type-name">F</span><span>, </span><span class="type-name">State</span><span>, </span><span class="type-name">Action</span><span>] =&gt;
+        <pre><code class="nohighlight"><span class="keyword">trait</span><span> </span><span class="type-name">View</span><span> { </span><span class="identifier">self</span><span>: </span><span class="identifier">ff4s</span><span>.</span><span class="type-name">Dsl</span><span>[</span><span class="type-name">State</span><span>, </span><span class="type-name">Action</span><span>] =&gt;
 
   </span><span class="keyword">val</span><span> </span><span class="identifier">view</span><span> = {
 
@@ -201,7 +201,7 @@
         <pre class="keep-together pdf epub"><code class="nohighlight"><span class="comment">// App.scala
 </span><span class="keyword">class</span><span> </span><span class="type-name">App</span><span>[</span><span class="type-name">F</span><span>[</span><span class="identifier">_</span><span>]](</span><span class="keyword">implicit</span><span> </span><span class="type-name">F</span><span>: </span><span class="type-name">Concurrent</span><span>[</span><span class="type-name">F</span><span>])
     </span><span class="keyword">extends</span><span> </span><span class="identifier">ff4s</span><span>.</span><span class="type-name">App</span><span>[</span><span class="type-name">F</span><span>, </span><span class="type-name">State</span><span>, </span><span class="type-name">Action</span><span>]
-    </span><span class="keyword">with</span><span> </span><span class="type-name">View</span><span>[</span><span class="type-name">F</span><span>] {
+    </span><span class="keyword">with</span><span> </span><span class="type-name">View</span><span> {
   </span><span class="keyword">override</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">store</span><span> = </span><span class="type-name">Store</span><span>[</span><span class="type-name">F</span><span>]
 }
 </span><span class="comment">// Main.scala

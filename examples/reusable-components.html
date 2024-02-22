@@ -126,7 +126,7 @@
 </span><span class="keyword">import</span><span> </span><span class="identifier">cats</span><span>.</span><span class="identifier">syntax</span><span>.</span><span class="identifier">all</span><span>.</span><span class="identifier">_</span><span>
 
 </span><span class="comment">// S and A are the state and action types, respectively
-</span><span class="keyword">trait</span><span> </span><span class="type-name">Selects</span><span>[</span><span class="type-name">F</span><span>[</span><span class="identifier">_</span><span>], </span><span class="type-name">S</span><span>, </span><span class="type-name">A</span><span>] { </span><span class="identifier">self</span><span>: </span><span class="identifier">ff4s</span><span>.</span><span class="type-name">Dsl</span><span>[</span><span class="type-name">F</span><span>, </span><span class="type-name">S</span><span>, </span><span class="type-name">A</span><span>] =&gt;
+</span><span class="keyword">trait</span><span> </span><span class="type-name">Selects</span><span>[</span><span class="type-name">S</span><span>, </span><span class="type-name">A</span><span>] { </span><span class="identifier">self</span><span>: </span><span class="identifier">ff4s</span><span>.</span><span class="type-name">Dsl</span><span>[</span><span class="type-name">S</span><span>, </span><span class="type-name">A</span><span>] =&gt;
 
   </span><span class="keyword">def</span><span> </span><span class="declaration-name">customSelect</span><span>[</span><span class="type-name">O</span><span>: </span><span class="type-name">Show</span><span>: </span><span class="type-name">Eq</span><span>](
       </span><span class="identifier">fromString</span><span>: </span><span class="type-name">String</span><span> =&gt; </span><span class="type-name">Option</span><span>[</span><span class="type-name">O</span><span>],
@@ -161,7 +161,7 @@
 </span><span>
 }
 
-</span><span class="keyword">trait</span><span> </span><span class="type-name">Buttons</span><span>[</span><span class="type-name">F</span><span>[</span><span class="identifier">_</span><span>], </span><span class="type-name">S</span><span>, </span><span class="type-name">A</span><span>] { </span><span class="identifier">self</span><span>: </span><span class="identifier">ff4s</span><span>.</span><span class="type-name">Dsl</span><span>[</span><span class="type-name">F</span><span>, </span><span class="type-name">S</span><span>, </span><span class="type-name">A</span><span>] =&gt;
+</span><span class="keyword">trait</span><span> </span><span class="type-name">Buttons</span><span>[</span><span class="type-name">S</span><span>, </span><span class="type-name">A</span><span>] { </span><span class="identifier">self</span><span>: </span><span class="identifier">ff4s</span><span>.</span><span class="type-name">Dsl</span><span>[</span><span class="type-name">S</span><span>, </span><span class="type-name">A</span><span>] =&gt;
 
   </span><span class="keyword">def</span><span> </span><span class="declaration-name">customButton</span><span>(
       </span><span class="identifier">child</span><span>: </span><span class="type-name">V</span><span>,
@@ -221,11 +221,8 @@
         <p>With concrete state and action types we can instantiate our components and build the view.</p>
         <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">cats</span><span>.</span><span class="identifier">syntax</span><span>.</span><span class="identifier">all</span><span>.</span><span class="identifier">_</span><span>
 
-</span><span class="keyword">trait</span><span> </span><span class="type-name">View</span><span>[</span><span class="type-name">F</span><span>[</span><span class="identifier">_</span><span>]]
-    </span><span class="keyword">extends</span><span> </span><span class="type-name">Selects</span><span>[</span><span class="type-name">F</span><span>, </span><span class="type-name">State</span><span>, </span><span class="type-name">Action</span><span>]
-    </span><span class="keyword">with</span><span> </span><span class="type-name">Buttons</span><span>[</span><span class="type-name">F</span><span>, </span><span class="type-name">State</span><span>, </span><span class="type-name">Action</span><span>] {
-
-  </span><span class="identifier">self</span><span>: </span><span class="identifier">ff4s</span><span>.</span><span class="type-name">App</span><span>[</span><span class="type-name">F</span><span>, </span><span class="type-name">State</span><span>, </span><span class="type-name">Action</span><span>] =&gt;
+</span><span class="keyword">trait</span><span> </span><span class="type-name">View</span><span> </span><span class="keyword">extends</span><span> </span><span class="type-name">Selects</span><span>[</span><span class="type-name">State</span><span>, </span><span class="type-name">Action</span><span>] </span><span class="keyword">with</span><span> </span><span class="type-name">Buttons</span><span>[</span><span class="type-name">State</span><span>, </span><span class="type-name">Action</span><span>] {
+  </span><span class="identifier">dsl</span><span>: </span><span class="identifier">ff4s</span><span>.</span><span class="type-name">Dsl</span><span>[</span><span class="type-name">State</span><span>, </span><span class="type-name">Action</span><span>] =&gt;
 
   </span><span class="keyword">import</span><span> </span><span class="identifier">html</span><span>.</span><span class="identifier">_</span><span>
 
