@@ -25,4 +25,10 @@ package ff4s
   * a variable with their name, and it will allow you to attach child in a
   * simple manner.
   */
-final case class Slot(name: String)
+final class Slot(val name: String)
+
+object Slot {
+
+  def apply(name: String): Slot = new Slot(name)
+
+}

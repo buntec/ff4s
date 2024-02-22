@@ -18,4 +18,9 @@ package ff4s
 
 import ff4s.codecs.Codec
 
-class AriaAttr[V](val name: String, val codec: Codec[V, String])
+final class AriaAttr[V](val name: String, val codec: Codec[V, String])
+
+object AriaAttr {
+  def apply[V](name: String, codec: Codec[V, String]): AriaAttr[V] =
+    new AriaAttr[V](name, codec)
+}

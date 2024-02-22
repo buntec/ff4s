@@ -16,4 +16,10 @@
 
 package ff4s
 
-class SvgTag[A](val name: String)
+final class SvgTag[A](val name: String)
+
+object SvgTag {
+
+  def apply[A](name: String): SvgTag[A] = new SvgTag[A](name)
+
+}

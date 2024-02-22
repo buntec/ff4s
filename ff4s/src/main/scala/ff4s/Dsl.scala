@@ -199,10 +199,7 @@ class Dsl[State, Action] { self =>
       Free.pure[ViewA, VNode[Action]](vnode)
     )
 
-    implicit def fromString(
-        text: String
-    ): Modifier =
-      fromVNode(VNode.apply(text))
+    implicit def fromString(text: String): Modifier = fromVNode(VNode(text))
 
     case class ChildNodes(vnodes: Seq[V]) extends Modifier
 
@@ -216,9 +213,7 @@ class Dsl[State, Action] { self =>
 
     case class InsertHook(onInsert: dom.Element => Action) extends Modifier
 
-    case class DestroyHook(
-        onDestroy: dom.Element => Action
-    ) extends Modifier
+    case class DestroyHook(onDestroy: dom.Element => Action) extends Modifier
 
     case class Style(name: String, value: String) extends Modifier
 

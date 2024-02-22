@@ -18,11 +18,11 @@ package ff4s
 
 import ff4s.codecs.Codec
 
-class HtmlProp[V, DomV](val name: String, val codec: Codec[V, DomV])
+final class HtmlProp[V, DomV](val name: String, val codec: Codec[V, DomV])
 
 object HtmlProp {
 
-  def apply[V, DomV](name: String, codec: Codec[V, DomV]) =
+  def apply[V, DomV](name: String, codec: Codec[V, DomV]): HtmlProp[V, DomV] =
     new HtmlProp[V, DomV](name, codec)
 
 }
