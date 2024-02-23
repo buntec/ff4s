@@ -86,7 +86,6 @@ private[ff4s] object Compiler {
                   tag,
                   children,
                   eventHandlers,
-                  cls,
                   key,
                   onInsert,
                   onDestroy,
@@ -97,7 +96,6 @@ private[ff4s] object Compiler {
               VNode[Action](
                 tag,
                 children,
-                cls,
                 key,
                 props,
                 attrs,

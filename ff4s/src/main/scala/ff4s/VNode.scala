@@ -47,7 +47,6 @@ private[ff4s] object VNode {
   def apply[Action](
       tag: String,
       children: Seq[VNode[Action]],
-      cls: Option[String],
       key: Option[String],
       props: Map[String, Any],
       attrs: Map[String, snabbdom.AttrValue],
@@ -75,7 +74,7 @@ private[ff4s] object VNode {
       }
 
       val data = snabbdom.VNodeData(
-        attrs = cls.fold(attrs)(cls => attrs + ("class" -> cls)),
+        attrs = attrs,
         props = props,
         style = style,
         key = key,

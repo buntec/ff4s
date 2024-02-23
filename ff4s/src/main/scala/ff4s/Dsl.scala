@@ -32,7 +32,6 @@ class Dsl[State, Action] { self =>
       tag: String,
       children: Seq[VNode[Action]],
       eventHandlers: Map[String, dom.Event => Option[Action]],
-      cls: Option[String],
       key: Option[String],
       onInsert: Option[dom.Element => Action],
       onDestroy: Option[dom.Element => Action],
@@ -81,6 +80,16 @@ class Dsl[State, Action] { self =>
         store: Resource[F, Store[F, State, Action]]
     ): F[Unit] = Render(self, store)(view, rootElementId, replaceRoot = true)
 
+    /** Overrides the `class` attribute of the underlying node. (For text nodes
+      * this is a noop.)
+      */
+    def withClass(className: String): V =
+      view.map(
+        _.modifyData(data =>
+          data.copy(attrs = data.attrs + ("class" -> className))
+        )
+      )
+
   }
 
   /** Produces the current state. */
@@ -111,7 +120,6 @@ class Dsl[State, Action] { self =>
       tag: String,
       children: Seq[VNode[Action]] = Seq.empty,
       eventHandlers: Map[String, dom.Event => Option[Action]] = Map.empty,
-      cls: Option[String] = None,
       key: Option[String] = None,
       onInsert: Option[dom.Element => Action] = None,
       onDestroy: Option[dom.Element => Action] = None,
@@ -123,7 +131,6 @@ class Dsl[State, Action] { self =>
       tag,
       children,
       eventHandlers,
-      cls,
       key,
       onInsert,
       onDestroy,
