@@ -1,7 +1,7 @@
 Global / onChangedBuildSource := ReloadOnSourceChanges
 Global / resolvers += "Sonatype S01 OSS Snapshots" at "https://s01.oss.sonatype.org/content/repositories/snapshots"
 
-ThisBuild / tlBaseVersion := "0.22"
+ThisBuild / tlBaseVersion := "0.23"
 
 lazy val scala213 = "2.13.12"
 ThisBuild / scalaVersion := scala213
