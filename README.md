@@ -21,6 +21,7 @@ libraryDependencies += "io.github.buntec" %%% "ff4s" % "<x.y.z>"
 
 - [ff4s-canvas](https://github.com/buntec/ff4s-canvas)
 - [ff4s-shoelace](https://github.com/buntec/ff4s-shoelace)
+- [ff4s-heroicons](https://github.com/buntec/ff4s-heroicons)
 
 ## Debugging
 
