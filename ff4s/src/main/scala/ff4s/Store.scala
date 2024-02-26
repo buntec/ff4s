@@ -29,6 +29,17 @@ import fs2.concurrent.Signal
 import fs2.concurrent.SignallingMapRef
 import fs2.concurrent.SignallingRef
 
+/** The store holds the entire state of your application. The only way to change
+  * the state is to dispatch actions on it. Actions can also trigger
+  * side-effects (think data fetching, etc.). Since the state is exposed as a
+  * `fs2.concurrent.Signal[State]`, we can subscribe and react to changes of (a
+  * subset of) the state. There should be only one instance of the store.
+  *
+  * The terminology is partly borrowed from
+  * [[https://redux.js.org/api/store Redux]]. Note, however, that the "reducer"
+  * in ff4s is more akin to an "update" function in
+  * [[https://guide.elm-lang.org/effects/http Elm]].
+  */
 sealed trait Store[F[_], State, Action] {
 
   /** Adds `action` to the queue of actions to be evaluated. */
@@ -64,6 +75,24 @@ sealed trait Store[F[_], State, Action] {
 
 object Store {
 
+  /** Constructs a store by assigning every action to a state update and/or
+    * side-effect. The side-effect will be run *after* the state update. The
+    * store itself is injected into the constructor so that we may dispatch
+    * further actions as side-effects:
+    * ```
+    *   case FooAction(foo) => state => state.copy(foo = foo) -> Some(store.dispatch(BarAction()))
+    *
+    * ```
+    *
+    * @param init
+    *   the initial state of the app
+    * @param mkUpdate
+    *   given the store instance, this should return an update function mapping
+    *   actions to state updates and/or side-effects.
+    *
+    * @return
+    *   the store
+    */
   def apply[F[_]: Concurrent, State, Action](init: State)(
       mkUpdate: Store[F, State, Action] => Action => State => (
           State,
