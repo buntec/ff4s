@@ -45,42 +45,42 @@ case class SetLoadingState(loading: Boolean) extends Action
 
 class App[F[_]](implicit F: Temporal[F]) extends ff4s.App[F, State, Action] {
 
+  private val unit = F.unit
+
   private val incCancelKey = "inc"
   private val decCancelKey = "dec"
   private val loadingKey = "loading"
 
   override val store = ff4s
     .Store[F, State, Action](State()) { store =>
-      _ match {
-        case Inc(amount) =>
-          state => state.copy(counter = state.counter + amount) -> none
+      (_, _) match {
+        case (Inc(amount), state) =>
+          state.copy(counter = state.counter + amount) -> unit
 
-        case DelayedInc(delay) =>
-          _ -> store
+        case (DelayedInc(delay), state) =>
+          state -> store
             .withCancellationKey(incCancelKey)(
               store.withRunningState(loadingKey)(
                 F.sleep(delay) *> store.dispatch(Inc(1))
               )
             )
-            .some
 
-        case DelayedDec(delay) =>
-          _ -> store
+        case (DelayedDec(delay), state) =>
+          state -> store
             .withCancellationKey(decCancelKey)(
               store.withRunningState(loadingKey)(
                 F.sleep(delay) *> store.dispatch(Inc(-1))
               )
             )
-            .some
 
-        case Cancel =>
-          _ -> (
+        case (Cancel, state) =>
+          state -> (
             store.cancel(incCancelKey),
             store.cancel(decCancelKey)
-          ).parTupled.void.some
+          ).parTupled.void
 
-        case SetLoadingState(loading) =>
-          _.copy(loading = loading) -> none
+        case (SetLoadingState(loading), state) =>
+          state.copy(loading = loading) -> unit
       }
     }
     .flatTap { store =>

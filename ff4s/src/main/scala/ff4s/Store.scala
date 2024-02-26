@@ -16,6 +16,7 @@
 
 package ff4s
 
+import cats.Applicative
 import cats.effect.Concurrent
 import cats.effect.Fiber
 import cats.effect.Resource
@@ -94,10 +95,7 @@ object Store {
     *   the store
     */
   def apply[F[_]: Concurrent, State, Action](init: State)(
-      mkUpdate: Store[F, State, Action] => Action => State => (
-          State,
-          Option[F[Unit]]
-      )
+      mkUpdate: Store[F, State, Action] => (Action, State) => (State, F[Unit])
   ): Resource[F, Store[F, State, Action]] = for {
     supervisor <- Supervisor[F]
 
@@ -154,8 +152,11 @@ object Store {
       .fromQueueUnterminated(actionQ)
       .evalMap(action =>
         stateSR
-          .modify(update(action))
-          .flatMap(_.foldMapM(supervisor.supervise(_).void))
+          .modify(state => update(action, state))
+          .flatMap(fu =>
+            Applicative[F]
+              .unlessA(fu == Applicative[F].unit)(supervisor.supervise(fu))
+          )
       )
       .compile
       .drain

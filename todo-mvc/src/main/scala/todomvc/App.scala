@@ -24,37 +24,37 @@ class App[F[_]](implicit val F: Concurrent[F])
     extends ff4s.App[F, State, Action] {
 
   override val store = ff4s.Store[F, State, Action](State()) { _ =>
-    _ match {
-      case Action.SetFilter(filter) => _.copy(filter = filter) -> none
+    (_, _) match {
+      case (Action.SetFilter(filter), state) =>
+        state.copy(filter = filter) -> F.unit
 
-      case Action.UpdateTodo(todo) =>
-        state => state.copy(todos = state.todos + (todo.id -> todo)) -> none
+      case (Action.UpdateTodo(todo), state) =>
+        state.copy(todos = state.todos + (todo.id -> todo)) -> F.unit
 
-      case Action.AddTodo =>
-        state =>
-          {
-            val nextId = state.nextId
-            state.todoInput match {
-              case Some(what) if what.nonEmpty =>
-                state.copy(
-                  nextId = nextId + 1,
-                  todos = state.todos + (nextId -> Todo(
-                    what,
-                    nextId,
-                    false,
-                    false
-                  )),
-                  todoInput = None
-                )
-              case _ => state
-            }
-          } -> none
+      case (Action.AddTodo, state) =>
+        {
+          val nextId = state.nextId
+          state.todoInput match {
+            case Some(what) if what.nonEmpty =>
+              state.copy(
+                nextId = nextId + 1,
+                todos = state.todos + (nextId -> Todo(
+                  what,
+                  nextId,
+                  false,
+                  false
+                )),
+                todoInput = None
+              )
+            case _ => state
+          }
+        } -> F.unit
 
-      case Action.RemoveTodo(id) =>
-        state => state.copy(todos = state.todos - id) -> none
+      case (Action.RemoveTodo(id), state) =>
+        state.copy(todos = state.todos - id) -> F.unit
 
-      case Action.SetTodoInput(what) =>
-        _.copy(todoInput = Some(what)) -> none
+      case (Action.SetTodoInput(what), state) =>
+        state.copy(todoInput = Some(what)) -> F.unit
     }
   }
 

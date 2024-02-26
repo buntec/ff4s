@@ -34,42 +34,43 @@ object Store {
     // send queue for the websockets connection
     wsSendQ <- Queue.bounded[F, String](100).toResource
 
+    unit = Async[F].unit
+
     store <- ff4s.Store[F, State, Action](State()) { store =>
-      _ match {
-        case Action.WebsocketMessageReceived(msg) =>
-          _.copy(websocketResponse = msg.some) -> none
+      (_, _) match {
+        case (Action.WebsocketMessageReceived(msg), state) =>
+          state.copy(websocketResponse = msg.some) -> unit
 
-        case Action.SendWebsocketMessage(msg) =>
-          _ -> (wsSendQ.offer(msg)).some
+        case (Action.SendWebsocketMessage(msg), state) =>
+          state -> wsSendQ.offer(msg)
 
-        case Action.SetSvgCoords(x, y) =>
-          _.copy(svgCoords = SvgCoords(x, y)) -> none
+        case (Action.SetSvgCoords(x, y), state) =>
+          state.copy(svgCoords = SvgCoords(x, y)) -> unit
 
-        case Action.Magic => _.copy(magic = true) -> none
+        case (Action.Magic, state) => state.copy(magic = true) -> unit
 
-        case Action.SetName(name) =>
-          _.copy(name = if (name.nonEmpty) Some(name) else None) -> none
+        case (Action.SetName(name), state) =>
+          state.copy(name = if (name.nonEmpty) Some(name) else None) -> unit
 
-        case Action.SetPets(pets) => _.copy(pets = pets) -> none
+        case (Action.SetPets(pets), state) => state.copy(pets = pets) -> unit
 
-        case Action.SetFavoriteDish(dish) =>
-          _.copy(favoriteDish = dish) -> none
+        case (Action.SetFavoriteDish(dish), state) =>
+          state.copy(favoriteDish = dish) -> unit
 
-        case Action.IncrementCounter =>
-          state => state.copy(counter = state.counter + 1) -> none
+        case (Action.IncrementCounter, state) =>
+          state.copy(counter = state.counter + 1) -> unit
 
-        case Action.DecrementCounter =>
-          state => state.copy(counter = state.counter - 1) -> none
+        case (Action.DecrementCounter, state) =>
+          state.copy(counter = state.counter - 1) -> unit
 
-        case Action.SetActivity(activity) =>
-          _.copy(bored = activity.some) -> none
+        case (Action.SetActivity(activity), state) =>
+          state.copy(bored = activity.some) -> unit
 
-        case Action.GetActivity =>
-          _ -> ff4s
+        case (Action.GetActivity, state) =>
+          state -> ff4s
             .HttpClient[F]
             .get[Bored]("http://www.boredapi.com/api/activity")
             .flatMap(activity => store.dispatch(Action.SetActivity(activity)))
-            .some
       }
     }
 
