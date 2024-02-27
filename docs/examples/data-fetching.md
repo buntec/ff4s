@@ -72,33 +72,36 @@ import cats.syntax.all._
 
 object Store {
 
-  def apply[F[_]: Async]: Resource[F, ff4s.Store[F, State, Action]] =
+  def apply[F[_]](implicit
+      F: Async[F]
+  ): Resource[F, ff4s.Store[F, State, Action]] =
     ff4s.Store[F, State, Action](State()) { store =>
-      _ match {
-        case SetApiResponse(response) =>
-          _.copy(apiResponse = response, errorMessage = None) -> none
-        case SetUserInput(input)  => _.copy(userInput = input) -> none
-        case SetErrorMessage(msg) => _.copy(errorMessage = msg) -> none
-        case MakeApiRequest =>
-          state =>
-            (
-              state,
-              state.ccyPairOption.map { case (ccy1, ccy2) =>
-                ff4s
-                  .HttpClient[F]
-                  .get[ApiResponse](
-                    s"https://api.frankfurter.app/latest?from=$ccy1&to=$ccy2"
+      (_, _) match {
+        case (SetApiResponse(response), state) =>
+          state.copy(apiResponse = response, errorMessage = None) -> F.unit
+        case (SetUserInput(input), state) =>
+          state.copy(userInput = input) -> F.unit
+        case (SetErrorMessage(msg), state) =>
+          state.copy(errorMessage = msg) -> F.unit
+        case (MakeApiRequest, state) =>
+          (
+            state,
+            state.ccyPairOption.foldMapM { case (ccy1, ccy2) =>
+              ff4s
+                .HttpClient[F]
+                .get[ApiResponse](
+                  s"https://api.frankfurter.app/latest?from=$ccy1&to=$ccy2"
+                )
+                .flatMap(response =>
+                  store.dispatch(SetApiResponse(response.some))
+                )
+                .handleErrorWith(t =>
+                  store.dispatch(
+                    SetErrorMessage(s"Failed to get FX rate: $t".some)
                   )
-                  .flatMap(response =>
-                    store.dispatch(SetApiResponse(response.some))
-                  )
-                  .handleErrorWith(t =>
-                    store.dispatch(
-                      SetErrorMessage(s"Failed to get FX rate: $t".some)
-                    )
-                  )
-              }
-            )
+                )
+            }
+          )
       }
     }
 

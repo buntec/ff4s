@@ -53,10 +53,12 @@ object Store {
     sendQ <- Queue.unbounded[F, String].toResource
 
     store <- ff4s.Store[F, State, Action](State()) { _ =>
-      _ match {
-        case SetUserInput(input) => _.copy(userInput = input) -> none
-        case Send => state => state -> state.userInput.map(sendQ.offer)
-        case SetServerResponse(res) => _.copy(serverResponse = res.some) -> none
+      (_, _) match {
+        case (SetUserInput(input), state) =>
+          state.copy(userInput = input) -> F.unit
+        case (Send, state) => state -> state.userInput.foldMapM(sendQ.offer)
+        case (SetServerResponse(res), state) =>
+          state.copy(serverResponse = res.some) -> F.unit
       }
     }
 
