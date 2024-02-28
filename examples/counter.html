@@ -140,20 +140,19 @@
         <h2 id="store" class="section"><a class="anchor-link left" href="#store"><i class="icofont-laika link">&#xef71;</i></a>Store</h2>
         <p>With the <code>State</code> and <code>Action</code> types in hand, we can set up our store:</p>
         <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">cats</span><span>.</span><span class="identifier">effect</span><span>.</span><span class="identifier">_</span><span>
-</span><span class="keyword">import</span><span> </span><span class="identifier">cats</span><span>.</span><span class="identifier">syntax</span><span>.</span><span class="identifier">all</span><span>.</span><span class="identifier">_</span><span>
 
 </span><span class="keyword">object</span><span> </span><span class="type-name">Store</span><span> {
 
   </span><span class="comment">// A basic store requires `cats.effect.Concurrent[F]`.
 </span><span>  </span><span class="comment">// In real-world app we usually need the more powerful `cats.effect.Async[F]`.
-</span><span>  </span><span class="keyword">def</span><span> </span><span class="declaration-name">apply</span><span>[</span><span class="type-name">F</span><span>[</span><span class="identifier">_</span><span>]: </span><span class="type-name">Concurrent</span><span>]: </span><span class="type-name">Resource</span><span>[</span><span class="type-name">F</span><span>, </span><span class="identifier">ff4s</span><span>.</span><span class="type-name">Store</span><span>[</span><span class="type-name">F</span><span>, </span><span class="type-name">State</span><span>, </span><span class="type-name">Action</span><span>]] =
-    </span><span class="identifier">ff4s</span><span>.</span><span class="type-name">Store</span><span>[</span><span class="type-name">F</span><span>, </span><span class="type-name">State</span><span>, </span><span class="type-name">Action</span><span>](</span><span class="type-name">State</span><span>()) { </span><span class="identifier">_</span><span> =&gt;
-      </span><span class="identifier">_</span><span> </span><span class="keyword">match</span><span> {
-        </span><span class="keyword">case</span><span> </span><span class="type-name">Inc</span><span>(</span><span class="identifier">amount</span><span>) =&gt;
-          </span><span class="identifier">state</span><span> =&gt; </span><span class="identifier">state</span><span>.</span><span class="identifier">copy</span><span>(</span><span class="identifier">counter</span><span> = </span><span class="identifier">state</span><span>.</span><span class="identifier">counter</span><span> + </span><span class="identifier">amount</span><span>) -&gt; </span><span class="identifier">none</span><span>
-        </span><span class="keyword">case</span><span> </span><span class="type-name">Reset</span><span> =&gt; </span><span class="identifier">_</span><span>.</span><span class="identifier">copy</span><span>(</span><span class="identifier">counter</span><span> = </span><span class="number-literal">0</span><span>) -&gt; </span><span class="identifier">none</span><span>
-      }
+</span><span>  </span><span class="keyword">def</span><span> </span><span class="declaration-name">apply</span><span>[</span><span class="type-name">F</span><span>[</span><span class="identifier">_</span><span>]](</span><span class="keyword">implicit</span><span>
+      </span><span class="type-name">F</span><span>: </span><span class="type-name">Concurrent</span><span>[</span><span class="type-name">F</span><span>]
+  ): </span><span class="type-name">Resource</span><span>[</span><span class="type-name">F</span><span>, </span><span class="identifier">ff4s</span><span>.</span><span class="type-name">Store</span><span>[</span><span class="type-name">F</span><span>, </span><span class="type-name">State</span><span>, </span><span class="type-name">Action</span><span>]] = {
+    </span><span class="identifier">ff4s</span><span>.</span><span class="type-name">Store</span><span>.</span><span class="identifier">pure</span><span>[</span><span class="type-name">F</span><span>, </span><span class="type-name">State</span><span>, </span><span class="type-name">Action</span><span>](</span><span class="type-name">State</span><span>()) {
+      </span><span class="keyword">case</span><span> (</span><span class="type-name">Inc</span><span>(</span><span class="identifier">amount</span><span>), </span><span class="identifier">state</span><span>) =&gt; </span><span class="identifier">state</span><span>.</span><span class="identifier">copy</span><span>(</span><span class="identifier">counter</span><span> = </span><span class="identifier">state</span><span>.</span><span class="identifier">counter</span><span> + </span><span class="identifier">amount</span><span>)
+      </span><span class="keyword">case</span><span> (</span><span class="type-name">Reset</span><span>, </span><span class="identifier">state</span><span>)       =&gt; </span><span class="identifier">state</span><span>.</span><span class="identifier">copy</span><span>(</span><span class="identifier">counter</span><span> = </span><span class="number-literal">0</span><span>)
     }
+  }
 
 }</span></code></pre>
         <p>The purpose of <code>none</code> will become clear when looking at more interesting examples

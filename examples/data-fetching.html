@@ -181,33 +181,36 @@
 
 </span><span class="keyword">object</span><span> </span><span class="type-name">Store</span><span> {
 
-  </span><span class="keyword">def</span><span> </span><span class="declaration-name">apply</span><span>[</span><span class="type-name">F</span><span>[</span><span class="identifier">_</span><span>]: </span><span class="type-name">Async</span><span>]: </span><span class="type-name">Resource</span><span>[</span><span class="type-name">F</span><span>, </span><span class="identifier">ff4s</span><span>.</span><span class="type-name">Store</span><span>[</span><span class="type-name">F</span><span>, </span><span class="type-name">State</span><span>, </span><span class="type-name">Action</span><span>]] =
+  </span><span class="keyword">def</span><span> </span><span class="declaration-name">apply</span><span>[</span><span class="type-name">F</span><span>[</span><span class="identifier">_</span><span>]](</span><span class="keyword">implicit</span><span>
+      </span><span class="type-name">F</span><span>: </span><span class="type-name">Async</span><span>[</span><span class="type-name">F</span><span>]
+  ): </span><span class="type-name">Resource</span><span>[</span><span class="type-name">F</span><span>, </span><span class="identifier">ff4s</span><span>.</span><span class="type-name">Store</span><span>[</span><span class="type-name">F</span><span>, </span><span class="type-name">State</span><span>, </span><span class="type-name">Action</span><span>]] =
     </span><span class="identifier">ff4s</span><span>.</span><span class="type-name">Store</span><span>[</span><span class="type-name">F</span><span>, </span><span class="type-name">State</span><span>, </span><span class="type-name">Action</span><span>](</span><span class="type-name">State</span><span>()) { </span><span class="identifier">store</span><span> =&gt;
-      </span><span class="identifier">_</span><span> </span><span class="keyword">match</span><span> {
-        </span><span class="keyword">case</span><span> </span><span class="type-name">SetApiResponse</span><span>(</span><span class="identifier">response</span><span>) =&gt;
-          </span><span class="identifier">_</span><span>.</span><span class="identifier">copy</span><span>(</span><span class="identifier">apiResponse</span><span> = </span><span class="identifier">response</span><span>, </span><span class="identifier">errorMessage</span><span> = </span><span class="type-name">None</span><span>) -&gt; </span><span class="identifier">none</span><span>
-        </span><span class="keyword">case</span><span> </span><span class="type-name">SetUserInput</span><span>(</span><span class="identifier">input</span><span>)  =&gt; </span><span class="identifier">_</span><span>.</span><span class="identifier">copy</span><span>(</span><span class="identifier">userInput</span><span> = </span><span class="identifier">input</span><span>) -&gt; </span><span class="identifier">none</span><span>
-        </span><span class="keyword">case</span><span> </span><span class="type-name">SetErrorMessage</span><span>(</span><span class="identifier">msg</span><span>) =&gt; </span><span class="identifier">_</span><span>.</span><span class="identifier">copy</span><span>(</span><span class="identifier">errorMessage</span><span> = </span><span class="identifier">msg</span><span>) -&gt; </span><span class="identifier">none</span><span>
-        </span><span class="keyword">case</span><span> </span><span class="type-name">MakeApiRequest</span><span> =&gt;
-          </span><span class="identifier">state</span><span> =&gt;
-            (
-              </span><span class="identifier">state</span><span>,
-              </span><span class="identifier">state</span><span>.</span><span class="identifier">ccyPairOption</span><span>.</span><span class="identifier">map</span><span> { </span><span class="keyword">case</span><span> (</span><span class="identifier">ccy1</span><span>, </span><span class="identifier">ccy2</span><span>) =&gt;
-                </span><span class="identifier">ff4s</span><span>
-                  .</span><span class="type-name">HttpClient</span><span>[</span><span class="type-name">F</span><span>]
-                  .</span><span class="identifier">get</span><span>[</span><span class="type-name">ApiResponse</span><span>](
-                    </span><span class="string-literal">s&quot;https://api.frankfurter.app/latest?from=</span><span class="substitution">$ccy1</span><span class="string-literal">&amp;to=</span><span class="substitution">$ccy2</span><span class="string-literal">&quot;</span><span>
+      {
+        </span><span class="keyword">case</span><span> (</span><span class="type-name">SetApiResponse</span><span>(</span><span class="identifier">response</span><span>), </span><span class="identifier">state</span><span>) =&gt;
+          </span><span class="identifier">state</span><span>.</span><span class="identifier">copy</span><span>(</span><span class="identifier">apiResponse</span><span> = </span><span class="identifier">response</span><span>, </span><span class="identifier">errorMessage</span><span> = </span><span class="type-name">None</span><span>) -&gt; </span><span class="type-name">F</span><span>.</span><span class="identifier">unit</span><span>
+        </span><span class="keyword">case</span><span> (</span><span class="type-name">SetUserInput</span><span>(</span><span class="identifier">input</span><span>), </span><span class="identifier">state</span><span>) =&gt;
+          </span><span class="identifier">state</span><span>.</span><span class="identifier">copy</span><span>(</span><span class="identifier">userInput</span><span> = </span><span class="identifier">input</span><span>) -&gt; </span><span class="type-name">F</span><span>.</span><span class="identifier">unit</span><span>
+        </span><span class="keyword">case</span><span> (</span><span class="type-name">SetErrorMessage</span><span>(</span><span class="identifier">msg</span><span>), </span><span class="identifier">state</span><span>) =&gt;
+          </span><span class="identifier">state</span><span>.</span><span class="identifier">copy</span><span>(</span><span class="identifier">errorMessage</span><span> = </span><span class="identifier">msg</span><span>) -&gt; </span><span class="type-name">F</span><span>.</span><span class="identifier">unit</span><span>
+        </span><span class="keyword">case</span><span> (</span><span class="type-name">MakeApiRequest</span><span>, </span><span class="identifier">state</span><span>) =&gt;
+          (
+            </span><span class="identifier">state</span><span>,
+            </span><span class="identifier">state</span><span>.</span><span class="identifier">ccyPairOption</span><span>.</span><span class="identifier">foldMapM</span><span> { </span><span class="keyword">case</span><span> (</span><span class="identifier">ccy1</span><span>, </span><span class="identifier">ccy2</span><span>) =&gt;
+              </span><span class="identifier">ff4s</span><span>
+                .</span><span class="type-name">HttpClient</span><span>[</span><span class="type-name">F</span><span>]
+                .</span><span class="identifier">get</span><span>[</span><span class="type-name">ApiResponse</span><span>](
+                  </span><span class="string-literal">s&quot;https://api.frankfurter.app/latest?from=</span><span class="substitution">$ccy1</span><span class="string-literal">&amp;to=</span><span class="substitution">$ccy2</span><span class="string-literal">&quot;</span><span>
+                )
+                .</span><span class="identifier">flatMap</span><span>(</span><span class="identifier">response</span><span> =&gt;
+                  </span><span class="identifier">store</span><span>.</span><span class="identifier">dispatch</span><span>(</span><span class="type-name">SetApiResponse</span><span>(</span><span class="identifier">response</span><span>.</span><span class="identifier">some</span><span>))
+                )
+                .</span><span class="identifier">handleErrorWith</span><span>(</span><span class="identifier">t</span><span> =&gt;
+                  </span><span class="identifier">store</span><span>.</span><span class="identifier">dispatch</span><span>(
+                    </span><span class="type-name">SetErrorMessage</span><span>(</span><span class="string-literal">s&quot;Failed to get FX rate: </span><span class="substitution">$t</span><span class="string-literal">&quot;</span><span>.</span><span class="identifier">some</span><span>)
                   )
-                  .</span><span class="identifier">flatMap</span><span>(</span><span class="identifier">response</span><span> =&gt;
-                    </span><span class="identifier">store</span><span>.</span><span class="identifier">dispatch</span><span>(</span><span class="type-name">SetApiResponse</span><span>(</span><span class="identifier">response</span><span>.</span><span class="identifier">some</span><span>))
-                  )
-                  .</span><span class="identifier">handleErrorWith</span><span>(</span><span class="identifier">t</span><span> =&gt;
-                    </span><span class="identifier">store</span><span>.</span><span class="identifier">dispatch</span><span>(
-                      </span><span class="type-name">SetErrorMessage</span><span>(</span><span class="string-literal">s&quot;Failed to get FX rate: </span><span class="substitution">$t</span><span class="string-literal">&quot;</span><span>.</span><span class="identifier">some</span><span>)
-                    )
-                  )
-              }
-            )
+                )
+            }
+          )
       }
     }
 
