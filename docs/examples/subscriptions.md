@@ -63,7 +63,7 @@ object Store {
   ): Resource[F, ff4s.Store[F, State, Action]] =
     ff4s
       .Store[F, State, Action](State()) { store =>
-        (_, _) match {
+        {
           case (SetApiResponse(response), state) =>
             state.copy(apiResponse = response, errorMessage = None) -> F.unit
           case (SetUserInput(userInput), state) =>

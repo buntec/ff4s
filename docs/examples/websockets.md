@@ -53,7 +53,7 @@ object Store {
     sendQ <- Queue.unbounded[F, String].toResource
 
     store <- ff4s.Store[F, State, Action](State()) { _ =>
-      (_, _) match {
+      {
         case (SetUserInput(input), state) =>
           state.copy(userInput = input) -> F.unit
         case (Send, state) => state -> state.userInput.foldMapM(sendQ.offer)

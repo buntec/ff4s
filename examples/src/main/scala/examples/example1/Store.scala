@@ -37,7 +37,7 @@ object Store {
     unit = Async[F].unit
 
     store <- ff4s.Store[F, State, Action](State()) { store =>
-      (_, _) match {
+      {
         case (Action.WebsocketMessageReceived(msg), state) =>
           state.copy(websocketResponse = msg.some) -> unit
 

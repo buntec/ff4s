@@ -62,7 +62,7 @@ object Store {
   ): Resource[F, ff4s.Store[F, State, Action]] = for {
 
     store <- ff4s.Store[F, State, Action](State()) { store =>
-      (_, _) match {
+      {
         case (SetActivity(activity), state) =>
           state.copy(activity = activity) -> F.unit
         case (SetLoading(loading), state) =>

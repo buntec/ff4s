@@ -22,7 +22,9 @@ import fs2.Stream
 
 import scala.concurrent.duration._
 
-case class State(toggle: Boolean = true)
+case class State(toggle: Boolean = true) {
+  def flipToggle: State = copy(toggle = !toggle)
+}
 
 sealed trait Action
 
@@ -42,12 +44,10 @@ class App[F[_]](implicit val F: Async[F]) extends ff4s.App[F, State, Action] {
 
   override val store = for {
 
-    store <- ff4s.Store[F, State, Action](State())(_ =>
-      (_, _) match {
-        case (Action.Toggle(), state) =>
-          state.copy(toggle = !state.toggle) -> F.unit
-      }
-    )
+    store <- ff4s.Store[F, State, Action](State())(_ => {
+      case (Action.Toggle(), state) =>
+        state.flipToggle -> F.unit
+    })
 
     _ <- Stream
       .fixedDelay(3.seconds)

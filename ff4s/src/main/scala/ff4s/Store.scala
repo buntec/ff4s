@@ -76,12 +76,21 @@ sealed trait Store[F[_], State, Action] {
 
 object Store {
 
+  /** A simple type of store where all actions are pure state updates.
+    */
+  def pure[F[_]: Concurrent, State, Action](init: State)(
+      update: (Action, State) => State
+  ): Resource[F, Store[F, State, Action]] = {
+    val unit = Concurrent[F].unit
+    apply[F, State, Action](init)(_ => (a, s) => update(a, s) -> unit)
+  }
+
   /** Constructs a store by assigning every action to a state update and/or
     * side-effect. The side-effect will be run *after* the state update. The
     * store itself is injected into the constructor so that we may dispatch
     * further actions as side-effects:
     * ```
-    *   case FooAction(foo) => state => state.copy(foo = foo) -> Some(store.dispatch(BarAction()))
+    *   case (FooAction(foo), state) => state.copy(foo = foo) -> store.dispatch(BarAction())
     *
     * ```
     *

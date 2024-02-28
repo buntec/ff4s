@@ -166,7 +166,7 @@ object Store {
       F: Async[F]
   ): Resource[F, ff4s.Store[F, State, Action]] =
     ff4s.Store[F, State, Action](State()) { _ =>
-      (_, _) match {
+      {
         case (SetFruit(fruit), state) => state.copy(fruit = fruit) -> F.unit
         case (Inc, state) => state.copy(counter = state.counter + 1) -> F.unit
       }

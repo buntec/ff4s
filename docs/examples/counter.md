@@ -36,12 +36,9 @@ object Store {
   def apply[F[_]](implicit
       F: Concurrent[F]
   ): Resource[F, ff4s.Store[F, State, Action]] = {
-    ff4s.Store[F, State, Action](State()) { _ =>
-      (_, _) match {
-        case (Inc(amount), state) =>
-          state.copy(counter = state.counter + amount) -> F.unit
-        case (Reset, state) => state.copy(counter = 0) -> F.unit
-      }
+    ff4s.Store.pure[F, State, Action](State()) {
+      case (Inc(amount), state) => state.copy(counter = state.counter + amount)
+      case (Reset, state)       => state.copy(counter = 0)
     }
   }
 

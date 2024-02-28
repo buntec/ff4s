@@ -28,7 +28,7 @@ class App[F[_]](implicit val F: Concurrent[F])
   private val unit = Concurrent[F].unit
 
   override val store = ff4s.Store[F, State, Action](State()) { _ =>
-    (_, _) match {
+    {
       case (Action.SetWeekday(weekday), state) =>
         state.focus(_.weekday).replace(weekday) -> unit
 
