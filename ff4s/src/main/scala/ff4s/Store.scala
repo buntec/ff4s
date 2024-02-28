@@ -157,15 +157,17 @@ object Store {
 
     update = mkUpdate(store)
 
+    unit = Applicative[F].unit
+
     _ <- Stream
       .fromQueueUnterminated(actionQ)
       .evalMap(action =>
         stateSR
           .modify(state => update(action, state))
-          .flatMap(fu =>
-            Applicative[F]
-              .unlessA(fu == Applicative[F].unit)(supervisor.supervise(fu))
-          )
+          .flatMap { fu =>
+            if (fu == unit) unit
+            else supervisor.supervise(fu).void
+          }
       )
       .compile
       .drain
