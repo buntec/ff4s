@@ -44,10 +44,9 @@ class App[F[_]](implicit val F: Async[F]) extends ff4s.App[F, State, Action] {
 
   override val store = for {
 
-    store <- ff4s.Store[F, State, Action](State())(_ => {
-      case (Action.Toggle(), state) =>
-        state.flipToggle -> F.unit
-    })
+    store <- ff4s.Store.pure[F, State, Action](State()) {
+      case (Action.Toggle(), state) => state.flipToggle
+    }
 
     _ <- Stream
       .fixedDelay(3.seconds)

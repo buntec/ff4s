@@ -25,18 +25,13 @@ class App[F[_]](implicit val F: Concurrent[F])
     extends ff4s.App[F, State, Action]
     with Components[State, Action] {
 
-  private val unit = Concurrent[F].unit
+  override val store = ff4s.Store.pure[F, State, Action](State()) {
+    case (Action.SetWeekday(weekday), state) =>
+      state.focus(_.weekday).replace(weekday)
 
-  override val store = ff4s.Store[F, State, Action](State()) { _ =>
-    {
-      case (Action.SetWeekday(weekday), state) =>
-        state.focus(_.weekday).replace(weekday) -> unit
+    case (Action.Inc(), state) => state.focus(_.counter).modify(_ + 1)
 
-      case (Action.Inc(), state) =>
-        state.focus(_.counter).modify(_ + 1) -> unit
-
-      case (Action.Dec(), state) => state.focus(_.counter).modify(_ - 1) -> unit
-    }
+    case (Action.Dec(), state) => state.focus(_.counter).modify(_ - 1)
   }
 
   import html._
