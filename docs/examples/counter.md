@@ -28,20 +28,19 @@ With the `State` and `Action` types in hand, we can set up our store:
 
 ```scala mdoc:js:shared
 import cats.effect._
-import cats.syntax.all._
 
 object Store {
 
   // A basic store requires `cats.effect.Concurrent[F]`.
   // In real-world app we usually need the more powerful `cats.effect.Async[F]`.
-  def apply[F[_]: Concurrent]: Resource[F, ff4s.Store[F, State, Action]] =
-    ff4s.Store[F, State, Action](State()) { _ =>
-      _ match {
-        case Inc(amount) =>
-          state => state.copy(counter = state.counter + amount) -> none
-        case Reset => _.copy(counter = 0) -> none
-      }
+  def apply[F[_]](implicit
+      F: Concurrent[F]
+  ): Resource[F, ff4s.Store[F, State, Action]] = {
+    ff4s.Store.pure[F, State, Action](State()) {
+      case (Inc(amount), state) => state.copy(counter = state.counter + amount)
+      case (Reset, state)       => state.copy(counter = 0)
     }
+  }
 
 }
 ```

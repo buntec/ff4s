@@ -159,15 +159,16 @@ trait View extends Selects[State, Action] with Buttons[State, Action] {
 
 ```scala mdoc:js:invisible
 import cats.effect._
-import cats.syntax.all._
 
 object Store {
 
-  def apply[F[_]: Async]: Resource[F, ff4s.Store[F, State, Action]] =
+  def apply[F[_]](implicit
+      F: Async[F]
+  ): Resource[F, ff4s.Store[F, State, Action]] =
     ff4s.Store[F, State, Action](State()) { _ =>
-      _ match {
-        case SetFruit(fruit) => _.copy(fruit = fruit) -> none
-        case Inc => state => state.copy(counter = state.counter + 1) -> none
+      {
+        case (SetFruit(fruit), state) => state.copy(fruit = fruit) -> F.unit
+        case (Inc, state) => state.copy(counter = state.counter + 1) -> F.unit
       }
     }
 }

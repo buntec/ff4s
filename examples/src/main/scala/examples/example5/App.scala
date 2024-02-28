@@ -18,7 +18,6 @@ package examples.example5
 
 import cats.effect.Async
 import cats.effect.implicits._
-import cats.syntax.all._
 import fs2.Stream
 
 import scala.concurrent.duration._
@@ -47,13 +46,10 @@ class App[F[_]](implicit val F: Async[F]) extends ff4s.App[F, State, Action] {
 
   override val store = for {
 
-    store <- ff4s.Store[F, State, Action](State())(_ =>
-      _ match {
-        case Action.Noop() => (_, none)
-        case Action.Toggle() =>
-          state => state.copy(toggle = !state.toggle) -> none
-      }
-    )
+    store <- ff4s.Store.pure[F, State, Action](State()) {
+      case (Action.Noop(), state)   => state
+      case (Action.Toggle(), state) => state.copy(toggle = !state.toggle)
+    }
 
     _ <- Stream
       .fixedDelay(3.seconds)

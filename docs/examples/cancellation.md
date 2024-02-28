@@ -41,7 +41,7 @@ case object Cancel extends Action
 
 ## Store
 
-The interesting bit is the contruction of the store.
+The interesting bit is the construction of the store.
 By wrapping the data fetching effect with `store.withCancellationKey`, we can cancel it using `store.cancel`.
 By wrapping it with `store.withRunningState`, we can observe whether it is running using `store.runningState`. 
 Finally, we keep the `loading` state in sync by subscribing to changes of `store.runningState`.
@@ -62,30 +62,30 @@ object Store {
   ): Resource[F, ff4s.Store[F, State, Action]] = for {
 
     store <- ff4s.Store[F, State, Action](State()) { store =>
-      _ match {
-        case SetActivity(activity) => _.copy(activity = activity) -> none
-        case SetLoading(loading)   => _.copy(loading = loading) -> none
-        case Cancel                => _ -> store.cancel(cancelKey).some
-        case GetRandomActivity =>
-          state =>
-            (
-              state.copy(activity = none),
-              store
-                .withCancellationKey(cancelKey)(
-                  store.withRunningState(loadingKey)(
-                    F.sleep(
-                      1.second // pretend that this is really long running
-                    ) *>
-                      ff4s
-                        .HttpClient[F]
-                        .get[Activity]("https://www.boredapi.com/api/activity")
-                        .flatMap(activity =>
-                          store.dispatch(SetActivity(activity.some))
-                        )
-                  )
+      {
+        case (SetActivity(activity), state) =>
+          state.copy(activity = activity) -> F.unit
+        case (SetLoading(loading), state) =>
+          state.copy(loading = loading) -> F.unit
+        case (Cancel, state) => state -> store.cancel(cancelKey)
+        case (GetRandomActivity, state) =>
+          (
+            state.copy(activity = none),
+            store
+              .withCancellationKey(cancelKey)(
+                store.withRunningState(loadingKey)(
+                  F.sleep(
+                    1.second // pretend that this is really long running
+                  ) *>
+                    ff4s
+                      .HttpClient[F]
+                      .get[Activity]("https://www.boredapi.com/api/activity")
+                      .flatMap(activity =>
+                        store.dispatch(SetActivity(activity.some))
+                      )
                 )
-                .some
-            )
+              )
+          )
       }
     }
 

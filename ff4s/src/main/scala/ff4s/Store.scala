@@ -16,6 +16,7 @@
 
 package ff4s
 
+import cats.Applicative
 import cats.effect.Concurrent
 import cats.effect.Fiber
 import cats.effect.Resource
@@ -75,12 +76,21 @@ sealed trait Store[F[_], State, Action] {
 
 object Store {
 
+  /** A simple type of store where all actions are pure state updates.
+    */
+  def pure[F[_]: Concurrent, State, Action](init: State)(
+      update: (Action, State) => State
+  ): Resource[F, Store[F, State, Action]] = {
+    val unit = Concurrent[F].unit
+    apply[F, State, Action](init)(_ => (a, s) => update(a, s) -> unit)
+  }
+
   /** Constructs a store by assigning every action to a state update and/or
     * side-effect. The side-effect will be run *after* the state update. The
     * store itself is injected into the constructor so that we may dispatch
     * further actions as side-effects:
     * ```
-    *   case FooAction(foo) => state => state.copy(foo = foo) -> Some(store.dispatch(BarAction()))
+    *   case (FooAction(foo), state) => state.copy(foo = foo) -> store.dispatch(BarAction())
     *
     * ```
     *
@@ -94,10 +104,7 @@ object Store {
     *   the store
     */
   def apply[F[_]: Concurrent, State, Action](init: State)(
-      mkUpdate: Store[F, State, Action] => Action => State => (
-          State,
-          Option[F[Unit]]
-      )
+      mkUpdate: Store[F, State, Action] => (Action, State) => (State, F[Unit])
   ): Resource[F, Store[F, State, Action]] = for {
     supervisor <- Supervisor[F]
 
@@ -150,12 +157,17 @@ object Store {
 
     update = mkUpdate(store)
 
+    unit = Applicative[F].unit
+
     _ <- Stream
       .fromQueueUnterminated(actionQ)
       .evalMap(action =>
         stateSR
-          .modify(update(action))
-          .flatMap(_.foldMapM(supervisor.supervise(_).void))
+          .modify(state => update(action, state))
+          .flatMap { fu =>
+            if (fu == unit) unit
+            else supervisor.supervise(fu).void
+          }
       )
       .compile
       .drain
