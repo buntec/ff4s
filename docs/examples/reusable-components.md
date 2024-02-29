@@ -13,40 +13,39 @@ import cats.syntax.all.*
 import org.scalajs.dom
 
 // S and A are the state and action types.
-trait Selects[S, A]: 
+trait Selects[S, A]:
   self: ff4s.Dsl[S, A] =>
 
   def customSelect[O: Show: Eq](
       onChange: O => Option[A],
       options: List[O],
       selected: Option[O]
-  ): V = 
-      import html.{onChange => _, selected => _, *}
-      select(
-        cls := "custom-select",
-        html.onChange := ((ev: dom.Event) =>
-          val target = ev.target.asInstanceOf[dom.HTMLSelectElement]
-          options.find(o => Show[O].show(o) == target.value).flatMap(onChange)
-        ),
-        options.map ( name =>
-          html.option(
-            html.selected := (selected.exists(_ == name)),
-            key := name.show,
-            html.value := name.show,
-            name.show
-          )
+  ): V =
+    import html.{onChange => _, selected => _, *}
+    select(
+      cls := "custom-select",
+      html.onChange := ((ev: dom.Event) =>
+        val target = ev.target.asInstanceOf[dom.HTMLSelectElement]
+        options.find(o => Show[O].show(o) == target.value).flatMap(onChange)
+      ),
+      options.map(name =>
+        html.option(
+          html.selected := (selected.exists(_ == name)),
+          key := name.show,
+          html.value := name.show,
+          name.show
         )
       )
+    )
 
-
-trait Buttons[S, A]: 
+trait Buttons[S, A]:
   self: ff4s.Dsl[S, A] =>
 
   def customButton(
       child: V,
       onClick: Option[A],
       isDisabled: Boolean
-  ): V = 
+  ): V =
     import html.{onClick => _, *}
     button(
       cls := "custom-button",
@@ -54,7 +53,6 @@ trait Buttons[S, A]:
       disabled := isDisabled,
       html.onClick := (_ => onClick)
     )
-
 ```
 
 
@@ -95,8 +93,8 @@ trait View extends Selects[State, Action] with Buttons[State, Action]:
 
   import html.*
 
-  val view = 
-    useState( state =>
+  val view =
+    useState(state =>
       div(
         customSelect[Fruit](
           fruit => Action.SetFruit(fruit).some,
@@ -117,7 +115,6 @@ trait View extends Selects[State, Action] with Buttons[State, Action]:
         else div(s"${10 - state.counter} increments remaining!")
       )
     )
-
 ```
 
 
@@ -126,12 +123,18 @@ import cats.effect.*
 
 object Store:
 
-  def apply[F[_]](using F: Async[F]): Resource[F, ff4s.Store[F, State, Action]] =
+  def apply[F[_]](using
+      F: Async[F]
+  ): Resource[F, ff4s.Store[F, State, Action]] =
     ff4s.Store[F, State, Action](State()): _ =>
-      case (Action.SetFruit(fruit), state) => state.copy(fruit = fruit) -> F.unit
-      case (Action.Inc, state) => state.copy(counter = state.counter + 1) -> F.unit
+      case (Action.SetFruit(fruit), state) =>
+        state.copy(fruit = fruit) -> F.unit
+      case (Action.Inc, state) =>
+        state.copy(counter = state.counter + 1) -> F.unit
 
-class App[F[_]](implicit F: Async[F]) extends ff4s.App[F, State, Action] with View:
+class App[F[_]](implicit F: Async[F])
+    extends ff4s.App[F, State, Action]
+    with View:
   override val store = Store[F]
   override val rootElementId = node.getAttribute("id")
 

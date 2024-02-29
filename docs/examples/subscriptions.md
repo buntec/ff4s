@@ -17,8 +17,7 @@ case class State(
       case ccyPairPattern(ccy1, ccy2) => Some((ccy1, ccy2))
       case _                          => None
 
-lazy  val ccyPairPattern = """([a-zA-Z]{3})/?([a-zA-Z]{3})""".r
-
+lazy val ccyPairPattern = """([a-zA-Z]{3})/?([a-zA-Z]{3})""".r
 ```
 
 ```scala mdoc:js:shared
@@ -54,30 +53,31 @@ object Store:
   def apply[F[_]](implicit
       F: Async[F]
   ): Resource[F, ff4s.Store[F, State, Action]] =
-      ff4s.Store[F, State, Action](State()): store =>
+    ff4s
+      .Store[F, State, Action](State()): store =>
         case (Action.SetApiResponse(response), state) =>
-            state.copy(apiResponse = response, errorMessage = None) -> F.unit
+          state.copy(apiResponse = response, errorMessage = None) -> F.unit
         case (Action.SetUserInput(userInput), state) =>
-            state.copy(userInput = userInput) -> F.unit
+          state.copy(userInput = userInput) -> F.unit
         case (Action.SetErrorMessage(msg), state) =>
-            state.copy(errorMessage = msg) -> F.unit
+          state.copy(errorMessage = msg) -> F.unit
         case (Action.MakeApiRequest(ccy1: String, ccy2: String), state) =>
-        (
+          (
             state,
             ff4s
-            .HttpClient[F]
-            .get[ApiResponse](
+              .HttpClient[F]
+              .get[ApiResponse](
                 s"https://api.frankfurter.app/latest?from=$ccy1&to=$ccy2"
-            )
-            .flatMap ( response =>
+              )
+              .flatMap(response =>
                 store.dispatch(Action.SetApiResponse(response.some))
-            )
-            .handleErrorWith ( t =>
+              )
+              .handleErrorWith(t =>
                 store.dispatch(
-                Action.SetErrorMessage(s"Failed to get FX rate: $t".some)
+                  Action.SetErrorMessage(s"Failed to get FX rate: $t".some)
                 )
-            )
-        )
+              )
+          )
       .flatTap:
         // subscribe to changes in user input and trigger debounced API calls
         store =>
@@ -87,12 +87,12 @@ object Store:
             .changes
             .debounce(1.second)
             .evalMap:
-              case Some((ccy1, ccy2)) => store.dispatch(Action.MakeApiRequest(ccy1, ccy2))
+              case Some((ccy1, ccy2)) =>
+                store.dispatch(Action.MakeApiRequest(ccy1, ccy2))
               case None => store.dispatch(Action.SetApiResponse(None))
             .compile
             .drain
             .background
-
 ```
 
 ## View
@@ -104,8 +104,8 @@ trait View:
   import html.*
   import org.scalajs.dom
 
-  val view = 
-    useState( state =>
+  val view =
+    useState(state =>
       div(
         input(
           tpe := "text",
@@ -123,7 +123,6 @@ trait View:
             )
       )
     )
-
 ```
 
 ## App

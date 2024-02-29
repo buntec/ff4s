@@ -57,48 +57,52 @@ object Store:
   private val cancelKey = "activity"
   private val loadingKey = "loading"
 
-  def apply[F[_]](using F: Async[F]): Resource[F, ff4s.Store[F, State, Action]] = 
-    for 
-        store <- ff4s.Store[F, State, Action](State()): store =>
-          case (Action.SetActivity(activity), state) => state.copy(activity = activity) -> F.unit
-          case (Action.SetLoading(loading), state) => state.copy(loading = loading) -> F.unit
-          case (Action.Cancel, state) => state -> store.cancel(cancelKey)
-          case (Action.GetRandomActivity, state) =>
-              (
-                  state.copy(activity = none),
-                  store
-                  .withCancellationKey(cancelKey)(
-                      store.withRunningState(loadingKey)(
-                      F.sleep(
-                          1.second // pretend that this is really long running
-                      ) *>
-                          ff4s
-                          .HttpClient[F]
-                          .get[Activity]("https://www.boredapi.com/api/activity")
-                          .flatMap(activity => store.dispatch(Action.SetActivity(activity.some)))
+  def apply[F[_]](using
+      F: Async[F]
+  ): Resource[F, ff4s.Store[F, State, Action]] =
+    for
+      store <- ff4s.Store[F, State, Action](State()): store =>
+        case (Action.SetActivity(activity), state) =>
+          state.copy(activity = activity) -> F.unit
+        case (Action.SetLoading(loading), state) =>
+          state.copy(loading = loading) -> F.unit
+        case (Action.Cancel, state) => state -> store.cancel(cancelKey)
+        case (Action.GetRandomActivity, state) =>
+          (
+            state.copy(activity = none),
+            store
+              .withCancellationKey(cancelKey)(
+                store.withRunningState(loadingKey)(
+                  F.sleep(
+                    1.second // pretend that this is really long running
+                  ) *>
+                    ff4s
+                      .HttpClient[F]
+                      .get[Activity]("https://www.boredapi.com/api/activity")
+                      .flatMap(activity =>
+                        store.dispatch(Action.SetActivity(activity.some))
                       )
-                  )
+                )
               )
+          )
 
-        _ <- store
+      _ <- store
         .runningState(loadingKey)
         .discrete
         .evalMap(loading => store.dispatch(Action.SetLoading(loading)))
         .compile
         .drain
         .background
-
     yield store
-
 ```
 
 ## View
 
 ```scala mdoc:js:shared
-trait View: 
+trait View:
   self: ff4s.Dsl[State, Action] =>
 
-  val view = 
+  val view =
 
     import html._
 
@@ -112,7 +116,6 @@ trait View:
         if (state.loading) div("loading...")
         else div(s"${state.activity.map(_.activity).getOrElse("")}")
       )
-
 ```
 
 

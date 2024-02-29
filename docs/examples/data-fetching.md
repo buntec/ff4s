@@ -20,10 +20,9 @@ case class State(
   def ccyPairOption: Option[(String, String)] =
     userInput.flatMap:
       case ccyPairPattern(ccy1, ccy2) => Some((ccy1, ccy2))
-      case _                                => None
+      case _                          => None
 
 lazy val ccyPairPattern = """([a-zA-Z]{3})/?([a-zA-Z]{3})""".r
-
 ```
 
 As per usual, we model the JSON API response using a case class with a
@@ -37,7 +36,6 @@ case class ApiResponse(rates: Map[String, Double])
 
 object ApiResponse:
   given Decoder[ApiResponse] = deriveDecoder
-
 ```
 
 ## Actions
@@ -62,45 +60,46 @@ import cats.syntax.all.*
 
 object Store:
 
-  def apply[F[_]](using F: Async[F]): Resource[F, ff4s.Store[F, State, Action]] =
+  def apply[F[_]](using
+      F: Async[F]
+  ): Resource[F, ff4s.Store[F, State, Action]] =
     ff4s.Store[F, State, Action](State()): store =>
-        case (Action.SetApiResponse(response), state) =>
-          state.copy(apiResponse = response, errorMessage = None) -> F.unit
-        case (Action.SetUserInput(input), state) =>
-          state.copy(userInput = input) -> F.unit
-        case (Action.SetErrorMessage(msg), state) =>
-          state.copy(errorMessage = msg) -> F.unit
-        case (Action.MakeApiRequest, state) =>
-          (
-            state,
-            state.ccyPairOption.foldMapM: (ccy1, ccy2) =>
-              ff4s
-                .HttpClient[F]
-                .get[ApiResponse](
-                  s"https://api.frankfurter.app/latest?from=$ccy1&to=$ccy2"
+      case (Action.SetApiResponse(response), state) =>
+        state.copy(apiResponse = response, errorMessage = None) -> F.unit
+      case (Action.SetUserInput(input), state) =>
+        state.copy(userInput = input) -> F.unit
+      case (Action.SetErrorMessage(msg), state) =>
+        state.copy(errorMessage = msg) -> F.unit
+      case (Action.MakeApiRequest, state) =>
+        (
+          state,
+          state.ccyPairOption.foldMapM: (ccy1, ccy2) =>
+            ff4s
+              .HttpClient[F]
+              .get[ApiResponse](
+                s"https://api.frankfurter.app/latest?from=$ccy1&to=$ccy2"
+              )
+              .flatMap(response =>
+                store.dispatch(Action.SetApiResponse(response.some))
+              )
+              .handleErrorWith(t =>
+                store.dispatch(
+                  Action.SetErrorMessage(s"Failed to get FX rate: $t".some)
                 )
-                .flatMap(response =>
-                  store.dispatch(Action.SetApiResponse(response.some))
-                )
-                .handleErrorWith(t =>
-                  store.dispatch(
-                    Action.SetErrorMessage(s"Failed to get FX rate: $t".some)
-                  )
-                )
-          )
-
+              )
+        )
 ```
 
 ## View
 
 ```scala mdoc:js:shared
-trait View: 
+trait View:
   self: ff4s.Dsl[State, Action] =>
 
   import html.*
   import org.scalajs.dom
 
-  val view = 
+  val view =
     useState: state =>
       div(
         input(
@@ -124,7 +123,6 @@ trait View:
               s"${state.apiResponse.flatMap(_.rates.values.toList.headOption).getOrElse("")}"
             )
       )
-
 ```
 
 ## App

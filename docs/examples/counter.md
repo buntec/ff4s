@@ -37,9 +37,9 @@ object Store:
       F: Concurrent[F]
   ): Resource[F, ff4s.Store[F, State, Action]] =
     ff4s.Store.pure[F, State, Action](State()):
-      case (Action.Inc(amount), state) => state.copy(counter = state.counter + amount)
-      case (Action.Reset, state)       => state.copy(counter = 0)
-
+      case (Action.Inc(amount), state) =>
+        state.copy(counter = state.counter + amount)
+      case (Action.Reset, state) => state.copy(counter = 0)
 ```
 
 The fact that `store` is a `Resource` will turn out to be extremely useful later
@@ -52,7 +52,7 @@ Finally, we describe how our page should be rendered using the built-in DSL
 for HTML markup.
 
 ```scala mdoc:js:shared
-trait View: 
+trait View:
   self: ff4s.Dsl[State, Action] =>
 
   val view =
@@ -79,14 +79,15 @@ trait View:
           onClick := (_ => Some(Action.Reset))
         )
       )
-
 ```
 
 To turn this into an app, we need a small amount of boilerplate.
 
 ```scala mdoc:js:compile-only
 // App.scala
-class App[F[_]](using F: Concurrent[F]) extends ff4s.App[F, State, Action] with View:
+class App[F[_]](using F: Concurrent[F])
+    extends ff4s.App[F, State, Action]
+    with View:
   override val store = Store[F]
 
 // Main.scala
@@ -95,7 +96,9 @@ object Main extends ff4s.IOEntryPoint(new App) // uses cats.effect.IO for F
 ```
 
 ```scala mdoc:js:invisible
-class App[F[_]](using F: Concurrent[F]) extends ff4s.App[F, State, Action] with View:
+class App[F[_]](using F: Concurrent[F])
+    extends ff4s.App[F, State, Action]
+    with View:
   override val store = Store[F]
   override val rootElementId = node.getAttribute("id")
 

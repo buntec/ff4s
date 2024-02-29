@@ -51,9 +51,12 @@ object Store:
     sendQ <- Queue.unbounded[F, String].toResource
 
     store <- ff4s.Store[F, State, Action](State()): _ =>
-      case (Action.SetUserInput(input), state) => state.copy(userInput = input) -> F.unit
-      case (Action.Send, state) => state -> state.userInput.foldMapM(sendQ.offer)
-      case (Action.SetServerResponse(res), state) => state.copy(serverResponse = res.some) -> F.unit
+      case (Action.SetUserInput(input), state) =>
+        state.copy(userInput = input) -> F.unit
+      case (Action.Send, state) =>
+        state -> state.userInput.foldMapM(sendQ.offer)
+      case (Action.SetServerResponse(res), state) =>
+        state.copy(serverResponse = res.some) -> F.unit
 
     _ <- ff4s
       .WebSocketClient[F]
@@ -63,9 +66,7 @@ object Store:
         Stream.fromQueueUnterminated(sendQ)
       )
       .background
-
   yield store
-
 ```
 
 ## View
@@ -73,7 +74,7 @@ object Store:
 ```scala mdoc:js:shared
 import org.scalajs.dom
 
-trait View: 
+trait View:
   self: ff4s.Dsl[State, Action] =>
 
   import html.*
@@ -86,7 +87,8 @@ trait View:
           placeholder := "your message here...",
           onInput := ((ev: dom.Event) =>
             val target = ev.target.asInstanceOf[dom.HTMLInputElement]
-            if target.value.nonEmpty then Some(Action.SetUserInput(target.value.some))
+            if target.value.nonEmpty then
+              Some(Action.SetUserInput(target.value.some))
             else Some(Action.SetUserInput(None))
           )
         ),
@@ -97,7 +99,6 @@ trait View:
         ),
         state.serverResponse.fold(empty)(res => div(s"Server response: $res"))
       )
-
 ```
 
 ## App
