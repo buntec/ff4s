@@ -14,7 +14,7 @@ the connection coincides with the lifetime of the app.
 The state holds the user's input and the most recent server response.
 
 ```scala mdoc:js:shared
-final case class State(
+case class State(
     userInput: Option[String] = None,
     serverResponse: Option[String] = None
 )
@@ -22,13 +22,11 @@ final case class State(
 
 ## Action
 
-The action encoding is straightforward:
-
 ```scala mdoc:js:shared
-sealed trait Action
-case class SetUserInput(input: Option[String]) extends Action
-case object Send extends Action
-case class SetServerResponse(response: String) extends Action
+enum Action:
+  case Send
+  case SetServerResponse(response: String)
+  case SetUserInput(input: Option[String])
 ```
 
 ## Store
@@ -41,79 +39,65 @@ powerful `http4s` client and intended for simple use-cases
 such as this one.
 
 ```scala mdoc:js:shared
-import cats.effect._
-import cats.effect.implicits._
-import cats.effect.std._
-import cats.syntax.all._
+import cats.effect.*
+import cats.effect.implicits.*
+import cats.effect.std.*
+import cats.syntax.all.*
 import fs2.Stream
 
-object Store {
+object Store:
 
-  def apply[F[_]](implicit F: Async[F]) = for {
+  def apply[F[_]](using F: Async[F]) = for
     sendQ <- Queue.unbounded[F, String].toResource
 
-    store <- ff4s.Store[F, State, Action](State()) { _ =>
-      {
-        case (SetUserInput(input), state) =>
-          state.copy(userInput = input) -> F.unit
-        case (Send, state) => state -> state.userInput.foldMapM(sendQ.offer)
-        case (SetServerResponse(res), state) =>
-          state.copy(serverResponse = res.some) -> F.unit
-      }
-    }
+    store <- ff4s.Store[F, State, Action](State()): _ =>
+      case (Action.SetUserInput(input), state) => state.copy(userInput = input) -> F.unit
+      case (Action.Send, state) => state -> state.userInput.foldMapM(sendQ.offer)
+      case (Action.SetServerResponse(res), state) => state.copy(serverResponse = res.some) -> F.unit
 
     _ <- ff4s
       .WebSocketClient[F]
       .bidirectionalText(
         "wss://ws.postman-echo.com/raw/",
-        _.evalMap(res => store.dispatch(SetServerResponse(res))),
+        _.evalMap(res => store.dispatch(Action.SetServerResponse(res))),
         Stream.fromQueueUnterminated(sendQ)
       )
       .background
 
-  } yield store
+  yield store
 
-}
 ```
 
 ## View
 
-There isn't much to say about the view.
-
 ```scala mdoc:js:shared
 import org.scalajs.dom
 
-trait View { self: ff4s.Dsl[State, Action] =>
+trait View: 
+  self: ff4s.Dsl[State, Action] =>
 
-  import html._
+  import html.*
 
-  val view = {
-
-    useState { state =>
+  val view =
+    useState: state =>
       div(
         input(
           tpe := "text",
           placeholder := "your message here...",
           onInput := ((ev: dom.Event) =>
-            ev.target match {
-              case el: dom.HTMLInputElement =>
-                if (el.value.nonEmpty) Some(SetUserInput(el.value.some))
-                else Some(SetUserInput(None))
-              case _ => None
-            }
+            val target = ev.target.asInstanceOf[dom.HTMLInputElement]
+            if target.value.nonEmpty then Some(Action.SetUserInput(target.value.some))
+            else Some(Action.SetUserInput(None))
           )
         ),
         button(
           "Send",
           disabled := state.userInput.isEmpty,
-          onClick := (_ => Send.some)
+          onClick := (_ => Action.Send.some)
         ),
         state.serverResponse.fold(empty)(res => div(s"Server response: $res"))
       )
-    }
-  }
 
-}
 ```
 
 ## App
@@ -121,11 +105,9 @@ trait View { self: ff4s.Dsl[State, Action] =>
 The boilerplate construction of `ff4s.App` and `ff4s.IOEntryPoint` is omitted.
 
 ```scala mdoc:js:invisible
-class App[F[_]](implicit F: Async[F])
-    extends ff4s.App[F, State, Action]
-    with View {
+class App[F[_]](using F: Async[F]) extends ff4s.App[F, State, Action] with View:
   override val store = Store[F]
   override val rootElementId = node.getAttribute("id")
-}
+
 new ff4s.IOEntryPoint(new App, false).main(Array())
 ```
