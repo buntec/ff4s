@@ -1,18 +1,19 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>todo-mvc</title>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/todomvc-app-css@2.4.2/index.css"
+    />
+  </head>
 
-<head>
-  <meta charset="UTF-8">
-  <title>todo-mvc</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/todomvc-app-css@2.4.2/index.css" />
-</head>
-
-<body>
-  <div id="app"></div>
-  <script type="text/javascript">
-    var process = {env: {'CATS_EFFECT_TRACING_MODE': 'NONE'}};
-  </script>
-  <script type="text/javascript" src="target/scala-2.13/todomvc-fastopt/main.js"></script>
-</body>
-
+  <body>
+    <div id="app"></div>
+    <script
+      type="text/javascript"
+      src="target/scala-2.13/todomvc-fastopt/main.js"
+    ></script>
+  </body>
 </html>

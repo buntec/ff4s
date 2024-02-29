@@ -28,6 +28,7 @@ class App[F[_]: Async] extends ff4s.App[F, State, Action] {
   import html._ // nice syntax for html tags, attributes etc.
 
   // Define some classes for easy re-use.
+  val paragraphCls = "max-w-3xl my-2"
   val linkCls = "text-pink-500"
   val subHeadingCls = "text-center text-2xl mt-4 mb-2"
   val buttonCls =
@@ -50,12 +51,13 @@ class App[F[_]: Async] extends ff4s.App[F, State, Action] {
   val welcome =
     h1( // All common html tags are available thanks to scala-dom-types.
       cls := "m-4 text-4xl", // Some tailwindcss utility classes.
-      "Hello from ff4s 👋" // Strings are valid child nodes, of course.
+      "Hello 👋" // Strings are valid child nodes, of course.
     )
 
   val intro = div(
     cls := "m-4 text-center",
     p(
+      cls := paragraphCls,
       "ff4s lets you write web front-ends in a purely functional style using ",
       a(
         cls := linkCls,
@@ -76,16 +78,16 @@ class App[F[_]: Async] extends ff4s.App[F, State, Action] {
         href := "https://github.com/raquo/scala-dom-types",
         "Scala DOM Types"
       ),
-      ". Rendering is based on the ",
+      " project. Rendering is efficient thanks to the ",
       a(
         cls := linkCls,
-        href := "https://github.com/snabbdom/snabbdom",
+        href := "https://github.com/buntec/scala-js-snabbdom",
         "Snabbdom"
       ),
-      " virtual DOM."
+      " virtual DOM library."
     ),
     p(
-      cls := "mt-4",
+      cls := paragraphCls,
       "This is a minimal SPA built with ff4s. Please check out the ",
       a(cls := linkCls, href := "https://github.com/buntec/ff4s", "code"),
       " to see how it all works."
@@ -100,10 +102,10 @@ class App[F[_]: Async] extends ff4s.App[F, State, Action] {
       cls := "m-4",
       h2(
         cls := subHeadingCls,
-        "A simple counter"
+        "A counter"
       ),
       p(
-        s"The counter stands at ${state.counter}. Click the buttons to increment or decrement the counter."
+        s"The counter stands at ${state.counter}. Click the buttons to increment or decrement."
       ),
       div(
         cls := "flex flex-row justify-center",
@@ -250,8 +252,8 @@ class App[F[_]: Async] extends ff4s.App[F, State, Action] {
         // separate import for SVG tags and attributes.
         // Note the curly braces defining a new scope.
         // Html syntax can still be accessed through fully-qualified names.
-        import svg.{svg => svgTag, _}
-        svgTag(
+        import svg.{svg => _, _}
+        svg.svg(
           height := "100",
           width := "100",
           circle(
@@ -325,7 +327,7 @@ class App[F[_]: Async] extends ff4s.App[F, State, Action] {
   }
 
   override val view = div(
-    cls := "p-4 flex flex-col items-center bg-no-repeat h-full bg-gradient-to-tr from-gray-200 to-sky-300 text-gray-800 font-light",
+    cls := "p-4 flex flex-col items-center bg-no-repeat h-full bg-gradient-to-tr from-gray-200 to-sky-300 text-gray-700 font-light",
     welcome,
     magicAlert,
     intro,
