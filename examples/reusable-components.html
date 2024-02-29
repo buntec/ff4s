@@ -119,141 +119,102 @@
       <main class="content">
 
         <h1 id="reusable-components" class="title">Reusable Components</h1>
-        <p>The ability to factor out and reuse components, possibly across project boundaries, is an essential feature of any UI framework or library. To accomplish this in ff4s we have to work with generic state and action types. Here we illustrate the general approach with some toy examples.</p>
-        <p>We recommend organizing components into generic traits with a <code>ff4s.Dsl</code> self-type:</p>
-        <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">org</span><span>.</span><span class="identifier">scalajs</span><span>.</span><span class="identifier">dom</span><span>
-</span><span class="keyword">import</span><span> </span><span class="identifier">cats</span><span>.</span><span class="identifier">_</span><span>
-</span><span class="keyword">import</span><span> </span><span class="identifier">cats</span><span>.</span><span class="identifier">syntax</span><span>.</span><span class="identifier">all</span><span>.</span><span class="identifier">_</span><span>
+        <p>The ability to factor out and reuse components, possibly across project boundaries,
+        is an essential feature of any UI framework or library.
+        To accomplish this in ff4s we have to work with generic state and action types.
+        Here we illustrate the general approach with some toy examples.</p>
+        <p>We recommend organizing components into generic traits with a <code>Dsl</code> self-type:</p>
+        <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">cats</span><span>.*
+</span><span class="keyword">import</span><span> </span><span class="identifier">cats</span><span>.</span><span class="identifier">syntax</span><span>.</span><span class="identifier">all</span><span>.*
+</span><span class="keyword">import</span><span> </span><span class="identifier">org</span><span>.</span><span class="identifier">scalajs</span><span>.</span><span class="identifier">dom</span><span>
 
-</span><span class="comment">// S and A are the state and action types, respectively
-</span><span class="keyword">trait</span><span> </span><span class="type-name">Selects</span><span>[</span><span class="type-name">S</span><span>, </span><span class="type-name">A</span><span>] { </span><span class="identifier">self</span><span>: </span><span class="identifier">ff4s</span><span>.</span><span class="type-name">Dsl</span><span>[</span><span class="type-name">S</span><span>, </span><span class="type-name">A</span><span>] =&gt;
+</span><span class="comment">// S and A are the state and action types.
+</span><span class="keyword">trait</span><span> </span><span class="type-name">Selects</span><span>[</span><span class="type-name">S</span><span>, </span><span class="type-name">A</span><span>]:
+  </span><span class="identifier">self</span><span>: </span><span class="identifier">ff4s</span><span>.</span><span class="type-name">Dsl</span><span>[</span><span class="type-name">S</span><span>, </span><span class="type-name">A</span><span>] =&gt;
 
   </span><span class="keyword">def</span><span> </span><span class="declaration-name">customSelect</span><span>[</span><span class="type-name">O</span><span>: </span><span class="type-name">Show</span><span>: </span><span class="type-name">Eq</span><span>](
-      </span><span class="identifier">fromString</span><span>: </span><span class="type-name">String</span><span> =&gt; </span><span class="type-name">Option</span><span>[</span><span class="type-name">O</span><span>],
-      </span><span class="identifier">onChange</span><span>: (</span><span class="type-name">S</span><span>, </span><span class="type-name">O</span><span>) =&gt; </span><span class="type-name">Option</span><span>[</span><span class="type-name">A</span><span>],
+      </span><span class="identifier">onChange</span><span>: </span><span class="type-name">O</span><span> =&gt; </span><span class="type-name">Option</span><span>[</span><span class="type-name">A</span><span>],
       </span><span class="identifier">options</span><span>: </span><span class="type-name">List</span><span>[</span><span class="type-name">O</span><span>],
-      </span><span class="identifier">selected</span><span>: </span><span class="type-name">S</span><span> =&gt; </span><span class="type-name">O</span><span>
-  ): </span><span class="type-name">V</span><span> = {
-    </span><span class="keyword">import</span><span> </span><span class="identifier">html</span><span>.{</span><span class="identifier">onChange</span><span> =&gt; </span><span class="identifier">onChange0</span><span>, </span><span class="identifier">selected</span><span> =&gt; </span><span class="identifier">selected0</span><span>, </span><span class="identifier">_</span><span>}
-
-    </span><span class="identifier">useState</span><span> { </span><span class="identifier">state</span><span> =&gt;
-      </span><span class="identifier">select</span><span>(
-        </span><span class="identifier">onChange0</span><span> := ((</span><span class="identifier">ev</span><span>: </span><span class="identifier">dom</span><span>.</span><span class="type-name">Event</span><span>) =&gt;
-          </span><span class="identifier">ev</span><span>.</span><span class="identifier">target</span><span> </span><span class="keyword">match</span><span> {
-            </span><span class="keyword">case</span><span> </span><span class="identifier">el</span><span>: </span><span class="identifier">dom</span><span>.</span><span class="type-name">HTMLSelectElement</span><span> =&gt;
-              </span><span class="identifier">fromString</span><span>(</span><span class="identifier">el</span><span>.</span><span class="identifier">value</span><span>).</span><span class="identifier">flatMap</span><span>(</span><span class="identifier">onChange</span><span>(</span><span class="identifier">state</span><span>, </span><span class="identifier">_</span><span>))
-            </span><span class="keyword">case</span><span> </span><span class="identifier">_</span><span> =&gt; </span><span class="type-name">None</span><span>
-          }
-        ),
-        </span><span class="identifier">options</span><span>.</span><span class="identifier">map</span><span> { </span><span class="identifier">name</span><span> =&gt;
-          </span><span class="identifier">option</span><span>(
-            </span><span class="identifier">selected0</span><span> := (</span><span class="identifier">name</span><span> === </span><span class="identifier">selected</span><span>(</span><span class="identifier">state</span><span>)),
-            </span><span class="identifier">key</span><span> := </span><span class="identifier">name</span><span>.</span><span class="identifier">show</span><span>,
-            </span><span class="identifier">value</span><span> := </span><span class="identifier">name</span><span>.</span><span class="identifier">show</span><span>,
-            </span><span class="identifier">name</span><span>.</span><span class="identifier">show</span><span>
-          )
-        }
+      </span><span class="identifier">selected</span><span>: </span><span class="type-name">Option</span><span>[</span><span class="type-name">O</span><span>]
+  ): </span><span class="type-name">V</span><span> =
+    </span><span class="keyword">import</span><span> </span><span class="identifier">html</span><span>.{</span><span class="identifier">onChange</span><span> =&gt; </span><span class="identifier">_</span><span>, </span><span class="identifier">selected</span><span> =&gt; </span><span class="identifier">_</span><span>, *}
+    </span><span class="identifier">select</span><span>(
+      </span><span class="identifier">cls</span><span> := </span><span class="string-literal">&quot;custom-select&quot;</span><span>,
+      </span><span class="identifier">html</span><span>.</span><span class="identifier">onChange</span><span> := ((</span><span class="identifier">ev</span><span>: </span><span class="identifier">dom</span><span>.</span><span class="type-name">Event</span><span>) =&gt;
+        </span><span class="keyword">val</span><span> </span><span class="identifier">target</span><span> = </span><span class="identifier">ev</span><span>.</span><span class="identifier">target</span><span>.</span><span class="identifier">asInstanceOf</span><span>[</span><span class="identifier">dom</span><span>.</span><span class="type-name">HTMLSelectElement</span><span>]
+        </span><span class="identifier">options</span><span>.</span><span class="identifier">find</span><span>(</span><span class="identifier">o</span><span> =&gt; </span><span class="type-name">Show</span><span>[</span><span class="type-name">O</span><span>].</span><span class="identifier">show</span><span>(</span><span class="identifier">o</span><span>) == </span><span class="identifier">target</span><span>.</span><span class="identifier">value</span><span>).</span><span class="identifier">flatMap</span><span>(</span><span class="identifier">onChange</span><span>)
+      ),
+      </span><span class="identifier">options</span><span>.</span><span class="identifier">map</span><span>(</span><span class="identifier">name</span><span> =&gt;
+        </span><span class="identifier">html</span><span>.</span><span class="identifier">option</span><span>(
+          </span><span class="identifier">html</span><span>.</span><span class="identifier">selected</span><span> := (</span><span class="identifier">selected</span><span>.</span><span class="identifier">exists</span><span>(</span><span class="identifier">_</span><span> == </span><span class="identifier">name</span><span>)),
+          </span><span class="identifier">key</span><span> := </span><span class="identifier">name</span><span>.</span><span class="identifier">show</span><span>,
+          </span><span class="identifier">html</span><span>.</span><span class="identifier">value</span><span> := </span><span class="identifier">name</span><span>.</span><span class="identifier">show</span><span>,
+          </span><span class="identifier">name</span><span>.</span><span class="identifier">show</span><span>
+        )
       )
-    }
+    )
 
-  }
-</span><span class="comment">// more ...
-</span><span>
-}
-
-</span><span class="keyword">trait</span><span> </span><span class="type-name">Buttons</span><span>[</span><span class="type-name">S</span><span>, </span><span class="type-name">A</span><span>] { </span><span class="identifier">self</span><span>: </span><span class="identifier">ff4s</span><span>.</span><span class="type-name">Dsl</span><span>[</span><span class="type-name">S</span><span>, </span><span class="type-name">A</span><span>] =&gt;
+</span><span class="keyword">trait</span><span> </span><span class="type-name">Buttons</span><span>[</span><span class="type-name">S</span><span>, </span><span class="type-name">A</span><span>]:
+  </span><span class="identifier">self</span><span>: </span><span class="identifier">ff4s</span><span>.</span><span class="type-name">Dsl</span><span>[</span><span class="type-name">S</span><span>, </span><span class="type-name">A</span><span>] =&gt;
 
   </span><span class="keyword">def</span><span> </span><span class="declaration-name">customButton</span><span>(
       </span><span class="identifier">child</span><span>: </span><span class="type-name">V</span><span>,
-      </span><span class="identifier">onClick</span><span>: </span><span class="type-name">S</span><span> =&gt; </span><span class="type-name">Option</span><span>[</span><span class="type-name">A</span><span>],
-      </span><span class="identifier">isDisabled</span><span>: </span><span class="type-name">S</span><span> =&gt; </span><span class="type-name">Boolean</span><span>
-  ): </span><span class="type-name">V</span><span> = {
-    </span><span class="keyword">import</span><span> </span><span class="identifier">html</span><span>.{</span><span class="identifier">onClick</span><span> =&gt; </span><span class="identifier">onClick0</span><span>, </span><span class="identifier">_</span><span>}
-
-    </span><span class="identifier">useState</span><span> { </span><span class="identifier">state</span><span> =&gt;
-      </span><span class="identifier">button</span><span>(
-        </span><span class="identifier">child</span><span>,
-        </span><span class="identifier">disabled</span><span> := </span><span class="identifier">isDisabled</span><span>(</span><span class="identifier">state</span><span>),
-        </span><span class="identifier">onClick0</span><span> := (</span><span class="identifier">_</span><span> =&gt; </span><span class="identifier">onClick</span><span>(</span><span class="identifier">state</span><span>))
-      )
-    }
-  }
-
-</span><span class="comment">// more ...
-</span><span>
-}</span></code></pre>
-        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">final</span><span> </span><span class="keyword">case</span><span> </span><span class="keyword">class</span><span> </span><span class="type-name">State</span><span>(</span><span class="identifier">counter</span><span>: </span><span class="type-name">Int</span><span> = </span><span class="number-literal">0</span><span>, </span><span class="identifier">fruit</span><span>: </span><span class="type-name">Fruit</span><span> = </span><span class="type-name">Fruit</span><span>.</span><span class="type-name">Banana</span><span>)</span></code></pre>
+      </span><span class="identifier">onClick</span><span>: </span><span class="type-name">Option</span><span>[</span><span class="type-name">A</span><span>],
+      </span><span class="identifier">isDisabled</span><span>: </span><span class="type-name">Boolean</span><span>
+  ): </span><span class="type-name">V</span><span> =
+    </span><span class="keyword">import</span><span> </span><span class="identifier">html</span><span>.{</span><span class="identifier">onClick</span><span> =&gt; </span><span class="identifier">_</span><span>, *}
+    </span><span class="identifier">button</span><span>(
+      </span><span class="identifier">cls</span><span> := </span><span class="string-literal">&quot;custom-button&quot;</span><span>,
+      </span><span class="identifier">child</span><span>,
+      </span><span class="identifier">disabled</span><span> := </span><span class="identifier">isDisabled</span><span>,
+      </span><span class="identifier">html</span><span>.</span><span class="identifier">onClick</span><span> := (</span><span class="identifier">_</span><span> =&gt; </span><span class="identifier">onClick</span><span>)
+    )</span></code></pre>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">case</span><span> </span><span class="keyword">class</span><span> </span><span class="type-name">State</span><span>(</span><span class="identifier">counter</span><span>: </span><span class="type-name">Int</span><span> = </span><span class="number-literal">0</span><span>, </span><span class="identifier">fruit</span><span>: </span><span class="type-name">Fruit</span><span> = </span><span class="type-name">Fruit</span><span>.</span><span class="type-name">Banana</span><span>)</span></code></pre>
         <p>To show off our custom selection component we define an enumeration with the required <code>Eq</code> and <code>Show</code> instances.</p>
-        <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">cats</span><span>.</span><span class="type-name">Show</span><span>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">cats</span><span>.</span><span class="type-name">Show</span><span>
 </span><span class="keyword">import</span><span> </span><span class="identifier">cats</span><span>.</span><span class="identifier">kernel</span><span>.</span><span class="type-name">Eq</span><span>
 
-</span><span class="keyword">sealed</span><span> </span><span class="keyword">trait</span><span> </span><span class="type-name">Fruit</span><span>
+</span><span class="keyword">enum</span><span> </span><span class="type-name">Fruit</span><span>:
+  </span><span class="keyword">case</span><span> </span><span class="type-name">Apple</span><span>, </span><span class="type-name">Banana</span><span>, </span><span class="type-name">Orange</span><span>, </span><span class="type-name">Strawberry</span><span>
 
-</span><span class="keyword">object</span><span> </span><span class="type-name">Fruit</span><span> {
-  </span><span class="keyword">case</span><span> </span><span class="keyword">object</span><span> </span><span class="type-name">Apple</span><span> </span><span class="keyword">extends</span><span> </span><span class="type-name">Fruit</span><span>
-  </span><span class="keyword">case</span><span> </span><span class="keyword">object</span><span> </span><span class="type-name">Banana</span><span> </span><span class="keyword">extends</span><span> </span><span class="type-name">Fruit</span><span>
-  </span><span class="keyword">case</span><span> </span><span class="keyword">object</span><span> </span><span class="type-name">Orange</span><span> </span><span class="keyword">extends</span><span> </span><span class="type-name">Fruit</span><span>
-  </span><span class="keyword">case</span><span> </span><span class="keyword">object</span><span> </span><span class="type-name">Strawberry</span><span> </span><span class="keyword">extends</span><span> </span><span class="type-name">Fruit</span><span>
-
-  </span><span class="keyword">def</span><span> </span><span class="declaration-name">fromString</span><span>(</span><span class="identifier">s</span><span>: </span><span class="type-name">String</span><span>): </span><span class="type-name">Option</span><span>[</span><span class="type-name">Fruit</span><span>] = </span><span class="identifier">s</span><span> </span><span class="keyword">match</span><span> {
-    </span><span class="keyword">case</span><span> </span><span class="string-literal">&quot;Apple&quot;</span><span>      =&gt; </span><span class="type-name">Apple</span><span>.</span><span class="identifier">some</span><span>
-    </span><span class="keyword">case</span><span> </span><span class="string-literal">&quot;Banana&quot;</span><span>     =&gt; </span><span class="type-name">Banana</span><span>.</span><span class="identifier">some</span><span>
-    </span><span class="keyword">case</span><span> </span><span class="string-literal">&quot;Orange&quot;</span><span>     =&gt; </span><span class="type-name">Orange</span><span>.</span><span class="identifier">some</span><span>
-    </span><span class="keyword">case</span><span> </span><span class="string-literal">&quot;Strawberry&quot;</span><span> =&gt; </span><span class="type-name">Strawberry</span><span>.</span><span class="identifier">some</span><span>
-    </span><span class="keyword">case</span><span> </span><span class="identifier">_</span><span>            =&gt; </span><span class="identifier">none</span><span>
-  }
-
+</span><span class="keyword">object</span><span> </span><span class="type-name">Fruit</span><span>:
   </span><span class="keyword">val</span><span> </span><span class="identifier">all</span><span> = </span><span class="type-name">List</span><span>(</span><span class="type-name">Apple</span><span>, </span><span class="type-name">Banana</span><span>, </span><span class="type-name">Orange</span><span>, </span><span class="type-name">Strawberry</span><span>)
-
-  </span><span class="keyword">implicit</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">show</span><span>: </span><span class="type-name">Show</span><span>[</span><span class="type-name">Fruit</span><span>] = </span><span class="type-name">Show</span><span>.</span><span class="identifier">show</span><span> {
-    </span><span class="keyword">case</span><span> </span><span class="type-name">Apple</span><span>      =&gt; </span><span class="string-literal">&quot;Apple&quot;</span><span>
-    </span><span class="keyword">case</span><span> </span><span class="type-name">Banana</span><span>     =&gt; </span><span class="string-literal">&quot;Banana&quot;</span><span>
-    </span><span class="keyword">case</span><span> </span><span class="type-name">Orange</span><span>     =&gt; </span><span class="string-literal">&quot;Orange&quot;</span><span>
-    </span><span class="keyword">case</span><span> </span><span class="type-name">Strawberry</span><span> =&gt; </span><span class="string-literal">&quot;Strawberry&quot;</span><span>
-  }
-
-  </span><span class="keyword">implicit</span><span> </span><span class="keyword">val</span><span> </span><span class="identifier">eq</span><span>: </span><span class="type-name">Eq</span><span>[</span><span class="type-name">Fruit</span><span>] = </span><span class="type-name">Eq</span><span>.</span><span class="identifier">fromUniversalEquals</span><span>
-}</span></code></pre>
-        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">sealed</span><span> </span><span class="keyword">trait</span><span> </span><span class="type-name">Action</span><span>
-</span><span class="keyword">case</span><span> </span><span class="keyword">class</span><span> </span><span class="type-name">SetFruit</span><span>(</span><span class="identifier">fruit</span><span>: </span><span class="type-name">Fruit</span><span>) </span><span class="keyword">extends</span><span> </span><span class="type-name">Action</span><span>
-</span><span class="keyword">case</span><span> </span><span class="keyword">object</span><span> </span><span class="type-name">Inc</span><span> </span><span class="keyword">extends</span><span> </span><span class="type-name">Action</span></code></pre>
+  </span><span class="keyword">given</span><span> </span><span class="type-name">Show</span><span>[</span><span class="type-name">Fruit</span><span>] = </span><span class="type-name">Show</span><span>.</span><span class="identifier">fromToString</span><span>
+  </span><span class="keyword">given</span><span> </span><span class="type-name">Eq</span><span>[</span><span class="type-name">Fruit</span><span>] = </span><span class="type-name">Eq</span><span>.</span><span class="identifier">fromUniversalEquals</span></code></pre>
+        <pre class="keep-together pdf epub"><code class="nohighlight"><span class="keyword">enum</span><span> </span><span class="type-name">Action</span><span>:
+  </span><span class="keyword">case</span><span> </span><span class="type-name">SetFruit</span><span>(</span><span class="identifier">fruit</span><span>: </span><span class="type-name">Fruit</span><span>)
+  </span><span class="keyword">case</span><span> </span><span class="type-name">Inc</span></code></pre>
         <p>We omit the straightforward definition of the store.</p>
         <p>With concrete state and action types we can instantiate our components and build the view.</p>
-        <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">cats</span><span>.</span><span class="identifier">syntax</span><span>.</span><span class="identifier">all</span><span>.</span><span class="identifier">_</span><span>
+        <pre><code class="nohighlight"><span class="keyword">import</span><span> </span><span class="identifier">cats</span><span>.</span><span class="identifier">syntax</span><span>.</span><span class="identifier">all</span><span>.*
 
-</span><span class="keyword">trait</span><span> </span><span class="type-name">View</span><span> </span><span class="keyword">extends</span><span> </span><span class="type-name">Selects</span><span>[</span><span class="type-name">State</span><span>, </span><span class="type-name">Action</span><span>] </span><span class="keyword">with</span><span> </span><span class="type-name">Buttons</span><span>[</span><span class="type-name">State</span><span>, </span><span class="type-name">Action</span><span>] {
+</span><span class="keyword">trait</span><span> </span><span class="type-name">View</span><span> </span><span class="keyword">extends</span><span> </span><span class="type-name">Selects</span><span>[</span><span class="type-name">State</span><span>, </span><span class="type-name">Action</span><span>] </span><span class="keyword">with</span><span> </span><span class="type-name">Buttons</span><span>[</span><span class="type-name">State</span><span>, </span><span class="type-name">Action</span><span>]:
   </span><span class="identifier">dsl</span><span>: </span><span class="identifier">ff4s</span><span>.</span><span class="type-name">Dsl</span><span>[</span><span class="type-name">State</span><span>, </span><span class="type-name">Action</span><span>] =&gt;
 
-  </span><span class="keyword">import</span><span> </span><span class="identifier">html</span><span>.</span><span class="identifier">_</span><span>
+  </span><span class="keyword">import</span><span> </span><span class="identifier">html</span><span>.*
 
-  </span><span class="keyword">val</span><span> </span><span class="identifier">view</span><span> = {
-
-    </span><span class="identifier">useState</span><span> { </span><span class="identifier">state</span><span> =&gt;
+  </span><span class="keyword">val</span><span> </span><span class="identifier">view</span><span> =
+    </span><span class="identifier">useState</span><span>(</span><span class="identifier">state</span><span> =&gt;
       </span><span class="identifier">div</span><span>(
         </span><span class="identifier">customSelect</span><span>[</span><span class="type-name">Fruit</span><span>](
-          </span><span class="type-name">Fruit</span><span>.</span><span class="identifier">fromString</span><span>,
-          (</span><span class="identifier">_</span><span>, </span><span class="identifier">fruit</span><span>) =&gt; </span><span class="type-name">SetFruit</span><span>(</span><span class="identifier">fruit</span><span>).</span><span class="identifier">some</span><span>,
+          </span><span class="identifier">fruit</span><span> =&gt; </span><span class="type-name">Action</span><span>.</span><span class="type-name">SetFruit</span><span>(</span><span class="identifier">fruit</span><span>).</span><span class="identifier">some</span><span>,
           </span><span class="type-name">Fruit</span><span>.</span><span class="identifier">all</span><span>,
-          </span><span class="identifier">_</span><span>.</span><span class="identifier">fruit</span><span>
+          </span><span class="identifier">state</span><span>.</span><span class="identifier">fruit</span><span>.</span><span class="identifier">some</span><span>
         ),
         </span><span class="identifier">div</span><span>(</span><span class="string-literal">s&quot;Selected fruit: </span><span class="substitution">${state.fruit}</span><span class="string-literal">&quot;</span><span>),
         </span><span class="identifier">customButton</span><span>(
           </span><span class="identifier">span</span><span>(</span><span class="string-literal">&quot;Increment&quot;</span><span>),
-          </span><span class="identifier">_</span><span> =&gt; </span><span class="type-name">Inc</span><span>.</span><span class="identifier">some</span><span>,
-          </span><span class="identifier">_</span><span>.</span><span class="identifier">counter</span><span> == </span><span class="number-literal">10</span><span>
+          </span><span class="type-name">Action</span><span>.</span><span class="type-name">Inc</span><span>.</span><span class="identifier">some</span><span>,
+          </span><span class="identifier">state</span><span>.</span><span class="identifier">counter</span><span> == </span><span class="number-literal">10</span><span>
         ),
-        </span><span class="keyword">if</span><span> (</span><span class="identifier">state</span><span>.</span><span class="identifier">counter</span><span> == </span><span class="number-literal">10</span><span>)
+        </span><span class="keyword">if</span><span> </span><span class="identifier">state</span><span>.</span><span class="identifier">counter</span><span> == </span><span class="number-literal">10</span><span> </span><span class="keyword">then</span><span>
           </span><span class="identifier">div</span><span>(
             </span><span class="identifier">styleAttr</span><span> := </span><span class="string-literal">&quot;color: red&quot;</span><span>,
             </span><span class="string-literal">&quot;Button disabled!&quot;</span><span>
           )
         </span><span class="keyword">else</span><span> </span><span class="identifier">div</span><span>(</span><span class="string-literal">s&quot;</span><span class="substitution">${10 - state.counter}</span><span class="string-literal"> increments remaining!&quot;</span><span>)
       )
-    }
-
-  }
-
-}</span></code></pre>
+    )</span></code></pre>
         <div id="mdoc-html-run5" data-mdoc-js></div>
         <p><script type="text/javascript" src="reusable-components.md.js" defer></script>
         <script type="text/javascript" src="mdoc.js" defer></script></p>
