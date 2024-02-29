@@ -14,7 +14,7 @@ in the `todo-mvc` folder.
 Artifacts are published to Maven Central for Scala 2.13 and Scala 3.
 
 ```scala
-libraryDependencies += "io.github.buntec" %%% "ff4s" % "<x.y.z>"
+libraryDependencies += "io.github.buntec" %%% "ff4s" % "0.24.0"
 ```
 
 ## Companion libraries
@@ -25,6 +25,10 @@ libraryDependencies += "io.github.buntec" %%% "ff4s" % "<x.y.z>"
 
 
 ## (Breaking) changes
+
+### 0.24.0
+- The store constructor is simplified to `(Action, State) => (State, F[Unit])`.
+  To migrate replace all occurrences of `None` with `Applicative[F].unit` (see microsite and examples).
 
 ### 0.23.0
 - Adds `withClass` extension method to the `V` type that allows overriding the `class` attribute of the underlying node.
