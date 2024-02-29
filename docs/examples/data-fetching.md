@@ -12,141 +12,117 @@ and possibly an error message in case something goes wrong.
 We also add a convenience method for parsing currency pairs from user input.
 
 ```scala mdoc:js:shared
-final case class State(
+case class State(
     userInput: Option[String] = None,
     apiResponse: Option[ApiResponse] = None,
     errorMessage: Option[String] = None
-) {
-
+):
   def ccyPairOption: Option[(String, String)] =
-    userInput.flatMap {
-      _ match {
-        case Utils.ccyPairPattern(ccy1, ccy2) => Some((ccy1, ccy2))
-        case _                                => None
-      }
-    }
+    userInput.flatMap:
+      case ccyPairPattern(ccy1, ccy2) => Some((ccy1, ccy2))
+      case _                          => None
 
-}
-
-object Utils {
-
-  val ccyPairPattern = """([a-zA-Z]{3})/?([a-zA-Z]{3})""".r
-
-}
+lazy val ccyPairPattern = """([a-zA-Z]{3})/?([a-zA-Z]{3})""".r
 ```
 
 As per usual, we model the JSON API response using a case class with a
 derived [circe](https://circe.github.io/circe/) decoder:
 
 ```scala mdoc:js:shared
-import io.circe._
-import io.circe.generic.semiauto._
+import io.circe.*
+import io.circe.generic.semiauto.*
 
 case class ApiResponse(rates: Map[String, Double])
-object ApiResponse {
-  implicit val decoder: Decoder[ApiResponse] = deriveDecoder
-}
+
+object ApiResponse:
+  given Decoder[ApiResponse] = deriveDecoder
 ```
 
 ## Actions
 
-The action encoding is straightforward.
-
 ```scala mdoc:js:shared
-sealed trait Action
-case class SetUserInput(input: Option[String]) extends Action
-case object MakeApiRequest extends Action
-case class SetApiResponse(response: Option[ApiResponse]) extends Action
-case class SetErrorMessage(msg: Option[String]) extends Action
+enum Action:
+  case MakeApiRequest
+  case SetApiResponse(response: Option[ApiResponse])
+  case SetErrorMessage(msg: Option[String])
+  case SetUserInput(input: Option[String])
 ```
 
 ## Store
 
-The interesting bit in the store is the handling of `MakeApiRequest`.
+The interesting bit is the handling of `MakeApiRequest`.
 Note how we retrieve the currency pair from the state and how we
 are updating the state with the response using `store.dispatch`.
 
 ```scala mdoc:js:shared
-import cats.effect._
-import cats.syntax.all._
+import cats.effect.*
+import cats.syntax.all.*
 
-object Store {
+object Store:
 
-  def apply[F[_]](implicit
+  def apply[F[_]](using
       F: Async[F]
   ): Resource[F, ff4s.Store[F, State, Action]] =
-    ff4s.Store[F, State, Action](State()) { store =>
-      {
-        case (SetApiResponse(response), state) =>
-          state.copy(apiResponse = response, errorMessage = None) -> F.unit
-        case (SetUserInput(input), state) =>
-          state.copy(userInput = input) -> F.unit
-        case (SetErrorMessage(msg), state) =>
-          state.copy(errorMessage = msg) -> F.unit
-        case (MakeApiRequest, state) =>
-          (
-            state,
-            state.ccyPairOption.foldMapM { case (ccy1, ccy2) =>
-              ff4s
-                .HttpClient[F]
-                .get[ApiResponse](
-                  s"https://api.frankfurter.app/latest?from=$ccy1&to=$ccy2"
+    ff4s.Store[F, State, Action](State()): store =>
+      case (Action.SetApiResponse(response), state) =>
+        state.copy(apiResponse = response, errorMessage = None) -> F.unit
+      case (Action.SetUserInput(input), state) =>
+        state.copy(userInput = input) -> F.unit
+      case (Action.SetErrorMessage(msg), state) =>
+        state.copy(errorMessage = msg) -> F.unit
+      case (Action.MakeApiRequest, state) =>
+        (
+          state,
+          state.ccyPairOption.foldMapM: (ccy1, ccy2) =>
+            ff4s
+              .HttpClient[F]
+              .get[ApiResponse](
+                s"https://api.frankfurter.app/latest?from=$ccy1&to=$ccy2"
+              )
+              .flatMap(response =>
+                store.dispatch(Action.SetApiResponse(response.some))
+              )
+              .handleErrorWith(t =>
+                store.dispatch(
+                  Action.SetErrorMessage(s"Failed to get FX rate: $t".some)
                 )
-                .flatMap(response =>
-                  store.dispatch(SetApiResponse(response.some))
-                )
-                .handleErrorWith(t =>
-                  store.dispatch(
-                    SetErrorMessage(s"Failed to get FX rate: $t".some)
-                  )
-                )
-            }
-          )
-      }
-    }
-
-}
+              )
+        )
 ```
 
 ## View
 
 ```scala mdoc:js:shared
-trait View { self: ff4s.Dsl[State, Action] =>
+trait View:
+  self: ff4s.Dsl[State, Action] =>
 
-  import html._
+  import html.*
   import org.scalajs.dom
 
-  val view = {
-    useState { state =>
+  val view =
+    useState: state =>
       div(
         input(
           tpe := "text",
           placeholder := "e.g. EUR/USD or EURUSD",
           onInput := ((ev: dom.Event) =>
-            ev.target match {
-              case el: dom.HTMLInputElement =>
-                SetUserInput(el.value.some).some
-              case _ => None
-            }
+            // casting is sometimes necessary when `org.scalajs.dom` doesn't give us precise enough types.
+            val target = ev.target.asInstanceOf[dom.HTMLInputElement]
+            Action.SetUserInput(target.value.some).some
           )
         ),
         button(
           "Get FX Rate",
-          onClick := (_ => MakeApiRequest.some),
+          onClick := (_ => Action.MakeApiRequest.some),
           disabled := state.ccyPairOption.isEmpty
         ),
-        state.errorMessage match {
+        state.errorMessage match
           case Some(errorMsg) => div(styleAttr := "color: red", errorMsg)
           case None =>
             div(
               s"${state.apiResponse.flatMap(_.rates.values.toList.headOption).getOrElse("")}"
             )
-        }
       )
-    }
-  }
-
-}
 ```
 
 ## App
@@ -154,11 +130,9 @@ trait View { self: ff4s.Dsl[State, Action] =>
 The boilerplate for `ff4s.App` and `ff4s.IOEntryPoint` is omitted.
 
 ```scala mdoc:js:invisible
-class App[F[_]](implicit F: Async[F])
-    extends ff4s.App[F, State, Action]
-    with View {
+class App[F[_]](using F: Async[F]) extends ff4s.App[F, State, Action] with View:
   override val store = Store[F]
   override val rootElementId = node.getAttribute("id")
-}
+
 new ff4s.IOEntryPoint(new App, false).main(Array())
 ```
