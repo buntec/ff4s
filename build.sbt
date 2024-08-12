@@ -81,8 +81,8 @@ lazy val examples = (project in file("examples"))
   .settings(
     scalaJSUseMainModuleInitializer := true,
     libraryDependencies ++= Seq(
-      "dev.optics" %%% "monocle-core" % "3.2.0",
-      "dev.optics" %%% "monocle-macro" % "3.2.0"
+      "dev.optics" %%% "monocle-core" % "3.3.0",
+      "dev.optics" %%% "monocle-macro" % "3.3.0"
     )
   )
   .dependsOn(ff4s)
