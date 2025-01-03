@@ -64,7 +64,7 @@ class App[F[_]](implicit val F: Async[F]) extends ff4s.App[F, State, Action] {
       cls := "flex flex-col items-center h-screen",
       span(s"Toggle: ${state.toggle}"),
       (
-        if (state.toggle) div("hello", cls := "foo") else div("hello")
+        if (state.toggle) div("hello", cls := "text-pink-500") else div("hello")
       )
     )
 

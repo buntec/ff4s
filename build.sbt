@@ -1,17 +1,16 @@
 Global / onChangedBuildSource := ReloadOnSourceChanges
 Global / resolvers += "Sonatype S01 OSS Snapshots" at "https://s01.oss.sonatype.org/content/repositories/snapshots"
 
-ThisBuild / tlBaseVersion := "0.24"
+ThisBuild / tlBaseVersion := "0.25"
 
-lazy val scala213 = "2.13.13"
-lazy val scala3 = "3.3.4"
+lazy val scala213 = "2.13.15"
+lazy val scala3 = "3.6.2"
 ThisBuild / scalaVersion := scala3
 ThisBuild / crossScalaVersions := Seq(scala213, scala3)
 
 ThisBuild / organization := "io.github.buntec"
 ThisBuild / organizationName := "buntec"
 ThisBuild / startYear := Some(2022)
-ThisBuild / tlSonatypeUseLegacyHost := false
 
 ThisBuild / developers := List(
   tlGitHubDev("buntec", "Christoph Bunte")
@@ -23,10 +22,10 @@ ThisBuild / tlSitePublishBranch := Some("main")
 ThisBuild / tlFatalWarnings := false
 
 lazy val scalajsDomVersion = "2.8.0"
-lazy val circeVersion = "0.14.6"
-lazy val catsVersion = "2.10.0"
+lazy val circeVersion = "0.14.10"
+lazy val catsVersion = "2.12.0"
 lazy val catsEffectVersion = "3.5.7"
-lazy val fs2Version = "3.9.4"
+lazy val fs2Version = "3.11.0"
 lazy val kindProjectorVersion = "0.13.3"
 lazy val http4sDomVersion = "0.2.11"
 lazy val http4sVersion = "0.23.30"
@@ -81,8 +80,8 @@ lazy val examples = (project in file("examples"))
   .settings(
     scalaJSUseMainModuleInitializer := true,
     libraryDependencies ++= Seq(
-      "dev.optics" %%% "monocle-core" % "3.2.0",
-      "dev.optics" %%% "monocle-macro" % "3.2.0"
+      "dev.optics" %%% "monocle-core" % "3.3.0",
+      "dev.optics" %%% "monocle-macro" % "3.3.0"
     )
   )
   .dependsOn(ff4s)

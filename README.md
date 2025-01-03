@@ -23,32 +23,36 @@ libraryDependencies += "io.github.buntec" %%% "ff4s" % "0.24.0"
 - [ff4s-shoelace](https://github.com/buntec/ff4s-shoelace)
 - [ff4s-heroicons](https://github.com/buntec/ff4s-heroicons)
 
-
 ## (Breaking) changes
 
 ### 0.24.0
+
 - The store constructor is simplified to `(Action, State) => (State, F[Unit])`.
   To migrate replace all occurrences of `None` with `Applicative[F].unit` (see microsite and examples).
 
 ### 0.23.0
+
 - Adds `withClass` extension method to the `V` type that allows overriding the `class` attribute of the underlying node.
   This turns out to be useful for `literal`s, e.g., setting the class on an SVG icon.
 
 ### 0.22.0
+
 - `Dsl[F, State, Action]` becomes `Dsl[State, Action]`. The `F` parameter was merely an implementation detail leaking out.
 - `ff4s.App` no longer has an implicit `Dsl` member. A better pattern for organizing components is to use a `Dsl[State, Action]` self-type (see the examples),
   which obviates the need for passing a `Dsl` parameter to every component.
 
 ### 0.21.0
+
 - Adds a debug mode for inspecting the state from the browser console.
 - Improves support for web components by adding a `WebComponent` base trait and a `Slot` modifier (see [ff4s-shoelace](https://github.com/buntec/ff4s-shoelace) for usage examples).
 
 ### 0.20.0
+
 - Bug fix: map reflected attributes to attributes instead of props. Properties typically cannot be deleted so things like `id`, once set, couldn't be removed.
 
 ### 0.18.0
-- Adds caching for `literal`s. This can significantly improve performance, e.g., when displaying a large number of SVG icon literals.
 
+- Adds caching for `literal`s. This can significantly improve performance, e.g., when displaying a large number of SVG icon literals.
 
 ## Debugging
 
@@ -58,8 +62,8 @@ following global variables (e.g., by adding an inline script to your `index.html
 ```javascript
 var process = {
   env: {
-    'FF4S_DEBUG': 'TRUE',
-  }
+    FF4S_DEBUG: "TRUE",
+  },
 };
 var ff4s_state;
 ```

@@ -273,11 +273,11 @@ class Dsl[State, Action] { self =>
 
   implicit class WebComponentOps(wc: WebComponent) {
     def apply(modifiers: Modifier*): V = {
-      (new HtmlTag[dom.html.Element](wc.tagName, false))(modifiers: _*)
+      (new HtmlTag[dom.html.Element](wc.tagName, false))(modifiers*)
     }
   }
 
-  implicit class HtmlTagOps(tag: HtmlTag[_]) {
+  implicit class HtmlTagOps(tag: HtmlTag[?]) {
 
     def apply(modifiers: Modifier*): V = {
 
@@ -346,7 +346,7 @@ class Dsl[State, Action] { self =>
 
   }
 
-  implicit class SvgTagOps(tag: SvgTag[_]) {
+  implicit class SvgTagOps(tag: SvgTag[?]) {
 
     def apply(modifiers: Modifier*): V = {
 
