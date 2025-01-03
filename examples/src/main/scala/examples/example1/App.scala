@@ -134,14 +134,19 @@ class App[F[_]: Async] extends ff4s.App[F, State, Action] {
       h2(cls := subHeadingCls, "API calls"),
       p(
         "We query ",
-        a(cls := linkCls, "The Bored API", href := "https://www.boredapi.com"),
+        a(cls := linkCls, "Open Meteo", href := "https://open-meteo.com"),
         " every few seconds in the background and display the result:"
       ),
       span(
         cls := "text-center",
-        state.bored.fold(
+        state.temperature.fold(
           p(cls := "animate-pulse text-amber-600", "loading...")
-        )(b => p(cls := "text-amber-600", s"${b.activity} (${b.`type`})"))
+        )(temp =>
+          p(
+            cls := "text-amber-600",
+            s"The temperature in Zurich is currently ${temp}°C."
+          )
+        )
       )
     )
   }

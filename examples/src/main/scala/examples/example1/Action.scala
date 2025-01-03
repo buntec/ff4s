@@ -32,9 +32,9 @@ object Action {
 
   case object DecrementCounter extends Action
 
-  case object GetActivity extends Action
+  case object GetTemperature extends Action
 
-  case class SetActivity(activity: Bored) extends Action
+  case class SetTemperature(temp: Double) extends Action
 
   case class SetSvgCoords(x: Double, y: Double) extends Action
 
