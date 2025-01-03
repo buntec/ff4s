@@ -3,16 +3,16 @@
 This example shows how long running effects can be made cancellable,
 either by triggering the same effect again before it has completed,
 or explicitly by, say, clicking a button. We illustrate this with a simple
-HTTP GET request to [The Bored API](https://www.boredapi.com/).
+HTTP GET request to [Open Meteo](https://open-meteo.com/).
 
 ## State
 
-The state holds the most recently fetched activity and the loading state,
+The state holds the most recently fetched result and the loading state,
 which indicates whether a request is currently running.
 
 ```scala mdoc:js:shared
 case class State(
-    activity: Option[Activity] = None,
+    temperature: Option[Double] = None,
     loading: Boolean = false
 )
 ```
@@ -23,10 +23,14 @@ The JSON API response is modeled using a case class with a circe decoder instanc
 import io.circe.*
 import io.circe.generic.semiauto.*
 
-case class Activity(activity: String)
+case class OpenMeteoData(temperature_2m: Double)
+case class OpenMeteoApiResponse(current: OpenMeteoData)
 
-object Activity:
-  given Decoder[Activity] = deriveDecoder
+object OpenMeteoData:
+  given Decoder[OpenMeteoData] = deriveDecoder
+
+object OpenMeteoApiResponse:
+  given Decoder[OpenMeteoApiResponse] = deriveDecoder
 ```
 
 ## Actions
@@ -34,8 +38,8 @@ object Activity:
 ```scala mdoc:js:shared
 enum Action:
   case Cancel
-  case GetRandomActivity
-  case SetActivity(activity: Option[Activity])
+  case GetTemperature
+  case SetTemperature(temp: Option[Double])
   case SetLoading(loading: Boolean)
 ```
 
@@ -54,7 +58,7 @@ import scala.concurrent.duration.*
 
 object Store:
 
-  private val cancelKey = "activity"
+  private val cancelKey = "get-temperature"
   private val loadingKey = "loading"
 
   def apply[F[_]](using
@@ -62,14 +66,14 @@ object Store:
   ): Resource[F, ff4s.Store[F, State, Action]] =
     for
       store <- ff4s.Store[F, State, Action](State()): store =>
-        case (Action.SetActivity(activity), state) =>
-          state.copy(activity = activity) -> F.unit
+        case (Action.SetTemperature(temp), state) =>
+          state.copy(temperature = temp) -> F.unit
         case (Action.SetLoading(loading), state) =>
           state.copy(loading = loading) -> F.unit
         case (Action.Cancel, state) => state -> store.cancel(cancelKey)
-        case (Action.GetRandomActivity, state) =>
+        case (Action.GetTemperature, state) =>
           (
-            state.copy(activity = none),
+            state.copy(temperature = none),
             store
               .withCancellationKey(cancelKey)(
                 store.withRunningState(loadingKey)(
@@ -78,9 +82,9 @@ object Store:
                   ) *>
                     ff4s
                       .HttpClient[F]
-                      .get[Activity]("https://www.boredapi.com/api/activity")
-                      .flatMap(activity =>
-                        store.dispatch(Action.SetActivity(activity.some))
+                      .get[OpenMeteoApiResponse]("https://api.open-meteo.com/v1/forecast?latitude=47.3667&longitude=8.55&current=temperature_2m")
+                      .flatMap(r =>
+                        store.dispatch(Action.SetTemperature(r.current.temperature_2m.some))
                       )
                 )
               )
@@ -109,15 +113,14 @@ trait View:
     useState: state =>
       div(
         button(
-          "Get activity",
-          onClick := (_ => Action.GetRandomActivity.some)
+          "Get current temperature",
+          onClick := (_ => Action.GetTemperature.some)
         ),
         button("Cancel", onClick := (_ => Action.Cancel.some)),
         if (state.loading) div("loading...")
-        else div(s"${state.activity.map(_.activity).getOrElse("")}")
+        else div(s"${state.temperature.fold("")(t => s"${t}°C")}")
       )
 ```
-
 
 ```scala mdoc:js:invisible
 class App[F[_]](using F: Async[F]) extends ff4s.App[F, State, Action] with View:

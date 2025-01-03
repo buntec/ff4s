@@ -63,14 +63,18 @@ object Store {
         case (Action.DecrementCounter, state) =>
           state.copy(counter = state.counter - 1) -> unit
 
-        case (Action.SetActivity(activity), state) =>
-          state.copy(bored = activity.some) -> unit
+        case (Action.SetTemperature(temp), state) =>
+          state.copy(temperature = temp.some) -> unit
 
-        case (Action.GetActivity, state) =>
+        case (Action.GetTemperature, state) =>
           state -> ff4s
             .HttpClient[F]
-            .get[Bored]("http://www.boredapi.com/api/activity")
-            .flatMap(activity => store.dispatch(Action.SetActivity(activity)))
+            .get[OpenMeteoApiResponse](
+              "https://api.open-meteo.com/v1/forecast?latitude=47.3667&longitude=8.55&current=temperature_2m"
+            )
+            .flatMap(r =>
+              store.dispatch(Action.SetTemperature(r.current.temperature_2m))
+            )
       }
     }
 
@@ -86,9 +90,9 @@ object Store {
       )
       .background
 
-    // Fetch a new activity every 5 seconds.
+    // Fetch current temperature every 5 seconds.
     _ <- (Stream.unit ++ Stream.fixedDelay(5.second))
-      .evalMap(_ => store.dispatch(Action.GetActivity))
+      .evalMap(_ => store.dispatch(Action.GetTemperature))
       .compile
       .drain
       .background

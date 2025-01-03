@@ -23,7 +23,7 @@ case class State(
     name: Option[String] = None,
     pets: Pets = Pets.Cats,
     counter: Int = 0,
-    bored: Option[Bored] = None,
+    temperature: Option[Double] = None,
     favoriteDish: Dish = Dish.Sushi,
     magic: Boolean = false,
     svgCoords: SvgCoords = SvgCoords(0, 0),
@@ -32,7 +32,8 @@ case class State(
 
 case class SvgCoords(x: Double, y: Double)
 
-case class Bored(activity: String, `type`: String)
+case class OpenMeteoData(temperature_2m: Double)
+case class OpenMeteoApiResponse(current: OpenMeteoData)
 
 sealed trait Dish
 
