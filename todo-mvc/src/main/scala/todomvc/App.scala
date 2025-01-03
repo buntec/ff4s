@@ -17,7 +17,6 @@
 package todomvc
 
 import cats.effect.Concurrent
-import cats.syntax.all._
 import org.scalajs.dom
 
 class App[F[_]](implicit val F: Concurrent[F])

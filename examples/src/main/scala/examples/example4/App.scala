@@ -20,8 +20,6 @@ import cats.effect.Temporal
 import cats.effect.implicits._
 import cats.syntax.all._
 
-import scala.concurrent.duration.FiniteDuration
-
 import concurrent.duration._
 
 // A minimal example demonstrating the use of cancellation and running state.
