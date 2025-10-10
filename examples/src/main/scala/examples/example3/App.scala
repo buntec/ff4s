@@ -86,7 +86,9 @@ class App[F[_]](implicit val F: Async[F]) extends ff4s.App[F, State, Action] {
         p("Navigation"),
         List("foo", "bar", "baz").map { path =>
           div(
-            cls := s"m-1 w-full rounded text-center cursor-pointer border ${if (matchedPath == Some(path)) "bg-purple-300"
+            cls := s"m-1 w-full rounded text-center cursor-pointer border ${if (
+                matchedPath == Some(path)
+              ) "bg-purple-300"
               else ""}",
             path,
             onClick := (_ =>
