@@ -70,7 +70,7 @@ object Store:
           state.copy(temperature = temp) -> F.unit
         case (Action.SetLoading(loading), state) =>
           state.copy(loading = loading) -> F.unit
-        case (Action.Cancel, state) => state -> store.cancel(cancelKey)
+        case (Action.Cancel, state)         => state -> store.cancel(cancelKey)
         case (Action.GetTemperature, state) =>
           (
             state.copy(temperature = none),
@@ -82,9 +82,13 @@ object Store:
                   ) *>
                     ff4s
                       .HttpClient[F]
-                      .get[OpenMeteoApiResponse]("https://api.open-meteo.com/v1/forecast?latitude=47.3667&longitude=8.55&current=temperature_2m")
+                      .get[OpenMeteoApiResponse](
+                        "https://api.open-meteo.com/v1/forecast?latitude=47.3667&longitude=8.55&current=temperature_2m"
+                      )
                       .flatMap(r =>
-                        store.dispatch(Action.SetTemperature(r.current.temperature_2m.some))
+                        store.dispatch(
+                          Action.SetTemperature(r.current.temperature_2m.some)
+                        )
                       )
                 )
               )
