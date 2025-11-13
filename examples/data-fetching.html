@@ -229,7 +229,7 @@
         ),
         </span><span class="identifier">state</span><span>.</span><span class="identifier">errorMessage</span><span> </span><span class="keyword">match</span><span>
           </span><span class="keyword">case</span><span> </span><span class="type-name">Some</span><span>(</span><span class="identifier">errorMsg</span><span>) =&gt; </span><span class="identifier">div</span><span>(</span><span class="identifier">styleAttr</span><span> := </span><span class="string-literal">&quot;color: red&quot;</span><span>, </span><span class="identifier">errorMsg</span><span>)
-          </span><span class="keyword">case</span><span> </span><span class="type-name">None</span><span> =&gt;
+          </span><span class="keyword">case</span><span> </span><span class="type-name">None</span><span>           =&gt;
             </span><span class="identifier">div</span><span>(
               </span><span class="string-literal">s&quot;</span><span class="substitution">${state.apiResponse.flatMap(_.rates.values.toList.headOption).getOrElse(&quot;&quot;)}</span><span class="string-literal">&quot;</span><span>
             )

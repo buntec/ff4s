@@ -183,7 +183,7 @@
           </span><span class="identifier">state</span><span>.</span><span class="identifier">copy</span><span>(</span><span class="identifier">temperature</span><span> = </span><span class="identifier">temp</span><span>) -&gt; </span><span class="type-name">F</span><span>.</span><span class="identifier">unit</span><span>
         </span><span class="keyword">case</span><span> (</span><span class="type-name">Action</span><span>.</span><span class="type-name">SetLoading</span><span>(</span><span class="identifier">loading</span><span>), </span><span class="identifier">state</span><span>) =&gt;
           </span><span class="identifier">state</span><span>.</span><span class="identifier">copy</span><span>(</span><span class="identifier">loading</span><span> = </span><span class="identifier">loading</span><span>) -&gt; </span><span class="type-name">F</span><span>.</span><span class="identifier">unit</span><span>
-        </span><span class="keyword">case</span><span> (</span><span class="type-name">Action</span><span>.</span><span class="type-name">Cancel</span><span>, </span><span class="identifier">state</span><span>) =&gt; </span><span class="identifier">state</span><span> -&gt; </span><span class="identifier">store</span><span>.</span><span class="identifier">cancel</span><span>(</span><span class="identifier">cancelKey</span><span>)
+        </span><span class="keyword">case</span><span> (</span><span class="type-name">Action</span><span>.</span><span class="type-name">Cancel</span><span>, </span><span class="identifier">state</span><span>)         =&gt; </span><span class="identifier">state</span><span> -&gt; </span><span class="identifier">store</span><span>.</span><span class="identifier">cancel</span><span>(</span><span class="identifier">cancelKey</span><span>)
         </span><span class="keyword">case</span><span> (</span><span class="type-name">Action</span><span>.</span><span class="type-name">GetTemperature</span><span>, </span><span class="identifier">state</span><span>) =&gt;
           (
             </span><span class="identifier">state</span><span>.</span><span class="identifier">copy</span><span>(</span><span class="identifier">temperature</span><span> = </span><span class="identifier">none</span><span>),
@@ -195,9 +195,13 @@
 </span><span>                  ) *&gt;
                     </span><span class="identifier">ff4s</span><span>
                       .</span><span class="type-name">HttpClient</span><span>[</span><span class="type-name">F</span><span>]
-                      .</span><span class="identifier">get</span><span>[</span><span class="type-name">OpenMeteoApiResponse</span><span>](</span><span class="string-literal">&quot;https://api.open-meteo.com/v1/forecast?latitude=47.3667&amp;longitude=8.55&amp;current=temperature_2m&quot;</span><span>)
+                      .</span><span class="identifier">get</span><span>[</span><span class="type-name">OpenMeteoApiResponse</span><span>](
+                        </span><span class="string-literal">&quot;https://api.open-meteo.com/v1/forecast?latitude=47.3667&amp;longitude=8.55&amp;current=temperature_2m&quot;</span><span>
+                      )
                       .</span><span class="identifier">flatMap</span><span>(</span><span class="identifier">r</span><span> =&gt;
-                        </span><span class="identifier">store</span><span>.</span><span class="identifier">dispatch</span><span>(</span><span class="type-name">Action</span><span>.</span><span class="type-name">SetTemperature</span><span>(</span><span class="identifier">r</span><span>.</span><span class="identifier">current</span><span>.</span><span class="identifier">temperature_2m</span><span>.</span><span class="identifier">some</span><span>))
+                        </span><span class="identifier">store</span><span>.</span><span class="identifier">dispatch</span><span>(
+                          </span><span class="type-name">Action</span><span>.</span><span class="type-name">SetTemperature</span><span>(</span><span class="identifier">r</span><span>.</span><span class="identifier">current</span><span>.</span><span class="identifier">temperature_2m</span><span>.</span><span class="identifier">some</span><span>)
+                        )
                       )
                 )
               )
