@@ -118,7 +118,7 @@ trait View:
         ),
         state.errorMessage match
           case Some(errorMsg) => div(styleAttr := "color: red", errorMsg)
-          case None =>
+          case None           =>
             div(
               s"${state.apiResponse.flatMap(_.rates.values.toList.headOption).getOrElse("")}"
             )
