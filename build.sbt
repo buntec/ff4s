@@ -4,7 +4,7 @@ Global / resolvers += "Sonatype S01 OSS Snapshots" at "https://s01.oss.sonatype.
 ThisBuild / tlBaseVersion := "0.26"
 
 lazy val scala213 = "2.13.17"
-lazy val scala3 = "3.7.3"
+lazy val scala3 = "3.7.4"
 ThisBuild / scalaVersion := scala3
 ThisBuild / crossScalaVersions := Seq(scala213, scala3)
 
