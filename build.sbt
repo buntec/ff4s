@@ -3,8 +3,8 @@ Global / resolvers += "Sonatype S01 OSS Snapshots" at "https://s01.oss.sonatype.
 
 ThisBuild / tlBaseVersion := "0.26"
 
-lazy val scala213 = "2.13.17"
-lazy val scala3 = "3.7.4"
+lazy val scala213 = "2.13.18"
+lazy val scala3 = "3.8.4"
 ThisBuild / scalaVersion := scala3
 ThisBuild / crossScalaVersions := Seq(scala213, scala3)
 
@@ -22,13 +22,13 @@ ThisBuild / tlSitePublishBranch := Some("main")
 ThisBuild / tlFatalWarnings := false
 
 lazy val scalajsDomVersion = "2.8.1"
-lazy val circeVersion = "0.14.15"
+lazy val circeVersion = "0.14.16"
 lazy val catsVersion = "2.13.0"
-lazy val catsEffectVersion = "3.6.3"
-lazy val fs2Version = "3.12.2"
+lazy val catsEffectVersion = "3.7.1"
+lazy val fs2Version = "3.13.0"
 lazy val kindProjectorVersion = "0.13.4"
 lazy val http4sDomVersion = "0.2.12"
-lazy val http4sVersion = "0.23.33"
+lazy val http4sVersion = "0.23.36"
 lazy val betterMonadicForVersion = "0.3.1"
 lazy val scalaJsSnabbdomVersion = "0.2.0-M3"
 lazy val fs2DomVersion = "0.2.1"
@@ -70,7 +70,7 @@ lazy val ff4s = (project in file("ff4s"))
           .generate((Compile / sourceManaged).value / "domdefs")
           .unsafeRunSync()
       )
-      cachedDomDefs((Compile / scalaVersion).value)
+      cachedDomDefs(s"${(Compile / scalaVersion).value}-domtypes-19.0.0")
     },
     Compile / sourceGenerators += (Compile / generateDomDefs)
   )

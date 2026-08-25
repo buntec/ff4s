@@ -48,7 +48,7 @@ object DomDefsGenerator {
         traitCommentLines = Nil,
         traitModifiers = Nil,
         traitName = traitName,
-        keyKind = "HtmlTag",
+        keyKind = "HtmlTag[_]",
         baseImplDefComments = List(
           "Create HTML tag",
           "",
@@ -84,7 +84,7 @@ object DomDefsGenerator {
         traitCommentLines = Nil,
         traitModifiers = Nil,
         traitName = traitName,
-        keyKind = "SvgTag",
+        keyKind = "SvgTag[_]",
         baseImplDefComments = List(
           "Create SVG tag",
           "",
@@ -113,6 +113,8 @@ object DomDefsGenerator {
 
       val fileContent = generator.generateAttrsTrait(
         defGroups = List(
+          "Global Attrs" -> attrs.GlobalAttrDefs.defs
+            .map(_.copy(tagType = HtmlTagType)),
           "HTML Attrs" -> attrs.HtmlAttrDefs.defs,
           "Reflected Attributes" -> defs.reflectedAttrs.ReflectedHtmlAttrDefs.defs
             .map(_.toAttrDef)
@@ -237,6 +239,7 @@ object DomDefsGenerator {
         traitModifiers = Nil,
         traitName = traitName,
         keyKind = "HtmlProp",
+        useDomVTypeParam = true,
         implNameSuffix = "Prop",
         baseImplDefComments = List(
           "Create custom HTML element property",
@@ -248,6 +251,7 @@ object DomDefsGenerator {
           "@tparam DomV - value type for this prop in the underlying JS DOM."
         ),
         baseImplName = "htmlProp",
+        keyImplReflectedAttrNameArgName = None,
         defType = LazyVal
       )
 
@@ -352,7 +356,7 @@ object DomDefsGenerator {
         ),
         baseImplName = "styleProp",
         defType = LazyVal,
-        lengthUnitsNumType = "Int",
+        lengthUnitsNumType = Some("Int"),
         outputUnitTraits = false
       )
 
@@ -373,15 +377,18 @@ object DomDefsGenerator {
           traitCommentLines = Nil,
           traitModifiers = Nil,
           traitName = styleTrait.scalaName.replace("[_]", ""),
+          traitTypeParam = None,
+          traitThisType = None,
           extendsTraits = styleTrait.extendsTraits.map(_.replace("[_]", "")),
+          traitExtendsFallbackTypeParam = None,
           extendsUnitTraits = styleTrait.extendsUnits,
           propKind = "StyleProp",
           keywordType = "StyleSetter",
+          keywordImpl = keyword => s"this := ${SourceRepr(keyword.domName)}",
           derivedKeyKind = "DerivedStyleProp",
-          lengthUnitsNumType = "Int",
+          lengthUnitsNumType = Some("Int"),
           defType = LazyVal,
-          outputUnitTypes = true,
-          allowSuperCallInOverride = false // can't access lazy val from `super`
+          outputUnitTypes = true
         )
 
         writeToFile(
