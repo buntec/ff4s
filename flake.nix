@@ -17,7 +17,7 @@
 
         devenv.shells.default = {
 
-          packages = with pkgs; [ nodejs_24 ];
+          packages = with pkgs; [ nodejs ];
 
           languages = {
             java.enable = true;
