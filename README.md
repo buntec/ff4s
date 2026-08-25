@@ -5,8 +5,8 @@
 Check out the [microsite](https://buntec.github.io/ff4s/) and [Scaladocs](https://www.javadoc.io/doc/io.github.buntec/ff4s_sjs1_3/latest/index.html).
 
 See the `examples` folder for commented code examples.
-Try them out by running `examples/fastLinkJS` in sbt and serving
-the `index.html` using something like [Live Server](https://www.npmjs.com/package/live-server).
+Try them out by first installing the JavaScript dev dependencies with `npm install`,
+then running `sbt '~examples/fastLinkJS'` and `just serve-examples` in separate terminals.
 
 For good measure, there is an implementation of [todomvc](https://github.com/tastejs/todomvc)
 in the `todo-mvc` folder.

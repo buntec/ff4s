@@ -1,0 +1,6 @@
+{
+  "private": true,
+  "devDependencies": {
+    "vite": "8.2.2"
+  }
+}

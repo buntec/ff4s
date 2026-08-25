@@ -17,7 +17,7 @@
 
         devenv.shells.default = {
 
-          packages = with pkgs; [ nodePackages.live-server ];
+          packages = with pkgs; [ nodejs_24 ];
 
           languages = {
             java.enable = true;
@@ -31,7 +31,7 @@
           '';
 
           scripts.serve-examples.exec = ''
-            live-server ./examples/ --port=8080 --entry-file=index.html
+            npm exec vite -- --config vite.config.mjs
           '';
 
         };
@@ -40,4 +40,3 @@
 
     };
 }
-
