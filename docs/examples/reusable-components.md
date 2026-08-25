@@ -30,7 +30,7 @@ trait Selects[S, A]:
       ),
       options.map(name =>
         html.option(
-          html.selected := (selected.exists(_ == name)),
+          html.selected := (selected.exists(Eq[O].eqv(_, name))),
           key := name.show,
           html.value := name.show,
           name.show

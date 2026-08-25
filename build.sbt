@@ -18,6 +18,7 @@ ThisBuild / developers := List(
 
 // publish website from this branch
 ThisBuild / tlSitePublishBranch := Some("main")
+ThisBuild / tlSiteJavaVersion := JavaSpec.temurin("17")
 
 ThisBuild / tlFatalWarnings := false
 
@@ -26,10 +27,8 @@ lazy val circeVersion = "0.14.16"
 lazy val catsVersion = "2.13.0"
 lazy val catsEffectVersion = "3.7.1"
 lazy val fs2Version = "3.13.0"
-lazy val kindProjectorVersion = "0.13.4"
 lazy val http4sDomVersion = "0.2.12"
 lazy val http4sVersion = "0.23.36"
-lazy val betterMonadicForVersion = "0.3.1"
 lazy val scalaJsSnabbdomVersion = "0.2.0-M3"
 lazy val fs2DomVersion = "0.2.1"
 
