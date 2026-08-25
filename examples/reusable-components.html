@@ -150,7 +150,7 @@
       ),
       </span><span class="identifier">options</span><span>.</span><span class="identifier">map</span><span>(</span><span class="identifier">name</span><span> =&gt;
         </span><span class="identifier">html</span><span>.</span><span class="identifier">option</span><span>(
-          </span><span class="identifier">html</span><span>.</span><span class="identifier">selected</span><span> := (</span><span class="identifier">selected</span><span>.</span><span class="identifier">exists</span><span>(</span><span class="identifier">_</span><span> == </span><span class="identifier">name</span><span>)),
+          </span><span class="identifier">html</span><span>.</span><span class="identifier">selected</span><span> := (</span><span class="identifier">selected</span><span>.</span><span class="identifier">exists</span><span>(</span><span class="type-name">Eq</span><span>[</span><span class="type-name">O</span><span>].</span><span class="identifier">eqv</span><span>(</span><span class="identifier">_</span><span>, </span><span class="identifier">name</span><span>))),
           </span><span class="identifier">key</span><span> := </span><span class="identifier">name</span><span>.</span><span class="identifier">show</span><span>,
           </span><span class="identifier">html</span><span>.</span><span class="identifier">value</span><span> := </span><span class="identifier">name</span><span>.</span><span class="identifier">show</span><span>,
           </span><span class="identifier">name</span><span>.</span><span class="identifier">show</span><span>
