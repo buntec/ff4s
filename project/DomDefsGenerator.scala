@@ -18,6 +18,14 @@ import java.io.File
 
 object DomDefsGenerator {
 
+  private def withLegacyMethods(
+      fileContent: String,
+      methods: String
+  ): String = {
+    val closingBrace = fileContent.lastIndexOf('}')
+    fileContent.patch(closingBrace, s"\n$methods\n", 0)
+  }
+
   def generate(srcManaged: File): IO[List[File]] = {
 
     val generator = new CustomGenerator(srcManaged)
@@ -68,7 +76,12 @@ object DomDefsGenerator {
       writeToFile(
         packagePath = generator.tagDefsPackagePath,
         fileName = traitName,
-        fileContent = fileContent
+        fileContent = withLegacyMethods(
+          fileContent,
+          """
+            |  lazy val mathTag: HtmlTag[dom.HTMLElement] = htmlTag("math")
+            |""".stripMargin
+        )
       )
     }
 
@@ -178,7 +191,14 @@ object DomDefsGenerator {
       writeToFile(
         packagePath = generator.attrDefsPackagePath,
         fileName = traitName,
-        fileContent = fileContent
+        fileContent = withLegacyMethods(
+          fileContent,
+          """
+            |  lazy val idAttr: SvgAttr[String] = stringSvgAttr("id")
+            |
+            |  lazy val tabIndex: SvgAttr[String] = stringSvgAttr("tabindex")
+            |""".stripMargin
+        )
       )
     }
 
