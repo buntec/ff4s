@@ -18,6 +18,7 @@ ThisBuild / developers := List(
 
 // publish website from this branch
 ThisBuild / tlSitePublishBranch := Some("main")
+ThisBuild / githubWorkflowJavaVersions := Seq(JavaSpec.temurin("17"))
 ThisBuild / tlSiteJavaVersion := JavaSpec.temurin("17")
 
 ThisBuild / tlFatalWarnings := false
