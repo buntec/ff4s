@@ -4,9 +4,29 @@
 
 Check out the [microsite](https://buntec.github.io/ff4s/) and [Scaladocs](https://www.javadoc.io/doc/io.github.buntec/ff4s_sjs1_3/latest/index.html).
 
-See the `examples` folder for commented code examples.
-Try them out by first installing the JavaScript dev dependencies with `npm install`,
-then running `sbt '~examples/fastLinkJS'` and `just serve-examples` in separate terminals.
+See the `examples` folder for commented code examples. To run them locally, you need
+Java 17 or later, sbt, [Node.js `^20.19.0` or `>=22.12.0`](https://nodejs.org/), and
+[just](https://just.systems/).
+
+From the repository root, install the JavaScript dependencies:
+
+```shell
+npm install
+```
+
+Then run the Scala.js compiler and the Vite dev server in separate terminals:
+
+```shell
+sbt '~examples/fastLinkJS'
+```
+
+```shell
+just serve-examples
+```
+
+Open <http://127.0.0.1:8080/> in your browser. To try another example, change
+`new example1.App` in `examples/src/main/scala/examples/Main.scala` to the desired
+`example<N>.App`.
 
 For good measure, there is an implementation of [todomvc](https://github.com/tastejs/todomvc)
 in the `todo-mvc` folder.
@@ -14,7 +34,7 @@ in the `todo-mvc` folder.
 Artifacts are published to Maven Central for Scala 2.13 and Scala 3.
 
 ```scala
-libraryDependencies += "io.github.buntec" %%% "ff4s" % "0.24.0"
+libraryDependencies += "io.github.buntec" %%% "ff4s" % "0.26.1"
 ```
 
 ## Companion libraries
@@ -23,12 +43,13 @@ libraryDependencies += "io.github.buntec" %%% "ff4s" % "0.24.0"
 - [ff4s-shoelace](https://github.com/buntec/ff4s-shoelace)
 - [ff4s-heroicons](https://github.com/buntec/ff4s-heroicons)
 
-## (Breaking) changes
+## Breaking changes
 
 ### 0.24.0
 
 - The store constructor is simplified to `(Action, State) => (State, F[Unit])`.
-  To migrate replace all occurrences of `None` with `Applicative[F].unit` (see microsite and examples).
+  To migrate replace the `None` returned for effect-free updates with
+  `Applicative[F].unit` (or a local `unit` value; see the microsite and examples).
 
 ### 0.23.0
 
