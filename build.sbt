@@ -29,7 +29,7 @@ lazy val catsVersion = "2.13.0"
 lazy val catsEffectVersion = "3.7.1"
 lazy val fs2Version = "3.13.0"
 lazy val http4sDomVersion = "0.2.12"
-lazy val http4sVersion = "0.23.36"
+lazy val http4sVersion = "0.23.38"
 lazy val scalaJsSnabbdomVersion = "0.2.0-M3"
 lazy val fs2DomVersion = "0.2.1"
 
