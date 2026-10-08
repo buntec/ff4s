@@ -24,7 +24,7 @@ ThisBuild / tlSiteJavaVersion := JavaSpec.temurin("17")
 ThisBuild / tlFatalWarnings := false
 
 lazy val scalajsDomVersion = "2.8.1"
-lazy val circeVersion = "0.14.16"
+lazy val circeVersion = "0.14.17"
 lazy val catsVersion = "2.13.0"
 lazy val catsEffectVersion = "3.7.1"
 lazy val fs2Version = "3.13.0"
