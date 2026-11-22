@@ -21,6 +21,16 @@ ThisBuild / tlSitePublishBranch := Some("main")
 ThisBuild / githubWorkflowJavaVersions := Seq(JavaSpec.temurin("17"))
 ThisBuild / tlSiteJavaVersion := JavaSpec.temurin("17")
 
+// the ff4s tests run in jsdom, which is installed via npm
+ThisBuild / githubWorkflowBuildPreamble ++= Seq(
+  WorkflowStep.Use(
+    UseRef.Public("actions", "setup-node", "v4"),
+    name = Some("Setup Node.js"),
+    params = Map("node-version" -> "24", "cache" -> "npm")
+  ),
+  WorkflowStep.Run(List("npm ci"), name = Some("Install npm dependencies"))
+)
+
 ThisBuild / tlFatalWarnings := false
 
 lazy val scalajsDomVersion = "2.8.1"
@@ -32,6 +42,7 @@ lazy val http4sDomVersion = "0.2.12"
 lazy val http4sVersion = "0.23.39"
 lazy val scalaJsSnabbdomVersion = "0.2.1"
 lazy val fs2DomVersion = "0.2.1"
+lazy val munitCatsEffectVersion = "2.2.1"
 
 lazy val generateDomDefs = taskKey[Seq[File]]("Generate SDT sources")
 
@@ -59,7 +70,13 @@ lazy val ff4s = (project in file("ff4s"))
       "io.circe" %%% "circe-generic" % circeVersion,
       "io.circe" %%% "circe-literal" % circeVersion,
       "io.circe" %%% "circe-parser" % circeVersion,
-      "com.armanbilge" %%% "fs2-dom" % fs2DomVersion
+      "com.armanbilge" %%% "fs2-dom" % fs2DomVersion,
+      "org.typelevel" %%% "munit-cats-effect" % munitCatsEffectVersion % Test
+    ),
+    Test / jsEnv := new org.scalajs.jsenv.jsdomnodejs.JSDOMNodeJSEnv(
+      org.scalajs.jsenv.jsdomnodejs.JSDOMNodeJSEnv
+        .Config()
+        .withArgs(List("--enable-source-maps"))
     ),
     Compile / generateDomDefs := {
       import cats.effect.unsafe.implicits.global

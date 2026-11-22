@@ -1,6 +1,7 @@
 {
   "private": true,
   "devDependencies": {
+    "jsdom": "31.0.1",
     "vite": "8.3.8"
   }
 }

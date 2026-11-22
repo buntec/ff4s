@@ -17,3 +17,7 @@ watch-todomvc scala="3":
 # Install the JavaScript dependencies (Vite) from package-lock.json
 install:
     npm ci
+
+# Run the ff4s test suite (in jsdom) for the given Scala version
+test scala="3": install
+    sbt '++ {{scala}}' ff4s/test
