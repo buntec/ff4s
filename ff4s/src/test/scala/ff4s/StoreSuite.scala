@@ -114,6 +114,74 @@ class StoreSuite extends CatsEffectSuite {
     }
   }
 
+  test(
+    "canceling the wrapper returned by withCancellationKey cancels the effect"
+  ) {
+    TestControl.executeEmbed {
+      Store.pure[IO, Unit, Unit](())((_, s) => s).use { store =>
+        for {
+          canceled <- Deferred[IO, Unit]
+          outer <- store
+            .withCancellationKey("k")(
+              IO.never[Unit].onCancel(canceled.complete(()).void)
+            )
+            .start
+          _ <- IO.sleep(1.milli)
+          _ <- outer.cancel
+          _ <- canceled.get.timeout(1.second)
+        } yield ()
+      }
+    }
+  }
+
+  test("runningState resets when the effect is canceled") {
+    TestControl.executeEmbed {
+      Store.pure[IO, Unit, Unit](())((_, s) => s).use { store =>
+        val running = store.runningState("load")
+        for {
+          fiber <- store.withRunningState("load")(IO.never[Unit]).start
+          _ <- IO.sleep(1.milli)
+          _ <- assertIO(running.get, true)
+          _ <- fiber.cancel
+          _ <- assertIO(running.get, false)
+        } yield ()
+      }
+    }
+  }
+
+  // `withRunningState(...)(withCancellationKey(...)(fu))` and the reverse
+  // nesting are documented to behave the same: the running state lasts exactly
+  // as long as `fu`, and `cancel(key)` ends both.
+  List[(String, Store[IO, Unit, Unit] => IO[Unit] => IO[Unit])](
+    "withRunningState outside" -> (store =>
+      fu => store.withRunningState("r")(store.withCancellationKey("k")(fu))
+    ),
+    "withCancellationKey outside" -> (store =>
+      fu => store.withCancellationKey("k")(store.withRunningState("r")(fu))
+    )
+  ).foreach { case (name, wrap) =>
+    test(s"withRunningState composes with withCancellationKey ($name)") {
+      TestControl.executeEmbed {
+        Store.pure[IO, Unit, Unit](())((_, s) => s).use { store =>
+          val running = store.runningState("r")
+          for {
+            canceled <- Deferred[IO, Unit]
+            outer <- wrap(store)(
+              IO.never[Unit].onCancel(canceled.complete(()).void)
+            ).start
+            _ <- IO.sleep(1.milli)
+            _ <- assertIO(running.get, true)
+            _ <- store.cancel("k")
+            _ <- canceled.get.timeout(1.second)
+            outcome <- outer.join.timeout(1.second)
+            _ = assert(outcome.isSuccess, outcome)
+            _ <- assertIO(running.get, false)
+          } yield ()
+        }
+      }
+    }
+  }
+
   test("cancel(key) on an unknown key is a no-op") {
     Store.pure[IO, Unit, Unit](())((_, s) => s).use(_.cancel("nope"))
   }
