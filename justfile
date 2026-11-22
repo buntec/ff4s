@@ -14,6 +14,10 @@ serve-todomvc scala="3":
 watch-todomvc scala="3":
     sbt '++ {{scala}}' '~todoMvc/fastLinkJS'
 
-# Install the JavaScript dependencies (Vite) from package-lock.json
+# Install the JavaScript dependencies (Vite, and jsdom for the tests) from package-lock.json
 install:
     npm ci
+
+# Run the ff4s test suite in jsdom (e.g. `just test 2.13`; run `just install` first)
+test scala="3":
+    sbt '++ {{scala}}' ff4s/test
