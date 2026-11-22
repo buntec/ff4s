@@ -81,9 +81,6 @@ lazy val examples = (project in file("examples"))
   .enablePlugins(ScalaJSPlugin, NoPublishPlugin)
   .settings(
     scalaJSUseMainModuleInitializer := true,
-    // stable path referenced by examples/index.html, independent of Scala version
-    Compile / fastLinkJS / scalaJSLinkerOutputDirectory :=
-      target.value / "examples-fastopt",
     libraryDependencies ++= Seq(
       "dev.optics" %%% "monocle-core" % "3.3.0",
       "dev.optics" %%% "monocle-macro" % "3.3.0"
@@ -94,10 +91,7 @@ lazy val examples = (project in file("examples"))
 lazy val todoMvc = (project in file("todo-mvc"))
   .enablePlugins(ScalaJSPlugin, NoPublishPlugin)
   .settings(
-    scalaJSUseMainModuleInitializer := true,
-    // stable path referenced by todo-mvc/index.html, independent of Scala version
-    Compile / fastLinkJS / scalaJSLinkerOutputDirectory :=
-      target.value / "todomvc-fastopt"
+    scalaJSUseMainModuleInitializer := true
   )
   .dependsOn(ff4s)
 
