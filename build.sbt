@@ -71,7 +71,7 @@ lazy val ff4s = (project in file("ff4s"))
           .unsafeRunSync()
       )
       cachedDomDefs(
-        s"${(Compile / scalaVersion).value}-domtypes-19.0.0-legacy-api-2"
+        s"${(Compile / scalaVersion).value}-domtypes-19.0.2-legacy-api-3"
       )
     },
     Compile / sourceGenerators += (Compile / generateDomDefs)
