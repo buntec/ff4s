@@ -4,7 +4,7 @@ Global / resolvers += "Sonatype S01 OSS Snapshots" at "https://s01.oss.sonatype.
 ThisBuild / tlBaseVersion := "0.26"
 
 lazy val scala213 = "2.13.18"
-lazy val scala3 = "3.8.4"
+lazy val scala3 = "3.10.1"
 ThisBuild / scalaVersion := scala3
 ThisBuild / crossScalaVersions := Seq(scala213, scala3)
 
@@ -24,13 +24,13 @@ ThisBuild / tlSiteJavaVersion := JavaSpec.temurin("17")
 ThisBuild / tlFatalWarnings := false
 
 lazy val scalajsDomVersion = "2.8.1"
-lazy val circeVersion = "0.14.16"
+lazy val circeVersion = "0.14.17"
 lazy val catsVersion = "2.13.0"
 lazy val catsEffectVersion = "3.7.1"
-lazy val fs2Version = "3.13.0"
+lazy val fs2Version = "3.16.0"
 lazy val http4sDomVersion = "0.2.12"
-lazy val http4sVersion = "0.23.36"
-lazy val scalaJsSnabbdomVersion = "0.2.0-M3"
+lazy val http4sVersion = "0.23.39"
+lazy val scalaJsSnabbdomVersion = "0.2.1"
 lazy val fs2DomVersion = "0.2.1"
 
 lazy val generateDomDefs = taskKey[Seq[File]]("Generate SDT sources")
@@ -71,7 +71,7 @@ lazy val ff4s = (project in file("ff4s"))
           .unsafeRunSync()
       )
       cachedDomDefs(
-        s"${(Compile / scalaVersion).value}-domtypes-19.0.0-legacy-api-2"
+        s"${(Compile / scalaVersion).value}-domtypes-19.0.2-legacy-api-3"
       )
     },
     Compile / sourceGenerators += (Compile / generateDomDefs)

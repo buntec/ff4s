@@ -197,6 +197,8 @@ object DomDefsGenerator {
             |  lazy val idAttr: SvgAttr[String] = stringSvgAttr("id")
             |
             |  lazy val tabIndex: SvgAttr[String] = stringSvgAttr("tabindex")
+            |
+            |  lazy val style: SvgAttr[String] = stringSvgAttr("style")
             |""".stripMargin
         )
       )
