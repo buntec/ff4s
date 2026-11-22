@@ -11,13 +11,13 @@ Java 17 or later, sbt, [Node.js `^20.19.0` or `>=22.12.0`](https://nodejs.org/),
 From the repository root, install the JavaScript dependencies:
 
 ```shell
-npm install
+just install
 ```
 
 Then run the Scala.js compiler and the Vite dev server in separate terminals:
 
 ```shell
-sbt '~examples/fastLinkJS'
+just watch-examples
 ```
 
 ```shell
@@ -34,7 +34,7 @@ in the `todo-mvc` folder.
 Artifacts are published to Maven Central for Scala 2.13 and Scala 3.
 
 ```scala
-libraryDependencies += "io.github.buntec" %%% "ff4s" % "0.26.1"
+libraryDependencies += "io.github.buntec" %%% "ff4s" % "0.27.0"
 ```
 
 ## Companion libraries
