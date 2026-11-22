@@ -28,15 +28,15 @@ Open <http://127.0.0.1:8080/> in your browser. To try another example, change
 `new example1.App` in `examples/src/main/scala/examples/Main.scala` to the desired
 `example<N>.App`.
 
-To run the test suite (in [jsdom](https://github.com/jsdom/jsdom), so the same
-Node.js requirement applies), run `just test`, or `just test 2.13` for Scala 2.13.
-
 Both recipes use Scala 3 by default. To run the examples on Scala 2.13, pass the
 version to both: `just watch-examples 2.13` and `just serve-examples 2.13`.
 
 For good measure, there is an implementation of [todomvc](https://github.com/tastejs/todomvc)
 in the `todo-mvc` folder. Run it the same way with `just watch-todomvc` and
 `just serve-todomvc`.
+
+To run the test suite (in [jsdom](https://github.com/jsdom/jsdom), so the same
+Node.js requirement applies), run `just test`, or `just test 2.13` for Scala 2.13.
 
 Artifacts are published to Maven Central for Scala 2.13 and Scala 3.
 

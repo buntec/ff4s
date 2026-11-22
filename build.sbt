@@ -21,14 +21,20 @@ ThisBuild / tlSitePublishBranch := Some("main")
 ThisBuild / githubWorkflowJavaVersions := Seq(JavaSpec.temurin("17"))
 ThisBuild / tlSiteJavaVersion := JavaSpec.temurin("17")
 
-// the ff4s tests run in jsdom, which is installed via npm
+// the ff4s tests run in jsdom, which is installed via npm (Scala.js jobs only)
+lazy val jsOnly = Some("matrix.project == 'rootJS'")
 ThisBuild / githubWorkflowBuildPreamble ++= Seq(
   WorkflowStep.Use(
     UseRef.Public("actions", "setup-node", "v4"),
     name = Some("Setup Node.js"),
-    params = Map("node-version" -> "24", "cache" -> "npm")
+    params = Map("node-version" -> "24", "cache" -> "npm"),
+    cond = jsOnly
   ),
-  WorkflowStep.Run(List("npm ci"), name = Some("Install npm dependencies"))
+  WorkflowStep.Run(
+    List("npm ci"),
+    name = Some("Install npm dependencies"),
+    cond = jsOnly
+  )
 )
 
 ThisBuild / tlFatalWarnings := false

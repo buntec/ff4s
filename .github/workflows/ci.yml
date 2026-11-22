@@ -56,12 +56,14 @@ jobs:
         run: sbt +update
 
       - name: Setup Node.js
+        if: matrix.project == 'rootJS'
         uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: npm
 
       - name: Install npm dependencies
+        if: matrix.project == 'rootJS'
         run: npm ci
 
       - name: Check that workflows are up to date

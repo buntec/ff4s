@@ -17,7 +17,6 @@
 package ff4s
 
 import cats.effect.IO
-import cats.syntax.all._
 
 import scala.concurrent.duration._
 
@@ -28,16 +27,15 @@ object TestUtils {
       check: IO[Boolean],
       timeout: FiniteDuration = 2.seconds,
       interval: FiniteDuration = 5.millis
-  ): IO[Unit] =
-    (check, IO.sleep(interval))
-      .mapN((ok, _) => ok)
-      .iterateUntil(identity)
-      .void
-      .timeoutTo(
-        timeout,
-        IO.raiseError(
-          new AssertionError(s"condition not met within $timeout")
-        )
+  ): IO[Unit] = {
+    // check first, and only sleep before retrying
+    def loop: IO[Unit] = check.ifM(IO.unit, IO.sleep(interval) *> loop)
+    loop.timeoutTo(
+      timeout,
+      IO.raiseError(
+        new AssertionError(s"condition not met within $timeout")
       )
+    )
+  }
 
 }

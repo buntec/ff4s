@@ -31,7 +31,6 @@ class StoreSuite extends CatsEffectSuite {
 
   sealed trait Action
   case class Add(n: Int) extends Action
-  case object Reset extends Action
   case class AddThenDouble(n: Int) extends Action
   case object Double extends Action
 
@@ -56,7 +55,6 @@ class StoreSuite extends CatsEffectSuite {
       Store[IO, Int, Action](0) { store =>
         {
           case (Add(n), s)           => (s + n, IO.unit)
-          case (Reset, _)            => (0, IO.unit)
           case (Double, s)           => (s * 2, IO.unit)
           case (AddThenDouble(n), s) =>
             (
@@ -92,7 +90,8 @@ class StoreSuite extends CatsEffectSuite {
           _ <- store.withCancellationKey("k")(IO.unit)
           _ <- firstCanceled.get.timeout(1.second)
           outcome <- first.join
-        } yield assert(outcome.isCanceled || outcome.isSuccess)
+          // the superseded wrapper completes normally rather than being canceled
+        } yield assert(outcome.isSuccess, outcome)
       }
     }
   }
