@@ -22,7 +22,6 @@ import cats.syntax.all._
 import munit.CatsEffectSuite
 import org.scalajs.dom
 
-import scala.concurrent.duration._
 import scala.scalajs.js
 
 import TestUtils._
