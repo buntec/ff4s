@@ -17,7 +17,7 @@ const demos = {
 };
 
 const demoName = process.env.FF4S_DEMO || "examples";
-const demo = demos[demoName];
+const demo = Object.hasOwn(demos, demoName) ? demos[demoName] : undefined;
 if (!demo) {
   throw new Error(
     `Unknown FF4S_DEMO "${demoName}"; expected one of: ${Object.keys(demos).join(", ")}`,
@@ -82,28 +82,52 @@ export default defineConfig({
       name: "scala-js-bundle",
       configureServer(server) {
         server.middlewares.use(bundleUrl, (req, res) => {
-          const dir = currentBundleDir();
-          const file =
-            dir && path.join(dir, decodeURIComponent(req.url.split("?")[0]));
-          if (
-            !file ||
-            !file.startsWith(dir + path.sep) ||
-            !fs.existsSync(file)
-          ) {
-            res.statusCode = 404;
+          const reply = (status, message) => {
+            res.statusCode = status;
             res.setHeader("Content-Type", "text/plain");
-            res.end(
+            res.end(`${message}\n`);
+          };
+
+          const dir = currentBundleDir();
+          if (!dir) {
+            return reply(
+              404,
               `No Scala ${scala} ${demo.bundle} bundle under ${targetDir}. ` +
-                `Is the matching watch recipe running?\n`,
+                `Is the matching watch recipe running?`,
             );
-            return;
           }
+
+          let requested;
+          try {
+            requested = decodeURIComponent(req.url.split("?")[0]);
+          } catch {
+            return reply(400, "Malformed request path");
+          }
+
+          const file = path.join(dir, requested);
+          const isFile =
+            file.startsWith(dir + path.sep) &&
+            fs.statSync(file, { throwIfNoEntry: false })?.isFile();
+          if (!isFile) {
+            return reply(404, `${requested} not found in ${dir}`);
+          }
+
           res.setHeader(
             "Content-Type",
             file.endsWith(".map") ? "application/json" : "text/javascript",
           );
           res.setHeader("Cache-Control", "no-store");
-          fs.createReadStream(file).pipe(res);
+          // The file can disappear between stat and open while sbt relinks;
+          // an unhandled stream error would crash the dev server.
+          fs.createReadStream(file)
+            .on("error", (err) => {
+              if (res.headersSent) {
+                res.destroy(err);
+              } else {
+                reply(500, `Could not read ${file}: ${err.message}`);
+              }
+            })
+            .pipe(res);
         });
 
         server.watcher.add(
