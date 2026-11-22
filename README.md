@@ -11,13 +11,13 @@ Java 17 or later, sbt, [Node.js `^20.19.0` or `>=22.12.0`](https://nodejs.org/),
 From the repository root, install the JavaScript dependencies:
 
 ```shell
-npm install
+just install
 ```
 
 Then run the Scala.js compiler and the Vite dev server in separate terminals:
 
 ```shell
-sbt '~examples/fastLinkJS'
+just watch-examples
 ```
 
 ```shell
@@ -28,13 +28,17 @@ Open <http://127.0.0.1:8080/> in your browser. To try another example, change
 `new example1.App` in `examples/src/main/scala/examples/Main.scala` to the desired
 `example<N>.App`.
 
+Both recipes use Scala 3 by default. To run the examples on Scala 2.13, pass the
+version to both: `just watch-examples 2.13` and `just serve-examples 2.13`.
+
 For good measure, there is an implementation of [todomvc](https://github.com/tastejs/todomvc)
-in the `todo-mvc` folder.
+in the `todo-mvc` folder. Run it the same way with `just watch-todomvc` and
+`just serve-todomvc`.
 
 Artifacts are published to Maven Central for Scala 2.13 and Scala 3.
 
 ```scala
-libraryDependencies += "io.github.buntec" %%% "ff4s" % "0.26.1"
+libraryDependencies += "io.github.buntec" %%% "ff4s" % "0.27.0"
 ```
 
 ## Companion libraries
