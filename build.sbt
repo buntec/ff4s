@@ -30,7 +30,7 @@ lazy val catsEffectVersion = "3.7.1"
 lazy val fs2Version = "3.16.0"
 lazy val http4sDomVersion = "0.2.12"
 lazy val http4sVersion = "0.23.39"
-lazy val scalaJsSnabbdomVersion = "0.2.0-M3"
+lazy val scalaJsSnabbdomVersion = "0.2.1"
 lazy val fs2DomVersion = "0.2.1"
 
 lazy val generateDomDefs = taskKey[Seq[File]]("Generate SDT sources")
