@@ -25,7 +25,7 @@ ThisBuild / tlSiteJavaVersion := JavaSpec.temurin("17")
 lazy val jsOnly = Some("matrix.project == 'rootJS'")
 ThisBuild / githubWorkflowBuildPreamble ++= Seq(
   WorkflowStep.Use(
-    UseRef.Public("actions", "setup-node", "v4"),
+    UseRef.Public("actions", "setup-node", "v6"),
     name = Some("Setup Node.js"),
     params = Map("node-version" -> "24", "cache" -> "npm"),
     cond = jsOnly

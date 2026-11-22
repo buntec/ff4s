@@ -74,17 +74,22 @@ private[ff4s] object Render {
         _ <- store.state.discrete
           .map(state => view.foldMap(compiler(dsl, state, store.dispatch)))
           .evalMapAccumulate(proxy0) { case (prevProxy, vnode) =>
-            F.async_[PatchedVNode] { cb =>
-              dom.window.requestAnimationFrame { _ =>
-                val proxy = patch(
-                  prevProxy,
-                  vnode.toSnabbdom(action =>
-                    dispatcher.unsafeRunAndForget(store.dispatch(action))
+            // Canceling (e.g., on teardown) cancels the pending frame. Without
+            // this, the effect would be uncancelable and the frame would
+            // still patch the DOM after the app is gone.
+            F.async[PatchedVNode] { cb =>
+              F.delay {
+                val handle = dom.window.requestAnimationFrame { _ =>
+                  val proxy = patch(
+                    prevProxy,
+                    vnode.toSnabbdom(action =>
+                      dispatcher.unsafeRunAndForget(store.dispatch(action))
+                    )
                   )
-                )
-                cb(Right(proxy))
+                  cb(Right(proxy))
+                }
+                Some(F.delay(dom.window.cancelAnimationFrame(handle)))
               }
-              ()
             }.tupleRight(())
           }
           .compile

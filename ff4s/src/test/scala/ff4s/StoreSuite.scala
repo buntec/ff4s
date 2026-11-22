@@ -32,7 +32,7 @@ class StoreSuite extends CatsEffectSuite {
   sealed trait Action
   case class Add(n: Int) extends Action
   case class AddThenDouble(n: Int) extends Action
-  case object Double extends Action
+  case object Times2 extends Action
 
   test("pure store applies dispatched actions in order") {
     Store
@@ -55,12 +55,12 @@ class StoreSuite extends CatsEffectSuite {
       Store[IO, Int, Action](0) { store =>
         {
           case (Add(n), s)           => (s + n, IO.unit)
-          case (Double, s)           => (s * 2, IO.unit)
+          case (Times2, s)           => (s * 2, IO.unit)
           case (AddThenDouble(n), s) =>
             (
               s + n,
               store.state.get.flatMap(s => seen.set(Some(s))) *>
-                store.dispatch(Double)
+                store.dispatch(Times2)
             )
         }
       }.use { store =>

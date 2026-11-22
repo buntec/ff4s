@@ -23,22 +23,52 @@ import cats.syntax.all._
 import munit.CatsEffectSuite
 import org.scalajs.dom
 
+import scala.collection.mutable
+import scala.concurrent.duration._
 import scala.scalajs.js
 
 import TestUtils._
 
 class RenderSuite extends CatsEffectSuite {
 
-  // jsdom only provides requestAnimationFrame in "visual" mode
+  // jsdom only provides requestAnimationFrame in "visual" mode, so this suite
+  // installs its own frame scheduler. Frames normally run on the next tick;
+  // while `framesPaused` is set they stay pending until canceled.
+  private val pendingFrames =
+    mutable.LinkedHashMap.empty[Int, js.Function1[Double, Unit]]
+  private var nextFrame = 0
+  private var framesPaused = false
+
+  private val window = js.Dynamic.global.window
+  private val frameApi = List("requestAnimationFrame", "cancelAnimationFrame")
+  private var savedFrameApi = Map.empty[String, js.Any]
+
   override def beforeAll(): Unit = {
-    val window = js.Dynamic.global.window
-    if (js.isUndefined(window.requestAnimationFrame)) {
-      window.requestAnimationFrame = { (cb: js.Function1[Double, Unit]) =>
-        js.timers.setTimeout(0)(cb(0.0)): Unit
-        0
-      }: js.Function1[js.Function1[Double, Unit], Int]
-    }
+    savedFrameApi = frameApi.collect {
+      case name if window.hasOwnProperty(name).asInstanceOf[Boolean] =>
+        name -> window.selectDynamic(name).asInstanceOf[js.Any]
+    }.toMap
+    window.requestAnimationFrame = { (cb: js.Function1[Double, Unit]) =>
+      nextFrame += 1
+      val id = nextFrame
+      pendingFrames(id) = cb
+      if (!framesPaused)
+        js.timers.setTimeout(0)(pendingFrames.remove(id).foreach(_(0.0))): Unit
+      id
+    }: js.Function1[js.Function1[Double, Unit], Int]
+    window.cancelAnimationFrame = { (id: Int) =>
+      pendingFrames.remove(id): Unit
+    }: js.Function1[Int, Unit]
   }
+
+  // leave the global window as we found it for suites that run later
+  override def afterAll(): Unit =
+    frameApi.foreach { name =>
+      savedFrameApi.get(name) match {
+        case Some(original) => window.updateDynamic(name)(original)
+        case None           => js.special.delete(window, name)
+      }
+    }
 
   case class State(
       count: Int = 0,
@@ -246,6 +276,27 @@ class RenderSuite extends CatsEffectSuite {
     withRender(view)(_ => IO.never[Unit]).attempt.map { result =>
       assertEquals(result.left.map(_.getMessage), Left("boom"))
     }
+  }
+
+  test("a frame scheduled before teardown is canceled") {
+    val view = useState { s =>
+      button(onClick := (_ => Some(Inc)), s.count.toString)
+    }
+    val scheduleFrameThenTearDown = withRender(view) { c =>
+      renders(c, "<button>0</button>") *>
+        IO {
+          framesPaused = true
+          c.querySelector("button").asInstanceOf[dom.HTMLElement].click()
+        } *>
+        waitUntil(IO(pendingFrames.nonEmpty)) // the re-render is scheduled
+    }
+    scheduleFrameThenTearDown
+      // an uncancelable frame would block teardown until the frame runs
+      .timeoutAndForget(5.seconds)
+      .flatMap(_ =>
+        IO(assert(pendingFrames.isEmpty, "frame still pending after teardown"))
+      )
+      .guarantee(IO { framesPaused = false; pendingFrames.clear() })
   }
 
   test("void elements cannot have children") {

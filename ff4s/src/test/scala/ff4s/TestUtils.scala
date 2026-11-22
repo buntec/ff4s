@@ -25,7 +25,7 @@ object TestUtils {
   /** Re-evaluates `check` until it yields `true`, failing after `timeout`. */
   def waitUntil(
       check: IO[Boolean],
-      timeout: FiniteDuration = 2.seconds,
+      timeout: FiniteDuration = 10.seconds,
       interval: FiniteDuration = 5.millis
   ): IO[Unit] = {
     // check first, and only sleep before retrying

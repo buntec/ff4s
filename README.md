@@ -35,8 +35,9 @@ For good measure, there is an implementation of [todomvc](https://github.com/tas
 in the `todo-mvc` folder. Run it the same way with `just watch-todomvc` and
 `just serve-todomvc`.
 
-To run the test suite (in [jsdom](https://github.com/jsdom/jsdom), so the same
-Node.js requirement applies), run `just test`, or `just test 2.13` for Scala 2.13.
+To run the test suite, use `just test`, or `just test 2.13` for Scala 2.13. The
+tests run in [jsdom](https://github.com/jsdom/jsdom), which needs Node.js
+`^20.19.0`, `^22.12.0` or `>=24.0.0` (Node 23 is not supported).
 
 Artifacts are published to Maven Central for Scala 2.13 and Scala 3.
 
