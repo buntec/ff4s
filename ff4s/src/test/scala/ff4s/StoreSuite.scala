@@ -19,6 +19,7 @@ package ff4s
 import cats.effect.Deferred
 import cats.effect.IO
 import cats.effect.Ref
+import cats.effect.testkit.TestControl
 import cats.syntax.all._
 import munit.CatsEffectSuite
 
@@ -73,37 +74,44 @@ class StoreSuite extends CatsEffectSuite {
     }
   }
 
+  // These tests run under `TestControl`, where virtual time only advances once
+  // every fiber is blocked. So after `IO.sleep`, the first wrapper is known to
+  // have supervised its effect *and* registered the fiber under the key.
+
   test("withCancellationKey cancels the previous evaluation") {
-    Store.pure[IO, Unit, Unit](())((_, s) => s).use { store =>
-      for {
-        firstCanceled <- Deferred[IO, Unit]
-        first <- store
-          .withCancellationKey("k")(
-            IO.never[Unit].onCancel(firstCanceled.complete(()).void)
-          )
-          .start
-        // wait until the first effect is registered under the key
-        _ <- IO.sleep(20.millis)
-        _ <- store.withCancellationKey("k")(IO.unit)
-        _ <- firstCanceled.get.timeout(1.second)
-        outcome <- first.join
-      } yield assert(outcome.isCanceled || outcome.isSuccess)
+    TestControl.executeEmbed {
+      Store.pure[IO, Unit, Unit](())((_, s) => s).use { store =>
+        for {
+          firstCanceled <- Deferred[IO, Unit]
+          first <- store
+            .withCancellationKey("k")(
+              IO.never[Unit].onCancel(firstCanceled.complete(()).void)
+            )
+            .start
+          _ <- IO.sleep(1.milli)
+          _ <- store.withCancellationKey("k")(IO.unit)
+          _ <- firstCanceled.get.timeout(1.second)
+          outcome <- first.join
+        } yield assert(outcome.isCanceled || outcome.isSuccess)
+      }
     }
   }
 
   test("cancel(key) cancels a running effect") {
-    Store.pure[IO, Unit, Unit](())((_, s) => s).use { store =>
-      for {
-        canceled <- Deferred[IO, Unit]
-        _ <- store
-          .withCancellationKey("k")(
-            IO.never[Unit].onCancel(canceled.complete(()).void)
-          )
-          .start
-        _ <- IO.sleep(20.millis)
-        _ <- store.cancel("k")
-        _ <- canceled.get.timeout(1.second)
-      } yield ()
+    TestControl.executeEmbed {
+      Store.pure[IO, Unit, Unit](())((_, s) => s).use { store =>
+        for {
+          canceled <- Deferred[IO, Unit]
+          _ <- store
+            .withCancellationKey("k")(
+              IO.never[Unit].onCancel(canceled.complete(()).void)
+            )
+            .start
+          _ <- IO.sleep(1.milli)
+          _ <- store.cancel("k")
+          _ <- canceled.get.timeout(1.second)
+        } yield ()
+      }
     }
   }
 
@@ -130,11 +138,19 @@ class StoreSuite extends CatsEffectSuite {
     Store.pure[IO, Unit, Unit](())((_, s) => s).use { store =>
       val running = store.runningState("load")
       for {
+        entered1 <- Deferred[IO, Unit]
+        entered2 <- Deferred[IO, Unit]
         g1 <- Deferred[IO, Unit]
         g2 <- Deferred[IO, Unit]
-        f1 <- store.withRunningState("load")(g1.get).start
-        f2 <- store.withRunningState("load")(g2.get).start
-        _ <- waitUntil(running.get)
+        f1 <- store
+          .withRunningState("load")(entered1.complete(()) *> g1.get)
+          .start
+        f2 <- store
+          .withRunningState("load")(entered2.complete(()) *> g2.get)
+          .start
+        // both bodies are running, so they overlap
+        _ <- entered1.get *> entered2.get
+        _ <- assertIO(running.get, true)
         _ <- g1.complete(()) *> f1.joinWithNever
         _ <- assertIO(running.get, true)
         _ <- g2.complete(()) *> f2.joinWithNever
@@ -143,11 +159,23 @@ class StoreSuite extends CatsEffectSuite {
     }
   }
 
-  test("runningState resets when the effect fails") {
+  test(
+    "withRunningState runs a failing effect, propagates its error and resets"
+  ) {
     Store.pure[IO, Unit, Unit](())((_, s) => s).use { store =>
-      store
-        .withRunningState("load")(IO.raiseError(new Exception("boom")))
-        .attempt *> assertIO(store.runningState("load").get, false)
+      val running = store.runningState("load")
+      val boom = new Exception("boom")
+      for {
+        runningInside <- Ref[IO].of(false)
+        result <- store
+          .withRunningState("load")(
+            running.get.flatMap(runningInside.set) *> IO.raiseError[Unit](boom)
+          )
+          .attempt
+        _ = assertEquals(result, Left(boom))
+        _ <- assertIO(runningInside.get, true)
+        _ <- assertIO(running.get, false)
+      } yield ()
     }
   }
 

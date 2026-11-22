@@ -71,7 +71,8 @@ lazy val ff4s = (project in file("ff4s"))
       "io.circe" %%% "circe-literal" % circeVersion,
       "io.circe" %%% "circe-parser" % circeVersion,
       "com.armanbilge" %%% "fs2-dom" % fs2DomVersion,
-      "org.typelevel" %%% "munit-cats-effect" % munitCatsEffectVersion % Test
+      "org.typelevel" %%% "munit-cats-effect" % munitCatsEffectVersion % Test,
+      "org.typelevel" %%% "cats-effect-testkit" % catsEffectVersion % Test
     ),
     Test / jsEnv := new org.scalajs.jsenv.jsdomnodejs.JSDOMNodeJSEnv(
       org.scalajs.jsenv.jsdomnodejs.JSDOMNodeJSEnv

@@ -40,7 +40,11 @@ class RenderSuite extends CatsEffectSuite {
     }
   }
 
-  case class State(count: Int = 0, inserted: Boolean = false)
+  case class State(
+      count: Int = 0,
+      inserted: Boolean = false,
+      log: Vector[Action] = Vector.empty // every action the store received
+  )
 
   sealed trait Action
   case object Inc extends Action
@@ -50,9 +54,12 @@ class RenderSuite extends CatsEffectSuite {
   import dsl._
   import dsl.html._
 
-  private val mkStore = Store.pure[IO, State, Action](State()) {
-    case (Inc, s)      => s.copy(count = s.count + 1)
-    case (Inserted, s) => s.copy(inserted = true)
+  private val mkStore = Store.pure[IO, State, Action](State()) { (a, s0) =>
+    val s = s0.copy(log = s0.log :+ a)
+    a match {
+      case Inc      => s.copy(count = s.count + 1)
+      case Inserted => s.copy(inserted = true)
+    }
   }
 
   private var counter = 0
@@ -111,12 +118,27 @@ class RenderSuite extends CatsEffectSuite {
   }
 
   test("event handlers returning None do not dispatch") {
-    val view = useState(s => button(onClick := (_ => None), s.count.toString))
+    val view = useState { s =>
+      div(
+        button(cls := "none", onClick := (_ => None)),
+        button(cls := "inc", onClick := (_ => Some(Inc))),
+        span(s.log.mkString(","))
+      )
+    }
+    def click(c: dom.Element, sel: String) =
+      c.querySelector(sel).asInstanceOf[dom.HTMLElement].click()
     render(view).use { c =>
-      renders(c, "<button>0</button>") *>
-        IO(c.querySelector("button").asInstanceOf[dom.HTMLElement].click()) *>
-        IO.sleep(50.millis) *>
-        renders(c, "<button>0</button>")
+      // Actions are dispatched in click order, so once `Inc` (the marker) is
+      // in the log, anything dispatched by the first click would be too.
+      renders(
+        c,
+        """<div><button class="none"></button><button class="inc"></button><span></span></div>"""
+      ) *>
+        IO { click(c, ".none"); click(c, ".inc") } *>
+        renders(
+          c,
+          """<div><button class="none"></button><button class="inc"></button><span>Inc</span></div>"""
+        )
     }
   }
 
@@ -131,14 +153,25 @@ class RenderSuite extends CatsEffectSuite {
     val view = div(
       button(disabled := true, "a"),
       button(disabled := false, "b"),
-      span(styleAttr := "color: red;")
+      span(styleAttr := "color: red;"),
+      input(typ := "checkbox", checked := true),
+      p(Modifier.Style("color", "blue"))
     )
-    render(view).use(
+    render(view).use { c =>
       renders(
-        _,
-        """<div><button disabled="">a</button><button>b</button><span style="color: red;"></span></div>"""
-      )
-    )
+        c,
+        """<div><button disabled="">a</button><button>b</button><span style="color: red;"></span><input type="checkbox"><p style="color: blue;"></p></div>"""
+      ) *> IO {
+        // `checked` is a DOM property, not an attribute
+        assert(
+          c.querySelector("input").asInstanceOf[dom.HTMLInputElement].checked
+        )
+        assertEquals(
+          c.querySelector("p").asInstanceOf[dom.HTMLElement].style.color,
+          "blue"
+        )
+      }
+    }
   }
 
   test("withClass overrides the class attribute") {
