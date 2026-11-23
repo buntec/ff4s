@@ -1,5 +1,5 @@
 Global / onChangedBuildSource := ReloadOnSourceChanges
-Global / resolvers += "Sonatype S01 OSS Snapshots" at "https://s01.oss.sonatype.org/content/repositories/snapshots"
+Global / resolvers += "Sonatype Central Snapshots" at "https://central.sonatype.com/repository/maven-snapshots/"
 
 ThisBuild / tlBaseVersion := "0.27"
 
